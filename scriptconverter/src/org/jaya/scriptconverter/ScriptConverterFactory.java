@@ -8,7 +8,8 @@ public class ScriptConverterFactory {
 	static{
 		m_scriptConverterList = new ArrayList<ScriptConverter>();
 		
-		ScriptConverterFactory.registerScriptConverter(new ITRANSToDevaNagariConverter());		
+		ScriptConverterFactory.registerScriptConverter(new ITRANSToDevaNagariConverter());
+		ScriptConverterFactory.registerScriptConverter(new DevaNagariToITRANSConverter());
 	}
 	
 	private static List<ScriptConverter> m_scriptConverterList;

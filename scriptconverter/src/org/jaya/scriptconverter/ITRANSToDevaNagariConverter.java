@@ -43,7 +43,9 @@ public class ITRANSToDevaNagariConverter implements ScriptConverter {
 		itransToSanskritMap.put("~", "~");
 		itransToSanskritMap.put("~N", "\u0919");
 		itransToSanskritMap.put("c", "\u091A");
-		itransToSanskritMap.put("ch", "\u091B");
+		itransToSanskritMap.put("ch", "\u091A");
+		itransToSanskritMap.put("C", "\u091B");
+		itransToSanskritMap.put("Ch", "\u091B");
 		itransToSanskritMap.put("j", "\u091C");
 		itransToSanskritMap.put("jh", "\u091D");
 		itransToSanskritMap.put("~n", "\u091E");
@@ -93,8 +95,7 @@ public class ITRANSToDevaNagariConverter implements ScriptConverter {
 	public String convert(String itrans){
 		String retVal = "";
 		int pos=0;
-		char[] charArray = itrans.toCharArray();
-		int length = charArray.length, i; 
+		int length = itrans.length(), i; 
 		String  curKey;
 		String tempChar = null, sanskritChar = null;
 		boolean isPreviousCharConsonent = false;
