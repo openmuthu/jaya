@@ -141,7 +141,7 @@ public class DevaNagariToITRANSConverter implements ScriptConverter {
 			if( itransChar == null )
 			{
 				retVal += curKey;
-				pos++;
+				pos += curKey.length();
 			}
 			else
 			{
