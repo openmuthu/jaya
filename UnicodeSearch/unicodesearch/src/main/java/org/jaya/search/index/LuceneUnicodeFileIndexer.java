@@ -6,6 +6,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
@@ -28,6 +30,7 @@ public class LuceneUnicodeFileIndexer {
 		// String destination = args[1];
 		LuceneUnicodeFileIndexer fileIndexer = new LuceneUnicodeFileIndexer();
 		fileIndexer.createIndex();
+
 	}
 
 	public void createIndex() throws CorruptIndexException, LockObtainFailedException, IOException {
@@ -36,8 +39,10 @@ public class LuceneUnicodeFileIndexer {
 		config.setOpenMode(IndexWriterConfig.OpenMode.CREATE_OR_APPEND);
 		IndexWriter indexWriter = new IndexWriter(FSDirectory.open(Paths.get(Constatants.INDEX_DIRECTORY)), config);
 		File dir = new File(Constatants.FILES_TO_INDEX_DIRECTORY);
-		File[] files = dir.listFiles();
+
+		List<File> files = getListOfFilesToIndex(dir);
 		for (File file : files) {
+
 			Document document = new Document();
 
 			String path = file.getCanonicalPath();
@@ -47,9 +52,23 @@ public class LuceneUnicodeFileIndexer {
 			document.add(new TextField(Constatants.FIELD_CONTENTS, reader));
 
 			indexWriter.addDocument(document);
+
 		}
 		indexWriter.close();
 		System.out.println("Index is complete");
 	}
 
+	public List<File> getListOfFilesToIndex(File sourceDir) {
+		ArrayList<File> fileList = new ArrayList<>();
+		File[] files = sourceDir.listFiles();
+		for (File file : files) {
+			if (file.isDirectory()) {
+				fileList.addAll(getListOfFilesToIndex(file));
+			} else {
+				fileList.add(file);
+			}
+		}
+		return fileList;
+
+	}
 }
