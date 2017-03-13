@@ -18,7 +18,6 @@ import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.store.LockObtainFailedException;
-import org.apache.lucene.util.Version;
 import org.jaya.util.Constatants;
 
 import static org.apache.lucene.util.Version.LUCENE_47;
