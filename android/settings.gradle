@@ -1,1 +1,2 @@
-include ':app'
+include ':unicodesearch', ':app'
+project(':unicodesearch').projectDir = new File(settingsDir, '../UnicodeSearch/unicodesearch')

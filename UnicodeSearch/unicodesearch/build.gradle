@@ -1,0 +1,18 @@
+apply plugin: 'com.android.library'
+
+android {
+    compileSdkVersion 23
+    buildToolsVersion "23.0.0"    
+}
+
+dependencies {
+    compile group: 'org.apache.lucene', name: 'lucene-core', version: '4.7.2'
+    compile group: 'org.apache.lucene', name: 'lucene-analyzers-common', version: '4.7.2'
+    compile group: 'org.apache.lucene', name: 'lucene-queryparser', version: '4.7.2'
+
+    compile group: 'org.slf4j', name: 'slf4j-api', version: '1.7.12'
+}
+
+task clean(type: Delete) {
+    delete rootProject.buildDir
+}
