@@ -66,6 +66,23 @@ public class LuceneUnicodeSearcher {
 		return searchIndex(searchStringDev);
 	}
 
+	public void search(String searchString, List<Document> retVal) throws IOException, ParseException {
+		Query query = mQueryParser.parse(searchString);
+		if(query == null)
+			return;
+		//SpanTermQuery query = new SpanTermQuery(new Term(Constatants.FIELD_CONTENTS, searchString + "~"));
+		TopDocs result = mIndexSearcher.search(query, Constatants.MAX_RESULTS);
+		System.out.println("Number of hits: " + result.totalHits);
+		for (ScoreDoc topdoc : result.scoreDocs) {
+			Document doc = mIndexSearcher.doc(topdoc.doc);
+			retVal.add(doc);
+			String fp = doc.get(Constatants.FIELD_PATH);
+			String contents = doc.get(Constatants.FIELD_CONTENTS);
+			System.out.println("String :" + searchString + " matched in : " + fp);
+			System.out.println("String :" + searchString + " matched is :\n" + contents);
+		}
+	}
+
 	public List<Document> searchIndex(String searchString) throws IOException, ParseException {
 		System.out.println("Searching for '" + searchString + "'");
 //		IndexReader reader = DirectoryReader.open(FSDirectory.open(new File(Constatants.INDEX_DIRECTORY)));
@@ -76,7 +93,9 @@ public class LuceneUnicodeSearcher {
 
 		ArrayList<Document> retVal = new ArrayList<>();
 
-		Query query = mQueryParser.parse(searchString + "~");
+		Query query = mQueryParser.parse(searchString);
+		if(query == null)
+			return retVal;
 		//SpanTermQuery query = new SpanTermQuery(new Term(Constatants.FIELD_CONTENTS, searchString + "~"));
 		TopDocs result = mIndexSearcher.search(query, Constatants.MAX_RESULTS);
 		System.out.println("Number of hits: " + result.totalHits);
@@ -84,11 +103,13 @@ public class LuceneUnicodeSearcher {
 			Document doc = mIndexSearcher.doc(topdoc.doc);
 			retVal.add(doc);
 			String fp = doc.get(Constatants.FIELD_PATH);
-			// String fp1 =
-			// indexSearcher.doc(topdoc.doc).get(Constatants.FIELD_CONTENTS);
-			System.out.println("String :" + searchString + "matched in : " + fp);
-			// System.out.println("String :" + searchString + "matched is : " +
-			// fp1);
+			String contents = doc.get(Constatants.FIELD_CONTENTS);
+			System.out.println("String :" + searchString + " matched in : " + fp);
+			System.out.println("String :" + searchString + " matched is :\n" + contents);
+		}
+
+		if( retVal.size() < 10 ){
+			search(searchString+"~", retVal);
 		}
 
 		return retVal;

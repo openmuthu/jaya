@@ -4,6 +4,8 @@ import android.app.Application;
 import android.content.Context;
 import android.os.Environment;
 
+import java.io.File;
+
 /**
  * Created by murthy on 12/03/17.
  */
@@ -35,5 +37,12 @@ public class JayaApp extends Application{
     public static String getSearchIndexFolder(){
         //return "/sdcard/"+APP_NAME+"/Index/";
         return Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + APP_NAME + "/Index/";
+    }
+
+    public static boolean isIndexingRequired(){
+        String sigFilePath = getSearchIndexFolder() + "/segments.gen";
+        File sigFile = new File(sigFilePath);
+
+        return !sigFile.exists();
     }
 }

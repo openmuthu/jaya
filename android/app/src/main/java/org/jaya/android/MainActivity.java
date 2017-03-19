@@ -42,7 +42,7 @@ public class MainActivity extends Activity {
                     if( mAssetsManager == null )
                         return;
                     mAssetsManager.copyResourcesToCacheIfRequired(this);
-                    indexFiles();
+                    indexFiles(false);
                 }
                 break;
         }
@@ -62,14 +62,13 @@ public class MainActivity extends Activity {
         return true;
     }
 
-    protected void indexFiles()
+    protected void indexFiles(boolean bForceReIndexing)
     {
         try {
-            if( !PreferencesManager.isIndexingRequired() )
+            if( !JayaApp.isIndexingRequired() && !bForceReIndexing)
                 return;
             LuceneUnicodeFileIndexer indexer = new LuceneUnicodeFileIndexer();
             indexer.createIndex(JayaApp.getSearchIndexFolder(), JayaApp.getDocumentsFolder());
-            PreferencesManager.setIsIndexingRequired(false);
         }
         catch(IOException ex){
             Log.d("Indexer", "IOException in indexFiles");
