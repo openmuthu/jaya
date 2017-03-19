@@ -6,30 +6,42 @@ import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.os.Bundle;
+import android.text.Html;
+import android.text.Spanned;
 import android.util.Log;
 import android.view.Menu;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.SearchView;
 import android.widget.SimpleAdapter;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import org.apache.lucene.document.Document;
 import org.apache.lucene.queryparser.classic.ParseException;
+import org.jaya.scriptconverter.ScriptConverter;
+import org.jaya.scriptconverter.ScriptConverterFactory;
 import org.jaya.util.Constatants;
 import org.jaya.android.R;
 import org.jaya.search.LuceneUnicodeSearcher;
 
 import java.io.IOException;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+
+import static android.R.attr.data;
 
 public class SearchableActivity extends ListActivity {
 
     List<Document> mSearchResults;
     LuceneUnicodeSearcher mSearcher = null;
+    String mCurrentQuery;
+    ScriptConverter mITransToDevnagari = ScriptConverterFactory.getScriptConverter(ScriptConverter.ITRANS_SCRIPT,
+            ScriptConverter.DEVANAGARI_SCRIPT);
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -59,6 +71,8 @@ public class SearchableActivity extends ListActivity {
             }
             mSearchResults = mSearcher.searchITRANSString(query);
 
+            mCurrentQuery = mITransToDevnagari.convert(query);
+
             setListAdapter();
         }
         catch (IOException ex){
@@ -79,14 +93,38 @@ public class SearchableActivity extends ListActivity {
         for (int i=0;i<mSearchResults.size();i++)
         {
             HashMap<String,String> hashMap=new HashMap<>();//create a hashmap to store the data in key value pair
-            hashMap.put("path",mSearchResults.get(i).get(Constatants.FIELD_PATH));
+            String path = mSearchResults.get(i).get(Constatants.FIELD_PATH);
+            path = path.substring(path.lastIndexOf("/"), path.length());
+            hashMap.put("path", path);
             hashMap.put("contents",mSearchResults.get(i).get(Constatants.FIELD_CONTENTS));
+            arrayList.add(hashMap);//add the hashmap into arrayList
+        }
+
+        if(mSearchResults.size() == 0)
+        {
+            HashMap<String,String> hashMap=new HashMap<>();//create a hashmap to store the data in key value pair
+            hashMap.put("path","No results found.");
+            hashMap.put("contents","");
             arrayList.add(hashMap);//add the hashmap into arrayList
         }
 
         String[] from={"path","contents"};//string array
         int[] to={R.id.list_item_path,R.id.list_item_contents};//int array of views id's
-        SimpleAdapter simpleAdapter = new SimpleAdapter(this,arrayList,R.layout.container_list_item_view,from,to);//Create object and set the parameters for simpleAdapter
+        //SimpleAdapter simpleAdapter = new SimpleAdapter(this,arrayList,R.layout.container_list_item_view,from,to);//Create object and set the parameters for simpleAdapter
+        SimpleAdapter simpleAdapter = new SimpleAdapter(this,arrayList,R.layout.container_list_item_view,from,to) {
+            @Override
+            public View getView(int position, View convertView, ViewGroup parent){
+                View view = super.getView(position, convertView, parent);
+                TextView contentsTextView = (TextView)view.findViewById(R.id.list_item_contents);
+                String actualText = contentsTextView.getText().toString();
+                int index = actualText.indexOf(mCurrentQuery);
+                if( index == -1 )
+                    return view;
+                Spanned spannedText = Html.fromHtml(actualText.substring(0, index) + "<span style=\"color:magenta\">" + mCurrentQuery +"</span>" + actualText.substring(index+mCurrentQuery.length()));
+                contentsTextView.setText(spannedText);
+                return view;
+            }
+        };
         setListAdapter(simpleAdapter);//sets the adapter for listView
 
         //perform listView item click event
