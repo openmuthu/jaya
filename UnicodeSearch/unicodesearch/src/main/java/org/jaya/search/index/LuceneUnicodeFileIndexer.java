@@ -32,6 +32,7 @@ import org.apache.lucene.search.Filter;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.store.LockObtainFailedException;
 import org.jaya.util.Constatants;
+import org.jaya.util.Utils;
 
 import static org.apache.lucene.util.Version.LUCENE_47;
 
@@ -92,17 +93,17 @@ public class LuceneUnicodeFileIndexer {
 	}
 
 	public void createIndexOld(String indexStorageDirectoryPath, String directoryToBeSearched) throws CorruptIndexException, LockObtainFailedException, IOException {
-		//Analyzer analyzer = new StandardAnalyzer(LUCENE_47);
-		Analyzer analyzer = new Analyzer() {
-			@Override
-			protected TokenStreamComponents createComponents(String fieldName, Reader reader) {
-				StandardTokenizer source = new StandardTokenizer(LUCENE_47, reader);
-				//KeywordTokenizer source = new KeywordTokenizer(reader);
-				//WhitespaceTokenizer wst = new WhitespaceTokenizer(LUCENE_47, source);
-				TokenStream filter = new NGramTokenFilter(LUCENE_47, source, 2, 50);
-				return new TokenStreamComponents(source, filter);
-			}
-		};
+		Analyzer analyzer = new StandardAnalyzer(LUCENE_47);
+//		Analyzer analyzer = new Analyzer() {
+//			@Override
+//			protected TokenStreamComponents createComponents(String fieldName, Reader reader) {
+//				StandardTokenizer source = new StandardTokenizer(LUCENE_47, reader);
+//				//KeywordTokenizer source = new KeywordTokenizer(reader);
+//				//WhitespaceTokenizer wst = new WhitespaceTokenizer(LUCENE_47, reader);
+//				TokenStream filter = new NGramTokenFilter(LUCENE_47, source, 3, 6);
+//				return new TokenStreamComponents(source, filter);
+//			}
+//		};
 		IndexWriterConfig config = new IndexWriterConfig(LUCENE_47, analyzer);
 		config.setOpenMode(IndexWriterConfig.OpenMode.CREATE_OR_APPEND);
 		IndexWriter indexWriter = new IndexWriter(FSDirectory.open(new File(indexStorageDirectoryPath)), config);
@@ -111,6 +112,10 @@ public class LuceneUnicodeFileIndexer {
 		List<File> files = getListOfFilesToIndex(dir);
 		for (File file : files) {
 
+			if( !Utils.getFileExtension(file.getCanonicalPath()).equals("txt") ){
+				continue;
+			}
+
 //			Reader reader = new InputStreamReader(new FileInputStream(path), "UTF-8");
 //			document.add(new TextField(Constatants.FIELD_CONTENTS, reader));
 			String path = file.getCanonicalPath();
@@ -118,6 +123,7 @@ public class LuceneUnicodeFileIndexer {
 			BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(path), "UTF-8"));
 			String line = "";
 			String lines = "";
+			path = path.replace(directoryToBeSearched, "");
 			for(int i=0;(line=reader.readLine())!=null;i++){
 				lines = lines + line + "\n";
 				if( (i+1)%4 == 0 ){
@@ -161,7 +167,7 @@ public class LuceneUnicodeFileIndexer {
 				StandardTokenizer source = new StandardTokenizer(LUCENE_47, reader);
 				//KeywordTokenizer source = new KeywordTokenizer(reader);
 				//WhitespaceTokenizer wst = new WhitespaceTokenizer(LUCENE_47, source);
-				TokenStream filter = new NGramTokenFilter(LUCENE_47, source, 2, 50);
+				TokenStream filter = new NGramTokenFilter(LUCENE_47, source, 2, 10);
 				return new TokenStreamComponents(source, filter);
 			}
 		};

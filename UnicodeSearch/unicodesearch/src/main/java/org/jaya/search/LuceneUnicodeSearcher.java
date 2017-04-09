@@ -14,8 +14,11 @@ import org.apache.lucene.index.Term;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.PhraseQuery;
 import org.apache.lucene.search.Query;
+import org.apache.lucene.search.RegexpQuery;
 import org.apache.lucene.search.ScoreDoc;
+import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.spans.SpanTermQuery;
 import org.apache.lucene.store.FSDirectory;
@@ -29,6 +32,7 @@ public class LuceneUnicodeSearcher {
 	IndexReader mReader;
 	IndexSearcher mIndexSearcher;
 	QueryParser mQueryParser;
+	String mIndexDirectoryPath;
 
 	public static void main(String[] args) throws Exception {
 		LuceneUnicodeSearcher searcher = new LuceneUnicodeSearcher(Constatants.INDEX_DIRECTORY);
@@ -36,8 +40,15 @@ public class LuceneUnicodeSearcher {
 	}
 
 	public LuceneUnicodeSearcher(String indexDirectoryPath){
+		mIndexDirectoryPath = indexDirectoryPath;
+		createIndexSearcherIfRequired();
+	}
+
+	public void createIndexSearcherIfRequired(){
 		try {
-			mReader = DirectoryReader.open(FSDirectory.open(new File(indexDirectoryPath)));
+			if (mIndexSearcher != null)
+				return;
+			mReader = DirectoryReader.open(FSDirectory.open(new File(mIndexDirectoryPath)));
 			mIndexSearcher = new IndexSearcher(mReader);
 			Analyzer analyzer = new StandardAnalyzer(Version.LUCENE_47);
 			mQueryParser = new QueryParser(Version.LUCENE_47, Constatants.FIELD_CONTENTS, analyzer);
@@ -59,31 +70,97 @@ public class LuceneUnicodeSearcher {
 		}
 	}
 
-	public List<Document> searchITRANSString(String searchString) throws IOException, ParseException {
+	public List<ResultDocument> searchITRANSString(String searchString) throws IOException, ParseException {
 		ScriptConverter it2dev = ScriptConverterFactory.getScriptConverter(ScriptConverter.ITRANS_SCRIPT,
 				ScriptConverter.DEVANAGARI_SCRIPT);
 		String searchStringDev = it2dev.convert(searchString);
 		return searchIndex(searchStringDev);
 	}
 
-	public void search(String searchString, List<Document> retVal) throws IOException, ParseException {
+	public void search(String searchString, List<ResultDocument> retVal) throws IOException, ParseException {
 		Query query = mQueryParser.parse(searchString);
 		if(query == null)
 			return;
-		//SpanTermQuery query = new SpanTermQuery(new Term(Constatants.FIELD_CONTENTS, searchString + "~"));
 		TopDocs result = mIndexSearcher.search(query, Constatants.MAX_RESULTS);
 		System.out.println("Number of hits: " + result.totalHits);
 		for (ScoreDoc topdoc : result.scoreDocs) {
 			Document doc = mIndexSearcher.doc(topdoc.doc);
-			retVal.add(doc);
+			retVal.add(new ResultDocument(topdoc.doc, doc));
 			String fp = doc.get(Constatants.FIELD_PATH);
 			String contents = doc.get(Constatants.FIELD_CONTENTS);
 			System.out.println("String :" + searchString + " matched in : " + fp);
 			System.out.println("String :" + searchString + " matched is :\n" + contents);
 		}
 	}
+	
+	public Query getQueryForSearchString(String searchString){
+//		Query query = mQueryParser.parse(searchString);
+//		if(query == null)
+//			return retVal;
+		//TermQuery query = new TermQuery(new Term(Constatants.FIELD_CONTENTS, searchString));
+//		PhraseQuery query = new PhraseQuery();
+//		query.add(new Term(Constatants.FIELD_CONTENTS, searchString));		
+		RegexpQuery query = new RegexpQuery(new Term(Constatants.FIELD_CONTENTS, ".*"+searchString+".*"));
+		return query;
+	}
+	
+	public List<ResultDocument> getAdjacentDocs(int docId, int nDocs, int dir) throws IOException{
+		ArrayList<ResultDocument> retVal = new ArrayList<>();
+		createIndexSearcherIfRequired();
+		if( mReader == null )
+			return retVal;
+		int i = 1;
+		int maxDoc = mReader.maxDoc();		
+		do{
+			int adjDocId =  docId+(dir*i);
+			if( adjDocId < 0 || adjDocId > maxDoc )
+				break;
+			Document doc = mIndexSearcher.doc(adjDocId);
+			++i;			
+			if( doc == null )
+				continue;
+			if(dir < 0 )
+				retVal.add(0, new ResultDocument(adjDocId, doc));
+			else
+				retVal.add(new ResultDocument(adjDocId, doc));
+		}while(i<=nDocs);
+		return retVal;
+	}
+	
+	public ResultDocument getDoc(int docId) throws IOException{
+		createIndexSearcherIfRequired();
+		if( mReader == null )
+			return null;
+		int maxDoc = mReader.maxDoc();		
+		if( docId < 0 || docId > maxDoc )
+			return null;
+		return new ResultDocument(docId, mIndexSearcher.doc(docId));
+	}	
+	
+	public ResultDocument getNextDoc(int docId) throws IOException{
+		List<ResultDocument> retVal = getAdjacentDocs(docId, 1, 1);
+		if( retVal.size() == 1)
+			return retVal.get(0);
+		return null;
+	}
+	
+	public ResultDocument getPreviousDoc(int docId) throws IOException{
+		List<ResultDocument> retVal = getAdjacentDocs(docId, 1, -1);
+		if( retVal.size() == 1)
+			return retVal.get(0);
+		return null;
+	}	
+	
+	public void printDocContents(Document doc){
+		if( doc == null )
+			return;
+		String fp = doc.get(Constatants.FIELD_PATH);
+		String contents = doc.get(Constatants.FIELD_CONTENTS);
+		System.out.println("Document path : " + fp);
+		System.out.println("Document contents :\n" + contents);		
+	}
 
-	public List<Document> searchIndex(String searchString) throws IOException, ParseException {
+	public List<ResultDocument> searchIndex(String searchString) throws IOException, ParseException {
 		System.out.println("Searching for '" + searchString + "'");
 //		IndexReader reader = DirectoryReader.open(FSDirectory.open(new File(Constatants.INDEX_DIRECTORY)));
 //		IndexSearcher indexSearcher = new IndexSearcher(reader);
@@ -91,26 +168,28 @@ public class LuceneUnicodeSearcher {
 //		Analyzer analyzer = new StandardAnalyzer(Version.LUCENE_47);
 //		QueryParser queryParser = new QueryParser(Version.LUCENE_47, Constatants.FIELD_CONTENTS, analyzer);
 
-		ArrayList<Document> retVal = new ArrayList<>();
+		ArrayList<ResultDocument> retVal = new ArrayList<>();
 
-		Query query = mQueryParser.parse(searchString);
-		if(query == null)
-			return retVal;
-		//SpanTermQuery query = new SpanTermQuery(new Term(Constatants.FIELD_CONTENTS, searchString + "~"));
+		createIndexSearcherIfRequired();
+
+		if( mIndexSearcher == null )
+			return  retVal;
+
+		Query query = getQueryForSearchString(searchString);
 		TopDocs result = mIndexSearcher.search(query, Constatants.MAX_RESULTS);
 		System.out.println("Number of hits: " + result.totalHits);
 		for (ScoreDoc topdoc : result.scoreDocs) {
 			Document doc = mIndexSearcher.doc(topdoc.doc);
-			retVal.add(doc);
+			retVal.add(new ResultDocument(topdoc.doc, doc));
 			String fp = doc.get(Constatants.FIELD_PATH);
 			String contents = doc.get(Constatants.FIELD_CONTENTS);
 			System.out.println("String :" + searchString + " matched in : " + fp);
 			System.out.println("String :" + searchString + " matched is :\n" + contents);
 		}
 
-		if( retVal.size() < 10 ){
-			search(searchString+"~", retVal);
-		}
+//		if( retVal.size() < 10 ){
+//			search(searchString+"~", retVal);
+//		}
 
 		return retVal;
 

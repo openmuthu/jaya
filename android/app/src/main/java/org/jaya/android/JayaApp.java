@@ -4,6 +4,8 @@ import android.app.Application;
 import android.content.Context;
 import android.os.Environment;
 
+import org.jaya.search.LuceneUnicodeSearcher;
+
 import java.io.File;
 
 /**
@@ -12,6 +14,7 @@ import java.io.File;
 
 public class JayaApp extends Application{
     public static final String APP_NAME = "Jaya";
+    public static final String INTENT_OPEN_DOCUMENT_ID = "org.jaya.INTENT_OPEN_DOCUMENT_ID";
 
     public enum Version{
         JAYA_1_0
@@ -20,6 +23,8 @@ public class JayaApp extends Application{
     public static Version VERSION = Version.JAYA_1_0;
     private static Context mContext;
 
+    private static LuceneUnicodeSearcher mSearcher = null;
+
     public void onCreate(){
         super.onCreate();
         JayaApp.mContext = getApplicationContext();
@@ -27,6 +32,13 @@ public class JayaApp extends Application{
 
     public static Context getAppContext() {
         return JayaApp.mContext;
+    }
+
+    public static LuceneUnicodeSearcher getSearcher(){
+        if (mSearcher == null) {
+            mSearcher = new LuceneUnicodeSearcher(JayaApp.getSearchIndexFolder());
+        }
+        return mSearcher;
     }
 
     public static String getDocumentsFolder(){
