@@ -4,19 +4,24 @@
     android:layout_height="fill_parent"
     android:gravity="center_vertical"
     android:orientation="vertical"
+    android:id="@+id/lytDocListItemView"
     android:padding="2dip" >
 
     <TextView
         android:id="@+id/list_item_path"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="4dip" />
+        android:padding="4dip"
+        android:textAppearance="@android:style/TextAppearance.DeviceDefault"
+        android:textAllCaps="false"/>
 
     <TextView
         android:id="@+id/list_item_contents"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:padding="4dip"
-        android:textSize="18sp" />
+        android:textAppearance="@android:style/TextAppearance.DeviceDefault"
+        android:textSize="18sp"
+        android:textAllCaps="false"/>
 
 </LinearLayout>

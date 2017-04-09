@@ -4,7 +4,6 @@ import android.app.ListActivity;
 import android.app.SearchManager;
 import android.content.Context;
 import android.content.Intent;
-import android.database.Cursor;
 import android.os.Bundle;
 import android.text.Html;
 import android.text.Spanned;
@@ -17,27 +16,23 @@ import android.widget.ListView;
 import android.widget.SearchView;
 import android.widget.SimpleAdapter;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import org.apache.lucene.document.Document;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.jaya.scriptconverter.ScriptConverter;
 import org.jaya.scriptconverter.ScriptConverterFactory;
-import org.jaya.util.Constatants;
-import org.jaya.android.R;
 import org.jaya.search.LuceneUnicodeSearcher;
+import org.jaya.search.ResultDocument;
+import org.jaya.util.Constatants;
 
 import java.io.IOException;
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import static android.R.attr.data;
-
 public class SearchableActivity extends ListActivity {
 
-    List<Document> mSearchResults;
+    List<ResultDocument> mSearchResults;
     LuceneUnicodeSearcher mSearcher = null;
     String mCurrentQuery;
     ScriptConverter mITransToDevnagari = ScriptConverterFactory.getScriptConverter(ScriptConverter.ITRANS_SCRIPT,
@@ -66,9 +61,7 @@ public class SearchableActivity extends ListActivity {
     private void doMySearch(String query) {
         try {
             Log.d(JayaApp.APP_NAME, "doMySearch");
-            if (mSearcher == null) {
-                mSearcher = new LuceneUnicodeSearcher(JayaApp.getSearchIndexFolder());
-            }
+            mSearcher = JayaApp.getSearcher();
             mSearchResults = mSearcher.searchITRANSString(query);
 
             mCurrentQuery = mITransToDevnagari.convert(query);
@@ -93,10 +86,11 @@ public class SearchableActivity extends ListActivity {
         for (int i=0;i<mSearchResults.size();i++)
         {
             HashMap<String,String> hashMap=new HashMap<>();//create a hashmap to store the data in key value pair
-            String path = mSearchResults.get(i).get(Constatants.FIELD_PATH);
+            Document resDoc = mSearchResults.get(i).getDoc();
+            String path = resDoc.get(Constatants.FIELD_PATH);
             path = path.substring(path.lastIndexOf("/"), path.length());
             hashMap.put("path", path);
-            hashMap.put("contents",mSearchResults.get(i).get(Constatants.FIELD_CONTENTS));
+            hashMap.put("contents",resDoc.get(Constatants.FIELD_CONTENTS));
             arrayList.add(hashMap);//add the hashmap into arrayList
         }
 
@@ -120,7 +114,7 @@ public class SearchableActivity extends ListActivity {
                 int index = actualText.indexOf(mCurrentQuery);
                 if( index == -1 )
                     return view;
-                Spanned spannedText = Html.fromHtml(actualText.substring(0, index) + "<span style=\"color:magenta\">" + mCurrentQuery +"</span>" + actualText.substring(index+mCurrentQuery.length()));
+                Spanned spannedText = Html.fromHtml(actualText.substring(0, index) + "<span style=\"color:#FF00FF\">" + mCurrentQuery +"</span>" + actualText.substring(index+mCurrentQuery.length()));
                 contentsTextView.setText(spannedText);
                 return view;
             }
@@ -131,7 +125,13 @@ public class SearchableActivity extends ListActivity {
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-                Toast.makeText(getApplicationContext(),mSearchResults.get(i).get(Constatants.FIELD_PATH),Toast.LENGTH_LONG).show();//show the selected image in toast according to position
+                ResultDocument resDoc = mSearchResults.get(i);
+                Intent intent = new Intent(SearchableActivity.this, MainActivity.class);
+                //intent.setClassName("org.jaya.android", "org.jaya.android.MainActivity");
+                intent.setAction(JayaApp.INTENT_OPEN_DOCUMENT_ID);
+                intent.putExtra("documentId", resDoc.getId());
+                startActivity(intent);
+                //Toast.makeText(getApplicationContext(),resDoc.get(Constatants.FIELD_PATH),Toast.LENGTH_LONG).show();//show the selected image in toast according to position
             }
         });
 
