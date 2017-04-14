@@ -70,7 +70,7 @@ public class LuceneUnicodeSearcher {
 		}
 	}
 
-	public List<ResultDocument> searchITRANSString(String searchString) throws IOException, ParseException {
+	public SearchResult searchITRANSString(String searchString) throws IOException, ParseException {
 		ScriptConverter it2dev = ScriptConverterFactory.getScriptConverter(ScriptConverter.ITRANS_SCRIPT,
 				ScriptConverter.DEVANAGARI_SCRIPT);
 		String searchStringDev = it2dev.convert(searchString);
@@ -160,7 +160,7 @@ public class LuceneUnicodeSearcher {
 		System.out.println("Document contents :\n" + contents);		
 	}
 
-	public List<ResultDocument> searchIndex(String searchString) throws IOException, ParseException {
+	public SearchResult searchIndex(String searchString) throws IOException, ParseException {
 		System.out.println("Searching for '" + searchString + "'");
 //		IndexReader reader = DirectoryReader.open(FSDirectory.open(new File(Constatants.INDEX_DIRECTORY)));
 //		IndexSearcher indexSearcher = new IndexSearcher(reader);
@@ -168,41 +168,47 @@ public class LuceneUnicodeSearcher {
 //		Analyzer analyzer = new StandardAnalyzer(Version.LUCENE_47);
 //		QueryParser queryParser = new QueryParser(Version.LUCENE_47, Constatants.FIELD_CONTENTS, analyzer);
 
-		ArrayList<ResultDocument> retVal = new ArrayList<>();
+		SearchResult retVal = null;
+		ArrayList<ResultDocument> resultList = new ArrayList<>();
 
 		createIndexSearcherIfRequired();
 
+		JayaQueryParser jqp = new JayaQueryParser(searchString);
+		retVal = new SearchResult(jqp, resultList);
 		if( mIndexSearcher == null )
-			return  retVal;
+			return  retVal;		
+		String parsedQueryString = jqp.getParsedQuery();
 
-		if( searchString.endsWith("/~")){			
-			searchString = searchString.replace("/~", "");
+		if( jqp.isRegExPrefixQuery() ){			
+			searchString = parsedQueryString;
 			Query query = getQueryForSearchString(searchString);
 			TopDocs result = mIndexSearcher.search(query, Constatants.MAX_RESULTS);
 			System.out.println("Number of hits: " + result.totalHits);
 			for (ScoreDoc topdoc : result.scoreDocs) {
 				Document doc = mIndexSearcher.doc(topdoc.doc);
-				retVal.add(new ResultDocument(topdoc.doc, doc));
+				resultList.add(new ResultDocument(topdoc.doc, doc));
 				String fp = doc.get(Constatants.FIELD_PATH);
 				String contents = doc.get(Constatants.FIELD_CONTENTS);
 				System.out.println("String :" + searchString + " matched in : " + fp + ", Score: " + topdoc.score);
 				System.out.println("String :" + searchString + " matched is :\n" + contents);
 			}
 		}
-		else if( searchString.endsWith("/q")){
-			searchString = searchString.replace("/q", "");
-			search(searchString, retVal);
+		else if( jqp.isLuceneQueryParserQuery() ){
+			searchString = parsedQueryString;
+			search(searchString, resultList);
+		}
+		else if( jqp.isFuzzyQuery() ){
+			search(parsedQueryString, resultList);			
 		}
 		else{
-			String q = QueryConverter.convertToRegExQueryWithTags(searchString);
-			search(q, retVal);
+			String q = parsedQueryString;
+			search(q, resultList);
 		}
 
-		if( retVal.size() < 10 ){
-			//search(searchString+"~", retVal);
-			String q = QueryConverter.convertToFuzzyQueryWithTags(searchString);
-			search(q, retVal);
-		}
+//		if( retVal.size() < 10 ){
+//			String q = QueryConverter.convertToFuzzyQueryWithTags(searchString);
+//			search(q, retVal);
+//		}
 
 		return retVal;
 
