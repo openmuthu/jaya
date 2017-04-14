@@ -15,6 +15,8 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
+import org.apache.lucene.analysis.Tokenizer;
+import org.apache.lucene.analysis.core.KeywordAnalyzer;
 import org.apache.lucene.analysis.core.KeywordTokenizer;
 import org.apache.lucene.analysis.core.WhitespaceTokenizer;
 import org.apache.lucene.analysis.ngram.EdgeNGramTokenFilter;
@@ -91,6 +93,47 @@ public class LuceneUnicodeFileIndexer {
 		LuceneUnicodeFileIndexer fileIndexer = new LuceneUnicodeFileIndexer();
 		fileIndexer.createIndex(Constatants.INDEX_DIRECTORY, Constatants.FILES_TO_INDEX_DIRECTORY);
 	}
+	
+	private String getTagFilePathForFile(String path){
+		return path + ".kw";
+	}
+	
+	private String getTagsForFile(String path){
+		if( path == null )
+			return "";
+		String retVal = "";
+		String tagsFilePath = path;
+		BufferedReader reader = null;
+		File f = new File(path);
+		try{
+			if( f.isDirectory() ){
+				tagsFilePath = f.getCanonicalPath() + File.separator + "tags.kw";
+			}
+			File tagsFile = new File(tagsFilePath);
+			if( tagsFile.exists() ){		
+				String line = "";
+				reader = new BufferedReader(new InputStreamReader(new FileInputStream(tagsFilePath), "UTF-16"));
+				if( reader != null ){				
+					while((line=reader.readLine()) != null){
+						retVal += line + "\n";
+					}
+				}
+			}
+			if(!f.equals(Constatants.getToBeIndexedDirectory()))
+				retVal += getTagsForFile(f.getParent());
+		}catch(IOException ex){
+			ex.printStackTrace();
+		}
+		finally{
+			try{
+				if( reader != null )
+					reader.close();
+			}catch(IOException ex){
+				ex.printStackTrace();
+			}
+		}
+		return retVal;
+	}
 
 	public void createIndexOld(String indexStorageDirectoryPath, String directoryToBeSearched) throws CorruptIndexException, LockObtainFailedException, IOException {
 		Analyzer analyzer = new StandardAnalyzer(LUCENE_47);
@@ -115,12 +158,17 @@ public class LuceneUnicodeFileIndexer {
 			if( !Utils.getFileExtension(file.getCanonicalPath()).equals("txt") ){
 				continue;
 			}
+			
+//			if(!file.getCanonicalPath().contains("_u16le"))
+//				continue;
 
 //			Reader reader = new InputStreamReader(new FileInputStream(path), "UTF-8");
 //			document.add(new TextField(Constatants.FIELD_CONTENTS, reader));
 			String path = file.getCanonicalPath();
 			
-			BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(path), "UTF-8"));
+			String tags = getTagsForFile(getTagFilePathForFile(path));
+			System.out.println("tags for file: " + path + " are : " + tags);
+			BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(path), "UTF-16"));
 			String line = "";
 			String lines = "";
 			path = path.replace(directoryToBeSearched, "");
@@ -129,8 +177,10 @@ public class LuceneUnicodeFileIndexer {
 				if( (i+1)%4 == 0 ){
 					Document document = new Document();
 					document.add(new TextField(Constatants.FIELD_PATH, path, Field.Store.YES));
-					
-					document.add(new TextField(Constatants.FIELD_CONTENTS, lines, Field.Store.YES));
+					TextField contentsField = new TextField(Constatants.FIELD_CONTENTS, lines, Field.Store.YES);
+					document.add(contentsField);
+					TextField tagsField = new TextField(Constatants.FIELD_TAGS, tags, Field.Store.YES);
+					document.add(tagsField);					
 					
 					indexWriter.addDocument(document);
 					lines = "";
@@ -141,7 +191,9 @@ public class LuceneUnicodeFileIndexer {
 				document.add(new TextField(Constatants.FIELD_PATH, path, Field.Store.YES));
 				
 				document.add(new TextField(Constatants.FIELD_CONTENTS, lines, Field.Store.YES));
-				
+				TextField tagsField = new TextField(Constatants.FIELD_TAGS, tags, Field.Store.YES);
+				tagsField.setBoost(2.0f);
+				document.add(tagsField);									
 				indexWriter.addDocument(document);
 			}
 			reader.close();

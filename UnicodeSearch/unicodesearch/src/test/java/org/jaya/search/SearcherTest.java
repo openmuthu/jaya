@@ -2,6 +2,7 @@ package org.jaya.search;
 
 import java.io.IOException;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.jaya.scriptconverter.ScriptConverter;
@@ -29,7 +30,9 @@ public class SearcherTest {
 	}
 	
 	public static void testSearch(){
-		String searchString = "kaaryasaadha";
+		//String searchString = "naraayaNa~ && guNai~ && sarva";
+		//String searchString = "samantabhadrO* bhagavaa* && ({{{tags:}}}amara || {{{tags:}}}bhaarata)/q";
+		String searchString = "raavaNa sahasra #raamaayaNa";
 		ScriptConverter it2dev = ScriptConverterFactory.getScriptConverter(ScriptConverter.ITRANS_SCRIPT,
 				ScriptConverter.DEVANAGARI_SCRIPT);
 		String searchStringDev = it2dev.convert(searchString);
@@ -47,8 +50,8 @@ public class SearcherTest {
 	}
 
 	public static void main(String[] args) {
-		testAdjacentDocuments();
-		//testSearch();
+		//testAdjacentDocuments();
+		testSearch();
 		return;
 		
 

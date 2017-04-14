@@ -97,6 +97,7 @@ public class MainActivity extends ListActivity {
                     if( mAssetsManager == null )
                         return;
                     mAssetsManager.copyResourcesToCacheIfRequired(this);
+                    JayaApp.getSearcher().createIndexSearcherIfRequired();
                     indexFiles(false);
                 }
                 break;
@@ -170,36 +171,39 @@ public class MainActivity extends ListActivity {
 
     protected void indexFiles(boolean bForceReIndexing)
     {
-        if( !JayaApp.isIndexingRequired() && !bForceReIndexing)
-            return;
-        if( mProgress != null )
-        {
-            // Indexing is already in progress.. just return
-            return;
-        }
-        mProgress = new ProgressDialog(this);
-        mProgress.setIndeterminate(true);
-        mProgress.setMessage("Please wait while indexing is in progress... This may take a few minutes.");
-        mProgress.show();
-        Thread t =  new Thread(new Runnable() {
-            public void run() {
-                try {
-                    LuceneUnicodeFileIndexer indexer = new LuceneUnicodeFileIndexer();
-                    indexer.createIndex(JayaApp.getSearchIndexFolder(), JayaApp.getDocumentsFolder());
-                    // Update the progress bar
-                    mHandler.post(new Runnable() {
-                        public void run() {
-                            mProgress.dismiss();
-                            mProgress = null;
-                            showDocumentId(INITIAL_DOCUMENT_ID);
-                        }
-                    });
-                }
-                catch(IOException ex){
-                    Log.d("Indexer", "IOException in indexFiles");
-                }
-            }
-        });
-        t.start();
+        return;
+//        if( !JayaApp.isIndexingRequired() && !bForceReIndexing)
+//            return;
+//        if( mProgress != null )
+//        {
+//            // Indexing is already in progress.. just return
+//            return;
+//        }
+//        mProgress = new ProgressDialog(this);
+//        mProgress.setIndeterminate(true);
+//        mProgress.setMessage("Please wait while indexing is in progress... This may take a few minutes.");
+//        mProgress.show();
+//        Thread t =  new Thread(new Runnable() {
+//            public void run() {
+//                try {
+//                    LuceneUnicodeFileIndexer indexer = new LuceneUnicodeFileIndexer();
+//                    indexer.createIndex(JayaApp.getSearchIndexFolder(), JayaApp.getDocumentsFolder());
+//                }
+//                catch(IOException ex){
+//                    Log.d("Indexer", "IOException in indexFiles");
+//                }
+//                finally {
+//                    // Update the progress bar
+//                    mHandler.post(new Runnable() {
+//                        public void run() {
+//                            mProgress.dismiss();
+//                            mProgress = null;
+//                            showDocumentId(INITIAL_DOCUMENT_ID);
+//                        }
+//                    });
+//                }
+//            }
+//        });
+//        t.start();
     }
 }

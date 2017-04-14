@@ -88,7 +88,7 @@ public class LuceneUnicodeSearcher {
 			retVal.add(new ResultDocument(topdoc.doc, doc));
 			String fp = doc.get(Constatants.FIELD_PATH);
 			String contents = doc.get(Constatants.FIELD_CONTENTS);
-			System.out.println("String :" + searchString + " matched in : " + fp);
+			System.out.println("String :" + searchString + " matched in : " + fp + ", Score: " + topdoc.score);
 			System.out.println("String :" + searchString + " matched is :\n" + contents);
 		}
 	}
@@ -175,21 +175,34 @@ public class LuceneUnicodeSearcher {
 		if( mIndexSearcher == null )
 			return  retVal;
 
-		Query query = getQueryForSearchString(searchString);
-		TopDocs result = mIndexSearcher.search(query, Constatants.MAX_RESULTS);
-		System.out.println("Number of hits: " + result.totalHits);
-		for (ScoreDoc topdoc : result.scoreDocs) {
-			Document doc = mIndexSearcher.doc(topdoc.doc);
-			retVal.add(new ResultDocument(topdoc.doc, doc));
-			String fp = doc.get(Constatants.FIELD_PATH);
-			String contents = doc.get(Constatants.FIELD_CONTENTS);
-			System.out.println("String :" + searchString + " matched in : " + fp);
-			System.out.println("String :" + searchString + " matched is :\n" + contents);
+		if( searchString.endsWith("/~")){			
+			searchString = searchString.replace("/~", "");
+			Query query = getQueryForSearchString(searchString);
+			TopDocs result = mIndexSearcher.search(query, Constatants.MAX_RESULTS);
+			System.out.println("Number of hits: " + result.totalHits);
+			for (ScoreDoc topdoc : result.scoreDocs) {
+				Document doc = mIndexSearcher.doc(topdoc.doc);
+				retVal.add(new ResultDocument(topdoc.doc, doc));
+				String fp = doc.get(Constatants.FIELD_PATH);
+				String contents = doc.get(Constatants.FIELD_CONTENTS);
+				System.out.println("String :" + searchString + " matched in : " + fp + ", Score: " + topdoc.score);
+				System.out.println("String :" + searchString + " matched is :\n" + contents);
+			}
+		}
+		else if( searchString.endsWith("/q")){
+			searchString = searchString.replace("/q", "");
+			search(searchString, retVal);
+		}
+		else{
+			String q = QueryConverter.convertToRegExQueryWithTags(searchString);
+			search(q, retVal);
 		}
 
-//		if( retVal.size() < 10 ){
-//			search(searchString+"~", retVal);
-//		}
+		if( retVal.size() < 10 ){
+			//search(searchString+"~", retVal);
+			String q = QueryConverter.convertToFuzzyQueryWithTags(searchString);
+			search(q, retVal);
+		}
 
 		return retVal;
 
