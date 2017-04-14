@@ -115,6 +115,7 @@ public class SearchableActivity extends ListActivity {
                 if( index == -1 )
                     return view;
                 Spanned spannedText = Html.fromHtml(actualText.substring(0, index) + "<span style=\"color:#FF00FF\">" + mCurrentQuery +"</span>" + actualText.substring(index+mCurrentQuery.length()));
+                contentsTextView.setAllCaps(false);
                 contentsTextView.setText(spannedText);
                 return view;
             }

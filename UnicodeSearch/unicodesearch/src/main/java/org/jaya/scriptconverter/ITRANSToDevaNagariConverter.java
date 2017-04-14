@@ -78,7 +78,13 @@ public class ITRANSToDevaNagariConverter implements ScriptConverter {
 		itransToSanskritMap.put("x", "\u0915\u094D\u0937");
 		itransToSanskritMap.put("om", "\u0950");
 		itransToSanskritMap.put("OM", "\u0950");
+		itransToSanskritMap.put(".", ".");
 		itransToSanskritMap.put(".a", "\u093D");
+		
+		itransToSanskritMap.put("{", "{");
+		itransToSanskritMap.put("{#", "{#");
+		itransToSanskritMap.put("}", "}");
+		itransToSanskritMap.put("#}", "#}");
 	}	
 	
 	private boolean isConsonent(char ch){
@@ -95,7 +101,8 @@ public class ITRANSToDevaNagariConverter implements ScriptConverter {
 	public String convert(String itrans){
 		String retVal = "";
 		int pos=0;
-		int length = itrans.length(), i; 
+		int length = itrans.length(), i;
+		boolean bInLiteralMode = false;
 		String  curKey;
 		String tempChar = null, sanskritChar = null;
 		boolean isPreviousCharConsonent = false;
@@ -122,6 +129,17 @@ public class ITRANSToDevaNagariConverter implements ScriptConverter {
 				}
 				else
 					sanskritChar = curKey;				
+				i++;
+			}
+			else if( LITERAL_MODE_START_STRING == sanskritChar || LITERAL_MODE_END_STRING == sanskritChar ){
+				if( !bInLiteralMode )
+					bInLiteralMode = sanskritChar == LITERAL_MODE_START_STRING;
+				else
+					bInLiteralMode = sanskritChar != LITERAL_MODE_END_STRING;
+				sanskritChar = "";
+			}
+			else if(bInLiteralMode){
+				sanskritChar = curKey;
 				i++;
 			}
 			else

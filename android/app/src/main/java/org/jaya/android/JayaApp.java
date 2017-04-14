@@ -41,14 +41,18 @@ public class JayaApp extends Application{
         return mSearcher;
     }
 
+    public static String getAppExtStorageFolder(){
+        return Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + APP_NAME;
+    }
+
     public static String getDocumentsFolder(){
         //return "/sdcard/"+APP_NAME+"/Documents/";
-        return Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + APP_NAME + "/Documents/";
+        return getAppExtStorageFolder() + "/Documents/";
     }
 
     public static String getSearchIndexFolder(){
         //return "/sdcard/"+APP_NAME+"/Index/";
-        return Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + APP_NAME + "/Index/";
+        return getAppExtStorageFolder() + "/Index/";
     }
 
     public static boolean isIndexingRequired(){

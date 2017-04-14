@@ -4,15 +4,19 @@ import android.app.Activity;
 import android.Manifest;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.content.res.AssetManager;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.util.Pair;
 
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.List;
 
 public class AssetsManager {
 
@@ -25,38 +29,77 @@ public class AssetsManager {
         //resFolderPath = context.getFilesDir() + "/" + JayaApp.VERSION + "/";
         resFolderPath = JayaApp.getDocumentsFolder();
 
-        mFilesToCopy.add(new Pair("sarvamoola/aitareya.txt", "sarvamoola"));
-        mFilesToCopy.add(new Pair("sarvamoola/anuvyakhyana.txt", "sarvamoola"));
-        mFilesToCopy.add(new Pair("sarvamoola/atharvana-up.txt", "sarvamoola"));
-        mFilesToCopy.add(new Pair("sarvamoola/bhagavata-t-n.txt", "sarvamoola"));
-        mFilesToCopy.add(new Pair("sarvamoola/bhagavata.txt", "sarvamoola"));
-        mFilesToCopy.add(new Pair("sarvamoola/brh-up.txt", "sarvamoola"));
-        mFilesToCopy.add(new Pair("sarvamoola/chand-up.txt", "sarvamoola"));
-        mFilesToCopy.add(new Pair("sarvamoola/gita.txt", "sarvamoola"));
-        mFilesToCopy.add(new Pair("sarvamoola/gitabhashya.txt", "sarvamoola"));
-        mFilesToCopy.add(new Pair("sarvamoola/gitatatparya.txt", "sarvamoola"));
-        mFilesToCopy.add(new Pair("sarvamoola/isha-up.txt", "sarvamoola"));
-        mFilesToCopy.add(new Pair("sarvamoola/katha-up.txt", "sarvamoola"));
-        mFilesToCopy.add(new Pair("sarvamoola/mandukya-up.txt", "sarvamoola"));
-        mFilesToCopy.add(new Pair("sarvamoola/mbtn.txt", "sarvamoola"));
-        mFilesToCopy.add(new Pair("sarvamoola/nyayavivarana.txt", "sarvamoola"));
-        mFilesToCopy.add(new Pair("sarvamoola/rigbhashya.txt", "sarvamoola"));
-        mFilesToCopy.add(new Pair("sarvamoola/sankirna.txt", "sarvamoola"));
-        mFilesToCopy.add(new Pair("sarvamoola/shatprashna-up.txt", "sarvamoola"));
-        mFilesToCopy.add(new Pair("sarvamoola/sutra.txt", "sarvamoola"));
-        mFilesToCopy.add(new Pair("sarvamoola/sutrabhashya.docx", "sarvamoola"));
-        mFilesToCopy.add(new Pair("sarvamoola/sutrabhashya.txt", "sarvamoola"));
-        mFilesToCopy.add(new Pair("sarvamoola/taittiriya.txt", "sarvamoola"));
-        mFilesToCopy.add(new Pair("sarvamoola/talavakara-up.txt", "sarvamoola"));
-        mFilesToCopy.add(new Pair("sarvamoola/yamaka.txt", "sarvamoola"));
-
     }
 
     public String getResFolderPath(){
         return resFolderPath;
     }
 
+    private boolean listAssetFiles(AssetManager assets, String path, List<String> recursiveFilePaths) {
+
+        String [] list;
+        try {
+            list = assets.list(path);
+            if (list.length > 0) {
+                // This is a folder
+                for (String file : list) {
+                    if (!listAssetFiles(assets, path + "/" + file, recursiveFilePaths))
+                        return false;
+                }
+            } else {
+                recursiveFilePaths.add(path);
+            }
+        } catch (IOException e) {
+            return false;
+        }
+
+        return true;
+    }
+
     public void copyResourcesToCacheIfRequired(Activity activity){
+        if( ContextCompat.checkSelfPermission(activity, Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                != PackageManager.PERMISSION_GRANTED )
+            return;
+        String sigFilePath = JayaApp.getSearchIndexFolder() + "/segments.gen";
+        File sigFile = new File(sigFilePath);
+
+        if(!sigFile.exists())
+        {
+            InputStream stream = null;
+            OutputStream output = null;
+
+            try {
+                ArrayList<String> assetFiles = new ArrayList<>();
+                //listAssetFiles(JayaApp.getAppContext().getAssets(), "to_be_indexed", assetFiles);
+                listAssetFiles(JayaApp.getAppContext().getAssets(), "index", assetFiles);
+                for (String fileName : assetFiles) {
+                    String dstPath = JayaApp.getAppExtStorageFolder() + "/" + fileName;
+                    File dstFile = new File(dstPath);
+                    boolean bDirsCreated =  dstFile.getParentFile().mkdirs();
+                    stream = JayaApp.getAppContext().getAssets().open(fileName);
+                    output = new BufferedOutputStream(new FileOutputStream(dstPath));
+
+                    byte data[] = new byte[16*1024];
+                    int count;
+
+                    while ((count = stream.read(data)) != -1) {
+                        output.write(data, 0, count);
+                    }
+
+                    output.flush();
+                    output.close();
+                    stream.close();
+
+                    stream = null;
+                    output = null;
+                }
+            }catch (IOException ex){
+                ex.printStackTrace();
+            }
+        }
+    }
+
+    public void copyResourcesToCacheIfRequired1(Activity activity){
         if( ContextCompat.checkSelfPermission(activity, Manifest.permission.WRITE_EXTERNAL_STORAGE)
                 != PackageManager.PERMISSION_GRANTED )
             return;
