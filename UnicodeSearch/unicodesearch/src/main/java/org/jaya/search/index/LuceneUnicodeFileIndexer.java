@@ -173,6 +173,11 @@ public class LuceneUnicodeFileIndexer {
 			String lines = "";
 			path = path.replace(directoryToBeSearched, "");
 			for(int i=0;(line=reader.readLine())!=null;i++){
+				if(line.matches("^[\\s\\r\\n]+$")){
+					System.out.println("Skipping empty line");
+					i--;
+					continue;
+				}
 				lines = lines + line + "\n";
 				if( (i+1)%4 == 0 ){
 					Document document = new Document();

@@ -23,6 +23,7 @@ import org.jaya.scriptconverter.ScriptConverter;
 import org.jaya.scriptconverter.ScriptConverterFactory;
 import org.jaya.search.LuceneUnicodeSearcher;
 import org.jaya.search.ResultDocument;
+import org.jaya.search.SearchResult;
 import org.jaya.util.Constatants;
 
 import java.io.IOException;
@@ -32,7 +33,7 @@ import java.util.List;
 
 public class SearchableActivity extends ListActivity {
 
-    List<ResultDocument> mSearchResults;
+    SearchResult mSearchResult;
     LuceneUnicodeSearcher mSearcher = null;
     String mCurrentQuery;
     ScriptConverter mITransToDevnagari = ScriptConverterFactory.getScriptConverter(ScriptConverter.ITRANS_SCRIPT,
@@ -62,7 +63,7 @@ public class SearchableActivity extends ListActivity {
         try {
             Log.d(JayaApp.APP_NAME, "doMySearch");
             mSearcher = JayaApp.getSearcher();
-            mSearchResults = mSearcher.searchITRANSString(query);
+            mSearchResult = mSearcher.searchITRANSString(query);
 
             mCurrentQuery = mITransToDevnagari.convert(query);
 
@@ -80,13 +81,18 @@ public class SearchableActivity extends ListActivity {
     }
 
     private void setListAdapter(){
+        if( mSearchResult == null )
+            return;
+
         ListView listView = getListView();
 
+        List<ResultDocument> resultDocs = mSearchResult.getResultDocs();
+
         ArrayList<HashMap<String,String>> arrayList=new ArrayList<>();
-        for (int i=0;i<mSearchResults.size();i++)
+        for (int i=0;i<resultDocs.size();i++)
         {
             HashMap<String,String> hashMap=new HashMap<>();//create a hashmap to store the data in key value pair
-            Document resDoc = mSearchResults.get(i).getDoc();
+            Document resDoc = resultDocs.get(i).getDoc();
             String path = resDoc.get(Constatants.FIELD_PATH);
             path = path.substring(path.lastIndexOf("/"), path.length());
             hashMap.put("path", path);
@@ -94,7 +100,7 @@ public class SearchableActivity extends ListActivity {
             arrayList.add(hashMap);//add the hashmap into arrayList
         }
 
-        if(mSearchResults.size() == 0)
+        if(resultDocs.size() == 0)
         {
             HashMap<String,String> hashMap=new HashMap<>();//create a hashmap to store the data in key value pair
             hashMap.put("path","No results found.");
@@ -111,10 +117,11 @@ public class SearchableActivity extends ListActivity {
                 View view = super.getView(position, convertView, parent);
                 TextView contentsTextView = (TextView)view.findViewById(R.id.list_item_contents);
                 String actualText = contentsTextView.getText().toString();
-                int index = actualText.indexOf(mCurrentQuery);
-                if( index == -1 )
-                    return view;
-                Spanned spannedText = Html.fromHtml(actualText.substring(0, index) + "<span style=\"color:#FF00FF\">" + mCurrentQuery +"</span>" + actualText.substring(index+mCurrentQuery.length()));
+//                int index = actualText.indexOf(mCurrentQuery);
+//                if( index == -1 )
+//                    return view;
+                //Spanned spannedText = Html.fromHtml(actualText.substring(0, index) + "<span style=\"color:#FF00FF\">" + mCurrentQuery +"</span>" + actualText.substring(index+mCurrentQuery.length()));
+                Spanned spannedText = Html.fromHtml(mSearchResult.getSpannedStringBasedOnCurrentQuery(actualText));
                 contentsTextView.setAllCaps(false);
                 contentsTextView.setText(spannedText);
                 return view;
@@ -126,7 +133,10 @@ public class SearchableActivity extends ListActivity {
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-                ResultDocument resDoc = mSearchResults.get(i);
+                if( mSearchResult == null )
+                    return;
+                List<ResultDocument> resultDocs = mSearchResult.getResultDocs();
+                ResultDocument resDoc = resultDocs.get(i);
                 Intent intent = new Intent(SearchableActivity.this, MainActivity.class);
                 //intent.setClassName("org.jaya.android", "org.jaya.android.MainActivity");
                 intent.setAction(JayaApp.INTENT_OPEN_DOCUMENT_ID);

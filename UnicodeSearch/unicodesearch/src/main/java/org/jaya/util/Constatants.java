@@ -2,7 +2,7 @@ package org.jaya.util;
 
 import java.io.File;
 
-public interface Constatants {
+public class Constatants {
 
 //	public static final String FILES_TO_INDEX_DIRECTORY = "C:\\Users\\hjuturi\\Downloads\\Sarvamoola";
 //	public static final String INDEX_DIRECTORY = "C:\\Users\\hjuturi\\Downloads\\lucenIndex";
