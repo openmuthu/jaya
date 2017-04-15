@@ -30,6 +30,10 @@ public class SarvamoolaLakaaraFixer {
 						bytes[i] = 0x32;
 						bytes[i+1] = 0x09;
 					}
+					else if( bytes[i] == (byte)0x80 && bytes[i+1] == (byte)0x00 ){
+						bytes[i] = 0x3D;
+						bytes[i+1] = 0x09;
+					}
 				}
 				FileUtils.writeByteArrayToFile(new File(newFilePath), bytes);
 			}

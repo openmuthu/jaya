@@ -1,27 +1,8 @@
 package org.jaya.search.index;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
-import org.apache.lucene.analysis.Tokenizer;
-import org.apache.lucene.analysis.core.KeywordAnalyzer;
-import org.apache.lucene.analysis.core.KeywordTokenizer;
-import org.apache.lucene.analysis.core.WhitespaceTokenizer;
-import org.apache.lucene.analysis.ngram.EdgeNGramTokenFilter;
 import org.apache.lucene.analysis.ngram.NGramTokenFilter;
-import org.apache.lucene.analysis.reverse.ReverseStringFilter;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.analysis.standard.StandardTokenizer;
 import org.apache.lucene.document.Document;
@@ -30,11 +11,22 @@ import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.CorruptIndexException;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
-import org.apache.lucene.search.Filter;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.store.LockObtainFailedException;
 import org.jaya.util.Constatants;
 import org.jaya.util.Utils;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import static org.apache.lucene.util.Version.LUCENE_47;
 
@@ -98,6 +90,28 @@ public class LuceneUnicodeFileIndexer {
 		return path + ".kw";
 	}
 	
+	private String[] getIndexableExtensions(){
+		return new String[]{".txt"};
+	}
+	
+	private boolean hasIndexableExtension(String path){
+		boolean bIndexableExtFound = false;
+		for(String ext:getIndexableExtensions()){
+			if( path.endsWith(ext) ){
+				bIndexableExtFound = true;
+				break;
+			}
+		}		
+		return bIndexableExtFound;
+	}
+	
+	private String getTagsFromFileName(String fileName){
+		if( !hasIndexableExtension(fileName) )
+			return "";
+		
+		return Utils.getTagsBasedOnFileName(fileName);	
+	}
+	
 	private String getTagsForFile(String path){
 		if( path == null )
 			return "";
@@ -120,7 +134,7 @@ public class LuceneUnicodeFileIndexer {
 				}
 			}
 			if(!f.equals(Constatants.getToBeIndexedDirectory()))
-				retVal += getTagsForFile(f.getParent());
+				retVal += " " + getTagsForFile(f.getParent());
 		}catch(IOException ex){
 			ex.printStackTrace();
 		}
@@ -155,7 +169,7 @@ public class LuceneUnicodeFileIndexer {
 		List<File> files = getListOfFilesToIndex(dir);
 		for (File file : files) {
 
-			if( !Utils.getFileExtension(file.getCanonicalPath()).equals("txt") ){
+			if( !hasIndexableExtension(file.getCanonicalPath()) ){
 				continue;
 			}
 			
@@ -167,6 +181,7 @@ public class LuceneUnicodeFileIndexer {
 			String path = file.getCanonicalPath();
 			
 			String tags = getTagsForFile(getTagFilePathForFile(path));
+			tags += " " + getTagsFromFileName(path);
 			System.out.println("tags for file: " + path + " are : " + tags);
 			BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(path), "UTF-16"));
 			String line = "";
