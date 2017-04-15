@@ -32,7 +32,7 @@ public class SearcherTest {
 	public static void testSearch(){
 		//String searchString = "naraayaNa~ && guNai~ && sarva";
 		//String searchString = "samantabhadrO* bhagavaa* && ({{{tags:}}}amara || {{{tags:}}}bhaarata)/q";
-		String searchString = "pAtAla #sarvamUla";
+		String searchString = "padmanaabha #kRShNAmRta";
 		ScriptConverter it2dev = ScriptConverterFactory.getScriptConverter(ScriptConverter.ITRANS_SCRIPT,
 				ScriptConverter.DEVANAGARI_SCRIPT);
 		String searchStringDev = it2dev.convert(searchString);
