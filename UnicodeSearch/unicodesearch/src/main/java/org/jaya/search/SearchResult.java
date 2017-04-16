@@ -3,6 +3,8 @@ package org.jaya.search;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jaya.scriptconverter.ITRANSToDevaNagariConverter;
+
 public class SearchResult {
 	
 	JayaQueryParser mJayaQueryParser;
@@ -32,12 +34,23 @@ public class SearchResult {
 		return mResultDocs;
 	}
 	
+	public int getDependentCharSequenceLength(String str, int startIndex){
+		int retVal = 0;
+		int length = str.length();
+		for(int i=startIndex;(i<length) && ITRANSToDevaNagariConverter.isDevanagariDependentCharacter(str.charAt(i));i++){
+			retVal++; 
+		}
+		return retVal;
+	}
+	
 	public String getSpannedString(String str, List<Highlight> highlights){
 		String retVal = "";
 		int index = 0;
 		for(Highlight h:highlights){
 			retVal += str.substring(index, h.startIndex);
 			index = h.startIndex+h.length;
+			// include dependent characters also in the highlight to avoid weird rendering of such characters
+			index += getDependentCharSequenceLength(str, index);
 			retVal += "<b><span style=\"color:#FF00FF\">" + str.substring(h.startIndex, index) + "</span></b>";
 		}
 		

@@ -54,16 +54,17 @@ public class JayaQueryParser {
 	protected void parse(){
 		if( mSearchString.startsWith("f/") ){
 			mbIsFuzzyQuery = true;
-			mSearchString.replace("f/", "");
+			mSearchString = mSearchString.replace("f/", "");
 		}
 		else if(mSearchString.startsWith("q/")){
 			mbIsLuceneQueryParserQuery = true;
-			mSearchString.replace("q/", "");
+			mSearchString = mSearchString.replace("q/", "");
 		}
 		else if(mSearchString.startsWith("~/")){
 			mbIsRegExPrefixQuery = true;
-			mSearchString.replace("~/", "");
+			mSearchString = mSearchString.replace("~/", "");
 		}
+		parseWordsAndTags(mSearchString);
 		if( mbIsFuzzyQuery ){
 			mParsedQuery = convertToFuzzyQueryWithTags(mSearchString);
 		}
@@ -93,9 +94,8 @@ public class JayaQueryParser {
 	protected String convertToFuzzyQueryWithTags(String originalQuery){
 		return convertToQueryWithTags(originalQuery, "~2");
 	}
-		
-	protected String convertToQueryWithTags(String originalQuery, String wordSuffix){		
-		String retVal = "";
+	
+	protected void parseWordsAndTags(String originalQuery){
 		String[] tokensBySpace = originalQuery.split(" ");
 		for( String token: tokensBySpace ){
 			if(token.isEmpty())
@@ -104,14 +104,16 @@ public class JayaQueryParser {
 				mSearchTags.add(token.substring(1));
 			}
 			else{
-				if( !token.endsWith(wordSuffix) )
-					mSearchWords.add(token+wordSuffix);
-				else
-					mSearchWords.add(token);
+				mSearchWords.add(token);
 			}
-		}
+		}		
+	}
+		
+	protected String convertToQueryWithTags(String originalQuery, String wordSuffix){		
+		String retVal = "";
 		for(String word:mSearchWords){
-			retVal += word + " ";
+			String suffix = (word.endsWith(wordSuffix))?"":wordSuffix;
+			retVal += word + suffix + " ";
 		}
 		if( mSearchTags.size() > 0 ){
 			retVal = "(" + retVal + ")&&(";

@@ -13,6 +13,7 @@ import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
+import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.PhraseQuery;
 import org.apache.lucene.search.Query;
@@ -20,6 +21,7 @@ import org.apache.lucene.search.RegexpQuery;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TopDocs;
+import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.spans.SpanTermQuery;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.util.Version;
@@ -93,15 +95,23 @@ public class LuceneUnicodeSearcher {
 		}
 	}
 	
-	public Query getQueryForSearchString(String searchString){
+	public Query getPrefixRegExpQuery(JayaQueryParser jqp){
 //		Query query = mQueryParser.parse(searchString);
 //		if(query == null)
 //			return retVal;
 		//TermQuery query = new TermQuery(new Term(Constatants.FIELD_CONTENTS, searchString));
 //		PhraseQuery query = new PhraseQuery();
-//		query.add(new Term(Constatants.FIELD_CONTENTS, searchString));		
-		RegexpQuery query = new RegexpQuery(new Term(Constatants.FIELD_CONTENTS, ".*"+searchString+".*"));
-		return query;
+//		query.add(new Term(Constatants.FIELD_CONTENTS, searchString));	
+		BooleanQuery bq = new BooleanQuery();
+		for(String tag:jqp.getSearchTags()){
+			RegexpQuery query = new RegexpQuery(new Term(Constatants.FIELD_TAGS, tag+".*"));
+			bq.add(query, Occur.MUST);
+		}		
+		for(String word:jqp.getSearchWords()){
+			RegexpQuery query = new RegexpQuery(new Term(Constatants.FIELD_CONTENTS, ".*"+word+".*"));
+			bq.add(query, Occur.MUST);
+		}
+		return bq;
 	}
 	
 	public List<ResultDocument> getAdjacentDocs(int docId, int nDocs, int dir) throws IOException{
@@ -181,7 +191,7 @@ public class LuceneUnicodeSearcher {
 
 		if( jqp.isRegExPrefixQuery() ){			
 			searchString = parsedQueryString;
-			Query query = getQueryForSearchString(searchString);
+			Query query = getPrefixRegExpQuery(jqp);
 			TopDocs result = mIndexSearcher.search(query, Constatants.MAX_RESULTS);
 			System.out.println("Number of hits: " + result.totalHits);
 			for (ScoreDoc topdoc : result.scoreDocs) {
