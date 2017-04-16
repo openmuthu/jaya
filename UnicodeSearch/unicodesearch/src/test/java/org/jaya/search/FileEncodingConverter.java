@@ -47,7 +47,7 @@ public class FileEncodingConverter {
 				if( newFilePath.contains("brahmAMDa purANa.txt")){
 					System.out.println("brahmAMDa purANa.txt");
 				}
-				//newFilePath = f1.getParent() + File.separator + FilenameUtils.getBaseName(newFilePath) + "_u16le." + FilenameUtils.getExtension(newFilePath);
+				newFilePath = f1.getParent() + File.separator + FilenameUtils.getBaseName(newFilePath) + "_u16le." + FilenameUtils.getExtension(newFilePath);
 				byte[] bytes = FileUtils.readFileToByteArray(file);
 				if( bytes[0] == (byte)0xFE && bytes[1] == (byte)0xFF ){					
 					// UTF-16BE

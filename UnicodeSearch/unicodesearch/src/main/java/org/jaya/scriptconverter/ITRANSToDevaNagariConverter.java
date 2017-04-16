@@ -181,4 +181,12 @@ public class ITRANSToDevaNagariConverter implements ScriptConverter {
 	public String getDestinationScript() {
 		return ScriptConverter.DEVANAGARI_SCRIPT;
 	}
+	
+	public static boolean isDevanagariDependentCharacter(char ch){
+		int c1 = (int)ch;
+		if( (c1 >= 0x093A && c1 <= 0x094F) || (c1 >= 0x0951 && c1 <= 0x0957 ) 
+				|| ( c1 >= 0x0962 && c1 <= 0x0963 ) || (c1 >= 0x0900 && c1 <= 0x0903) )
+			return true;
+		return false;
+	}
 }
