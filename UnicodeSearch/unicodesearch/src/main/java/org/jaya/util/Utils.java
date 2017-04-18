@@ -6,6 +6,7 @@ import java.util.List;
 
 import org.jaya.scriptconverter.ScriptConverter;
 import org.jaya.scriptconverter.ScriptConverterFactory;
+import org.jaya.scriptconverter.ScriptType;
 
 /**
  * Created by murthy on 08/04/17.
@@ -41,8 +42,8 @@ public class Utils {
 		String basename = getBaseName(fileName);
 		String retVal = basename.replaceAll("[\\s-]+", "");
 		
-		ScriptConverter it2dev = ScriptConverterFactory.getScriptConverter(ScriptConverter.ITRANS_SCRIPT,
-				ScriptConverter.DEVANAGARI_SCRIPT);
+		ScriptConverter it2dev = ScriptConverterFactory.getScriptConverter(ScriptType.ITRANS,
+				ScriptType.DEVANAGARI);
 		retVal += " " + it2dev.convert(retVal);
 		
 		return retVal;

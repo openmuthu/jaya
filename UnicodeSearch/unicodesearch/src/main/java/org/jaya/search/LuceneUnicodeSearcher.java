@@ -27,6 +27,7 @@ import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.util.Version;
 import org.jaya.scriptconverter.ScriptConverter;
 import org.jaya.scriptconverter.ScriptConverterFactory;
+import org.jaya.scriptconverter.ScriptType;
 import org.jaya.util.Constatants;
 
 public class LuceneUnicodeSearcher {
@@ -73,8 +74,8 @@ public class LuceneUnicodeSearcher {
 	}
 
 	public SearchResult searchITRANSString(String searchString) throws IOException, ParseException {
-		ScriptConverter it2dev = ScriptConverterFactory.getScriptConverter(ScriptConverter.ITRANS_SCRIPT,
-				ScriptConverter.DEVANAGARI_SCRIPT);
+		ScriptConverter it2dev = ScriptConverterFactory.getScriptConverter(ScriptType.ITRANS,
+				ScriptType.DEVANAGARI);
 		String searchStringDev = it2dev.convert(searchString);
 		return searchIndex(searchStringDev);
 	}
