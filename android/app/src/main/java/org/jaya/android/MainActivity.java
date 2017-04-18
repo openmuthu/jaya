@@ -1,6 +1,7 @@
 package org.jaya.android;
 
 import android.Manifest;
+import android.app.Activity;
 import android.app.ListActivity;
 import android.app.ProgressDialog;
 import android.app.SearchManager;
@@ -10,9 +11,15 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.NonNull;
+import android.support.v7.app.ActionBarDrawerToggle;
+import android.support.v4.widget.DrawerLayout;
 import android.util.Log;
 import android.view.Menu;
+import android.view.MenuItem;
+import android.view.View;
 import android.widget.AbsListView;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.SearchView;
@@ -24,10 +31,15 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MainActivity extends ListActivity {
+public class MainActivity extends Activity {
 
     public static final int NUM_ITEMS_TO_LOAD_MORE = 4;
     public static final int INITIAL_DOCUMENT_ID = 2500;
+
+    private DrawerLayout mDrawerLayout;
+    private ListView mDrawerList;
+    private String[] mDrawerListTitles;
+    private ActionBarDrawerToggle mDrawerToggle;
 
     private ProgressDialog mProgress;
     private int mProgressStatus = 0;
@@ -76,6 +88,8 @@ public class MainActivity extends ListActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        setupNavigationDrawerItems();
+
         mAssetsManager = new AssetsManager(getApplicationContext());
         PermissionRequestor.requestPermissionIfRequired(this, Manifest.permission.WRITE_EXTERNAL_STORAGE, PermissionRequestor.WRITE_EXTERNAL_STORAGE_PERMISSSION_REQUEST_ID);
 
@@ -105,7 +119,7 @@ public class MainActivity extends ListActivity {
     }
 
     private void setListAdapter(){
-        final ListView listView = getListView();
+        final ListView listView = (ListView) findViewById(R.id.doc_list_view);
 
         DocumentListAdapter docListAdapter = new DocumentListAdapter(this, mDocumentList);
         listView.setAdapter(docListAdapter);//sets the adapter for listView
@@ -167,6 +181,68 @@ public class MainActivity extends ListActivity {
         searchView.setSearchableInfo(
                 searchManager.getSearchableInfo(cn));
         return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        //int id = item.getItemId();
+        if (mDrawerToggle.onOptionsItemSelected(item)) {
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    public void setupNavigationDrawerItems(){
+        mDrawerListTitles = getResources().getStringArray(R.array.drawer_options_array);
+        mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
+        mDrawerList = (ListView) findViewById(R.id.left_drawer);
+
+        // Set the adapter for the list view
+        mDrawerList.setAdapter(new ArrayAdapter<String>(this,
+                R.layout.drawer_list_item, mDrawerListTitles));
+        // Set the list's click listener
+        mDrawerList.setOnItemClickListener(new DrawerItemClickListener());
+
+        // enable ActionBar app icon to behave as action to toggle nav drawer
+//        getActionBar().setDisplayHomeAsUpEnabled(true);
+        getActionBar().setHomeButtonEnabled(true);
+
+        if( mDrawerToggle != null && mDrawerLayout != null )
+            mDrawerLayout.removeDrawerListener(mDrawerToggle);
+
+        // ActionBarDrawerToggle ties together the the proper interactions
+        // between the sliding drawer and the action bar app icon
+        mDrawerToggle = new ActionBarDrawerToggle(
+                this,                  /* host Activity */
+                mDrawerLayout,         /* DrawerLayout object */
+                R.string.drawer_open,  /* "open drawer" description for accessibility */
+                R.string.drawer_close  /* "close drawer" description for accessibility */
+        ) {
+            public void onDrawerClosed(View view) {
+                //getActionBar().setTitle(mTitle);
+                invalidateOptionsMenu(); // creates call to onPrepareOptionsMenu()
+            }
+
+            public void onDrawerOpened(View drawerView) {
+                //getActionBar().setTitle(mDrawerTitle);
+                invalidateOptionsMenu(); // creates call to onPrepareOptionsMenu()
+            }
+        };
+        mDrawerLayout.addDrawerListener(mDrawerToggle);
+
+//        if (savedInstanceState == null) {
+//            selectItem(0);
+//        }
+    }
+
+    private class DrawerItemClickListener implements ListView.OnItemClickListener {
+        @Override
+        public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+            mDrawerLayout.closeDrawer(mDrawerList);
+            if( position == 0 ){
+                startActivity(new Intent(MainActivity.this, SettingsActivity.class));
+            }
+        }
     }
 
     protected void indexFiles(boolean bForceReIndexing)

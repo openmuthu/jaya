@@ -3,7 +3,7 @@ package org.jaya.search;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jaya.scriptconverter.ITRANSToDevaNagariConverter;
+import org.jaya.scriptconverter.SCUtils;
 
 public class SearchResult {
 	
@@ -37,7 +37,7 @@ public class SearchResult {
 	public int getDependentCharSequenceLength(String str, int startIndex){
 		int retVal = 0;
 		int length = str.length();
-		for(int i=startIndex;(i<length) && ITRANSToDevaNagariConverter.isDevanagariDependentCharacter(str.charAt(i));i++){
+		for(int i=startIndex;(i<length) && SCUtils.isDependentCharacter(str.charAt(i));i++){
 			retVal++; 
 		}
 		return retVal;

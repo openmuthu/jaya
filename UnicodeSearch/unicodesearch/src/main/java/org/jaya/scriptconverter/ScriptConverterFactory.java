@@ -10,11 +10,14 @@ public class ScriptConverterFactory {
 		
 		ScriptConverterFactory.registerScriptConverter(new ITRANSToDevaNagariConverter());
 		ScriptConverterFactory.registerScriptConverter(new DevaNagariToITRANSConverter());
+		ScriptConverterFactory.registerScriptConverter(new ITRANSToKannadaConverter());
+		ScriptConverterFactory.registerScriptConverter(new DevanagariToKannadaConverter());
+		ScriptConverterFactory.registerScriptConverter(new KannadaToDevanagariConverter());
 	}
 	
 	private static List<ScriptConverter> m_scriptConverterList;
 
-	public static ScriptConverter getScriptConverter(String sourceScriptType, String destScriptType){
+	public static ScriptConverter getScriptConverter(ScriptType sourceScriptType, ScriptType destScriptType){
 		for(ScriptConverter sc : m_scriptConverterList)
 		{
 			if(sc.getSourceScript() == sourceScriptType && sc.getDestinationScript() == destScriptType)

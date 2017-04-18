@@ -20,26 +20,30 @@ public class SarvamoolaLakaaraFixer {
 		//File f1 = new File(Constatants.FILES_TO_INDEX_DIRECTORY + File.separator + "sarvamUla/aitarEya-bhAShya.txt");
 		//fileList.add(f1);
 		for (File file : fileList) {			
-			try{
-				String filePath = file.getCanonicalPath();
-				//String newFilePath = file.getParent() + File.separator + FilenameUtils.getBaseName(filePath) + "_fixed." + FilenameUtils.getExtension(filePath);
-				String newFilePath = filePath;
-				byte[] bytes = FileUtils.readFileToByteArray(file);
-				for(int i = 2;i<bytes.length;i+=2){
-					if( bytes[i] == (byte)0x83 && bytes[i+1] == (byte)0x00 ){
-						bytes[i] = 0x32;
-						bytes[i+1] = 0x09;
-					}
-					else if( bytes[i] == (byte)0x80 && bytes[i+1] == (byte)0x00 ){
-						bytes[i] = 0x3D;
-						bytes[i+1] = 0x09;
-					}
-				}
-				FileUtils.writeByteArrayToFile(new File(newFilePath), bytes);
-			}
-			catch(IOException ex){
-				ex.printStackTrace();
-			}
+			transformFile(file);
 		}
+	}
+	
+	public static void transformFile(File file){
+		try{
+			String filePath = file.getCanonicalPath();
+			//String newFilePath = file.getParent() + File.separator + FilenameUtils.getBaseName(filePath) + "_fixed." + FilenameUtils.getExtension(filePath);
+			String newFilePath = filePath;
+			byte[] bytes = FileUtils.readFileToByteArray(file);
+			for(int i = 2;i<bytes.length;i+=2){
+				if( bytes[i] == (byte)0x83 && bytes[i+1] == (byte)0x00 ){
+					bytes[i] = 0x32;
+					bytes[i+1] = 0x09;
+				}
+				else if( bytes[i] == (byte)0x80 && bytes[i+1] == (byte)0x00 ){
+					bytes[i] = 0x3D;
+					bytes[i+1] = 0x09;
+				}			
+			}
+			FileUtils.writeByteArrayToFile(new File(newFilePath), bytes);
+		}
+		catch(IOException ex){
+			ex.printStackTrace();
+		}		
 	}
 }

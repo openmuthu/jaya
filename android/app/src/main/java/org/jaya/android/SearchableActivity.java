@@ -21,6 +21,7 @@ import org.apache.lucene.document.Document;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.jaya.scriptconverter.ScriptConverter;
 import org.jaya.scriptconverter.ScriptConverterFactory;
+import org.jaya.scriptconverter.ScriptType;
 import org.jaya.search.LuceneUnicodeSearcher;
 import org.jaya.search.ResultDocument;
 import org.jaya.search.SearchResult;
@@ -36,8 +37,8 @@ public class SearchableActivity extends ListActivity {
     SearchResult mSearchResult;
     LuceneUnicodeSearcher mSearcher = null;
     String mCurrentQuery;
-    ScriptConverter mITransToDevnagari = ScriptConverterFactory.getScriptConverter(ScriptConverter.ITRANS_SCRIPT,
-            ScriptConverter.DEVANAGARI_SCRIPT);
+    ScriptConverter mITransToDevnagari = ScriptConverterFactory.getScriptConverter(ScriptType.ITRANS,
+            ScriptType.DEVANAGARI);
 
     @Override
     public void onCreate(Bundle savedInstanceState) {

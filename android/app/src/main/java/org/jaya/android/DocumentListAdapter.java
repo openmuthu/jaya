@@ -96,7 +96,8 @@ class DocumentListAdapter extends BaseAdapter {
             if (doc == null)
                 return;
             mDocPathTextView.setText(doc.get(Constatants.FIELD_PATH));
-            mDocContentesTextView.setText(doc.get(Constatants.FIELD_CONTENTS));
+            String contents = mDocument.getDocContentsForScriptType(PreferencesManager.getPreferredOutputScriptType());
+            mDocContentesTextView.setText(contents);
         }
 
         public void setItem(ResultDocument item) {

@@ -93,13 +93,13 @@ public class DevaNagariToITRANSConverter implements ScriptConverter {
 	}		
 
 	@Override
-	public String getSourceScript() {
-		return ScriptConverter.DEVANAGARI_SCRIPT;
+	public ScriptType getSourceScript() {
+		return ScriptType.DEVANAGARI;
 	}
 
 	@Override
-	public String getDestinationScript() {
-		return ScriptConverter.ITRANS_SCRIPT;
+	public ScriptType getDestinationScript() {
+		return ScriptType.ITRANS;
 	}
 	
 	private boolean isConsonent(char ch){

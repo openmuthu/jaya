@@ -2,10 +2,10 @@ package org.jaya.scriptconverter;
 
 public class ScriptConverterTest {
 	public static void main(String[] args) {
-		ScriptConverter dev2it = ScriptConverterFactory.getScriptConverter(ScriptConverter.DEVANAGARI_SCRIPT,
-				ScriptConverter.ITRANS_SCRIPT);
-		ScriptConverter it2dev = ScriptConverterFactory.getScriptConverter(ScriptConverter.ITRANS_SCRIPT,
-				ScriptConverter.DEVANAGARI_SCRIPT);
+		ScriptConverter dev2it = ScriptConverterFactory.getScriptConverter(ScriptType.DEVANAGARI,
+				ScriptType.ITRANS);
+		ScriptConverter it2dev = ScriptConverterFactory.getScriptConverter(ScriptType.ITRANS,
+				ScriptType.DEVANAGARI);
 
 		String[] inputs = new String[] { "bRhaddhaatukOSa", "nArAyaNaM guNaiH sarvairudIrNaM dOShavarjitam",
 				"jnEyaM gamyaM gurUMshcaapi natvaa sUtraartha uchyatE", "rAyaNaM" };

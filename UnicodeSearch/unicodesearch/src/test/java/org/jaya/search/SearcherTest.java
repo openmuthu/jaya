@@ -7,6 +7,7 @@ import org.apache.lucene.document.Document;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.jaya.scriptconverter.ScriptConverter;
 import org.jaya.scriptconverter.ScriptConverterFactory;
+import org.jaya.scriptconverter.ScriptType;
 import org.jaya.util.Constatants;
 
 public class SearcherTest {
@@ -33,8 +34,8 @@ public class SearcherTest {
 		//String searchString = "naraayaNa~ && guNai~ && sarva";
 		//String searchString = "samantabhadrO* bhagavaa* && ({{{tags:}}}amara || {{{tags:}}}bhaarata)/q";
 		String searchString = "jhalaa #kAshikA8";
-		ScriptConverter it2dev = ScriptConverterFactory.getScriptConverter(ScriptConverter.ITRANS_SCRIPT,
-				ScriptConverter.DEVANAGARI_SCRIPT);
+		ScriptConverter it2dev = ScriptConverterFactory.getScriptConverter(ScriptType.ITRANS,
+				ScriptType.DEVANAGARI);
 		String searchStringDev = it2dev.convert(searchString);
 		LuceneUnicodeSearcher searcher = new LuceneUnicodeSearcher(Constatants.INDEX_DIRECTORY);
 		try {
