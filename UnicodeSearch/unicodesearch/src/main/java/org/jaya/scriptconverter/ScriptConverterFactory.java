@@ -23,6 +23,7 @@ public class ScriptConverterFactory {
 			if(sc.getSourceScript() == sourceScriptType && sc.getDestinationScript() == destScriptType)
 				return sc;
 		}
+		System.err.println("Failed to get script converter for sourceType: " + sourceScriptType.name() + " and desType: " + destScriptType.name());
 		return null;
 	}
 	

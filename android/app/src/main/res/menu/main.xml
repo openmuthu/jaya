@@ -9,4 +9,11 @@
         android:icon="@drawable/ic_search"
         android:showAsAction="ifRoom|collapseActionView"
         android:title="@string/search_label"/>
+
+    <item
+        android:id="@+id/action_random_doc"
+        android:icon="@drawable/ic_random_doc"
+        android:title="@string/action_random_doc"
+        app:showAsAction="ifRoom"
+        android:visible="false"/>
 </menu>

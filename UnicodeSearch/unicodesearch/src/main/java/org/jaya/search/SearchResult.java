@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.jaya.scriptconverter.SCUtils;
+import org.jaya.scriptconverter.ScriptType;
 
 public class SearchResult {
 	
@@ -71,12 +72,14 @@ public class SearchResult {
 		return retVal;
 	}
 	
-	public String getSpannedStringBasedOnCurrentQuery(String str){
+	public String getSpannedStringBasedOnCurrentQuery(String str, ScriptType scriptType){
 		List<Highlight> matchedIndicesList = new ArrayList<Highlight>();
 		List<String> words = mJayaQueryParser.getSearchWords();
 		String retVal = "";
 		int lastMatchedIndex = -1;
+		str = SCUtils.convertStringToScript(str, scriptType);
 		for(String word:words){
+			word = SCUtils.convertStringToScript(word, scriptType);
 			Highlight match = getClosestMatch(str, word);
 			if( match.startIndex > lastMatchedIndex ){
 				int size = matchedIndicesList.size();

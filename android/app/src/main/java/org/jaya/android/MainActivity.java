@@ -15,7 +15,9 @@ import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v4.widget.DrawerLayout;
 import android.util.Log;
 import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.AbsListView;
 import android.widget.AdapterView;
@@ -34,7 +36,6 @@ import java.util.List;
 public class MainActivity extends Activity {
 
     public static final int NUM_ITEMS_TO_LOAD_MORE = 4;
-    public static final int INITIAL_DOCUMENT_ID = 2500;
 
     private DrawerLayout mDrawerLayout;
     private ListView mDrawerList;
@@ -61,8 +62,10 @@ public class MainActivity extends Activity {
             int docId = intent.getIntExtra("documentId", 0);
             showDocumentId(docId);
         }
-        else
-            showDocumentId(INITIAL_DOCUMENT_ID);
+        else {
+            int docId = PreferencesManager.getLastViewedDocId();
+            showDocumentId(PreferencesManager.getLastViewedDocId());
+        }
     }
 
     public void showDocumentId(int docId){
@@ -100,6 +103,15 @@ public class MainActivity extends Activity {
         //showDocumentId(3000);
     }
 
+    @Override
+    protected void onPause() {
+//        final ListView listView = (ListView) findViewById(R.id.doc_list_view);
+//        if( listView != null && mDocumentList != null ){
+//            ResultDocument doc =  mDocumentList.get( listView.getFirstVisiblePosition() );
+//            PreferencesManager.setLastViewedDocId(doc.getId());
+//        }
+        super.onPause();
+    }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
@@ -119,10 +131,11 @@ public class MainActivity extends Activity {
     }
 
     private void setListAdapter(){
-        final ListView listView = (ListView) findViewById(R.id.doc_list_view);
+        final JayaDocListView listView = (JayaDocListView) findViewById(R.id.doc_list_view);
 
         DocumentListAdapter docListAdapter = new DocumentListAdapter(this, mDocumentList);
         listView.setAdapter(docListAdapter);//sets the adapter for listView
+
 
         listView.setOnScrollListener(new AbsListView.OnScrollListener(){
 
@@ -134,6 +147,10 @@ public class MainActivity extends Activity {
             @Override
             public void onScrollStateChanged(AbsListView view,int scrollState) {
                 try {
+
+                    if( listView.isScalingInProgress() )
+                        return;
+
                     int threshold = 1;
                     int count = listView.getCount();
 
@@ -149,7 +166,7 @@ public class MainActivity extends Activity {
                             DocumentListAdapter listAdapter = (DocumentListAdapter)view.getAdapter();
                             listAdapter.setDocumentListAndUpdateView(mDocumentList);
                         }
-                        else if (listView.getFirstVisiblePosition() <= 0) {
+                        else if (listView.isOverscrollDown() && listView.getFirstVisiblePosition() <= 0) {
                             int oldFirstPos = listView.getFirstVisiblePosition();
                             Log.d(JayaApp.APP_NAME, "onScrollStateChanged(): fetching previous docs ");
                             ResultDocument lastDoc = mDocumentList.get(0);
@@ -159,7 +176,8 @@ public class MainActivity extends Activity {
                             mDocumentList.addAll(0, prevDocs);
                             DocumentListAdapter listAdapter = (DocumentListAdapter)view.getAdapter();
                             listAdapter.setDocumentListAndUpdateView(mDocumentList);
-                            listView.setSelectionFromTop(index, top);
+                            //listView.setSelectionFromTop(index, top);
+                            listView.setSelection(index);
                         }
                     }
                 }catch (IOException ex){
@@ -167,6 +185,13 @@ public class MainActivity extends Activity {
                 }
             }
         });
+    }
+
+    @Override
+    public boolean onPrepareOptionsMenu(Menu menu) {
+        menu.findItem(R.id.action_random_doc).setVisible(true);
+        return super.onPrepareOptionsMenu(menu);
+
     }
 
     @Override
@@ -188,6 +213,9 @@ public class MainActivity extends Activity {
         //int id = item.getItemId();
         if (mDrawerToggle.onOptionsItemSelected(item)) {
             return true;
+        }
+        else if( item.getItemId() == R.id.action_random_doc ){
+            showDocumentId(JayaApp.getSearcher().getRandomDoc());
         }
         return super.onOptionsItemSelected(item);
     }
