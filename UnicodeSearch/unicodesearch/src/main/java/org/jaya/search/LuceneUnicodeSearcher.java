@@ -137,6 +137,17 @@ public class LuceneUnicodeSearcher {
 		}while(i<=nDocs);
 		return retVal;
 	}
+
+	public int getRandomDoc(){
+		return (int)(Math.random()*numDocs());
+	}
+
+	public int numDocs(){
+		createIndexSearcherIfRequired();
+		if( mReader == null )
+			return 0;
+		return mReader.maxDoc();
+	}
 	
 	public ResultDocument getDoc(int docId) throws IOException{
 		createIndexSearcherIfRequired();

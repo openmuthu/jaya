@@ -81,7 +81,32 @@ public class SearchableActivity extends ListActivity {
 //                new String[] {DatabaseConstants.COL_LANG_NAME }, new int[]{R.id.list_item}));
     }
 
-    private void setListAdapter(){
+    private void setListAdapter() {
+        if (mSearchResult == null)
+            return;
+
+        ListView listView = getListView();
+
+        listView.setAdapter(new DocumentListAdapter(this, mSearchResult));
+
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+                if( mSearchResult == null )
+                    return;
+                List<ResultDocument> resultDocs = mSearchResult.getResultDocs();
+                ResultDocument resDoc = resultDocs.get(i);
+                Intent intent = new Intent(SearchableActivity.this, MainActivity.class);
+                //intent.setClassName("org.jaya.android", "org.jaya.android.MainActivity");
+                intent.setAction(JayaApp.INTENT_OPEN_DOCUMENT_ID);
+                intent.putExtra("documentId", resDoc.getId());
+                startActivity(intent);
+                //Toast.makeText(getApplicationContext(),resDoc.get(Constatants.FIELD_PATH),Toast.LENGTH_LONG).show();//show the selected image in toast according to position
+            }
+        });
+    }
+
+    private void setListAdapter1(){
         if( mSearchResult == null )
             return;
 
@@ -116,15 +141,16 @@ public class SearchableActivity extends ListActivity {
             @Override
             public View getView(int position, View convertView, ViewGroup parent){
                 View view = super.getView(position, convertView, parent);
+                TextView pathTextView = (TextView)view.findViewById(R.id.list_item_path);
                 TextView contentsTextView = (TextView)view.findViewById(R.id.list_item_contents);
                 String actualText = contentsTextView.getText().toString();
-//                int index = actualText.indexOf(mCurrentQuery);
-//                if( index == -1 )
-//                    return view;
-                //Spanned spannedText = Html.fromHtml(actualText.substring(0, index) + "<span style=\"color:#FF00FF\">" + mCurrentQuery +"</span>" + actualText.substring(index+mCurrentQuery.length()));
-                Spanned spannedText = Html.fromHtml(mSearchResult.getSpannedStringBasedOnCurrentQuery(actualText));
+                Spanned spannedText = Html.fromHtml(mSearchResult.getSpannedStringBasedOnCurrentQuery(actualText.trim(), PreferencesManager.getPreferredOutputScriptType()));
                 contentsTextView.setAllCaps(false);
                 contentsTextView.setText(spannedText);
+                contentsTextView.setTextSize(PreferencesManager.getFontSize());
+                int bgColor = JayaAppUtils.getColorForDoc(mSearchResult.getResultDocs().get(position).getId());
+                contentsTextView.setBackgroundColor(bgColor);
+                pathTextView.setBackgroundColor(bgColor);
                 return view;
             }
         };

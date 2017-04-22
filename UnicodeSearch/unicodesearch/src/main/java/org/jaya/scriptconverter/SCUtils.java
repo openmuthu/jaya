@@ -34,12 +34,12 @@ public class SCUtils {
 	
 	public static boolean isDevanagari(char ch){
 		int chInt = (int)ch;
-		return (chInt >= 0x0900) || (chInt <= 0x097F);		
+		return (chInt >= 0x0900) && (chInt <= 0x097F);		
 	}
 	
 	public static boolean isKannada(char ch){
 		int chInt = (int)ch;
-		return (chInt >= 0x0C80) || (chInt <= 0x0CFF);
+		return (chInt >= 0x0C80) && (chInt <= 0x0CFF);
 	}
 	
 	public static boolean isDependentCharacter(char ch){
@@ -70,4 +70,16 @@ public class SCUtils {
 			return true;
 		return false;
 	}	
+	
+	public static String convertStringToScript(String str, ScriptType destScriptType){
+		if( destScriptType == null )
+			return str;
+		ScriptType sourceScriptType = guessScript(str);
+		if( destScriptType == sourceScriptType )
+			return str;
+		ScriptConverter converter = ScriptConverterFactory.getScriptConverter(sourceScriptType, destScriptType);
+		if( converter == null )
+			return str;
+		return converter.convert(str);
+	}
 }

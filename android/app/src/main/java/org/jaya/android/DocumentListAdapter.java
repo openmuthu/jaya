@@ -1,25 +1,34 @@
 package org.jaya.android;
 
 import android.app.Activity;
+import android.text.Html;
+import android.text.Spanned;
+import android.view.ScaleGestureDetector;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.TextView;
 
 import org.apache.lucene.document.Document;
+import org.jaya.scriptconverter.ScriptType;
 import org.jaya.search.ResultDocument;
+import org.jaya.search.SearchResult;
 import org.jaya.util.Constatants;
 
 import java.util.List;
+import java.util.prefs.PreferenceChangeEvent;
+import java.util.prefs.PreferenceChangeListener;
 
 /**
  * Created by murthy on 08/04/17.
  */
 
-class DocumentListAdapter extends BaseAdapter {
+class DocumentListAdapter extends BaseAdapter implements JayaDocListView.IListAdapterWithScaleFactor {
 
     //private ListViewRowClickListener mRowClickListener;
+    private float mScaleFactor = 1.0f;
     private List<ResultDocument> mDocumentList;
+    private SearchResult mSearchResult = null;
     private Activity mActivity;
 
     public DocumentListAdapter(Activity activity, List<ResultDocument> documentList) {
@@ -28,9 +37,37 @@ class DocumentListAdapter extends BaseAdapter {
         //mRowClickListener = new ListViewRowClickListener();
     }
 
+    public DocumentListAdapter(Activity activity, SearchResult searchResult) {
+        mDocumentList = searchResult.getResultDocs();
+        mActivity = activity;
+        mSearchResult = searchResult;
+        //mRowClickListener = new ListViewRowClickListener();
+    }
+
     public void setDocumentListAndUpdateView(List<ResultDocument> documentList){
         mDocumentList = documentList;
         notifyDataSetChanged();
+    }
+
+    @Override
+    public void onScaleBegin(ScaleGestureDetector detector) {
+        mScaleFactor = 1.0f;
+    }
+
+    @Override
+    public void setScaleFactor(float scaleFactor){
+        mScaleFactor = scaleFactor;
+    }
+
+    @Override
+    public void onScaleEnd(float scaleFactor){
+        mScaleFactor = 1.0f;
+        float currentSize = PreferencesManager.getFontSize();
+        PreferencesManager.setFontSize( getClampedFontSize(currentSize * scaleFactor) );
+    }
+
+    float getClampedFontSize(float fontSize){
+        return Math.max(PreferencesManager.MIN_FONT_SIZE, Math.min(fontSize, PreferencesManager.MAX_FONT_SIZE));
     }
 
     @Override
@@ -85,7 +122,11 @@ class DocumentListAdapter extends BaseAdapter {
 
             mDocPathTextView = (TextView) itemView.findViewById(R.id.list_item_path);
             mDocContentesTextView = (TextView)itemView.findViewById(R.id.list_item_contents);
-            mDocContentesTextView.setTextSize(24);
+            //mDocContentesTextView.setTextIsSelectable(true);
+            mDocContentesTextView.setLineSpacing(10, 1.0f);
+            int bgColor = JayaAppUtils.getColorForDoc(item.getId());
+            mDocContentesTextView.setBackgroundColor(bgColor);
+            mDocPathTextView.setBackgroundColor(bgColor);
 
             mDocument = item;
             refresh();
@@ -96,8 +137,19 @@ class DocumentListAdapter extends BaseAdapter {
             if (doc == null)
                 return;
             mDocPathTextView.setText(doc.get(Constatants.FIELD_PATH));
-            String contents = mDocument.getDocContentsForScriptType(PreferencesManager.getPreferredOutputScriptType());
-            mDocContentesTextView.setText(contents);
+            ScriptType preferredScriptType = PreferencesManager.getPreferredOutputScriptType();
+            String contents = mDocument.getDocContentsForScriptType(preferredScriptType).trim();
+            if( mSearchResult != null ) {
+                contents = mSearchResult.getSpannedStringBasedOnCurrentQuery(contents, preferredScriptType);
+                Spanned spannedText = Html.fromHtml(contents);
+                mDocContentesTextView.setText(spannedText);
+            }
+            else
+                mDocContentesTextView.setText(contents);
+            mDocContentesTextView.setTextSize(getClampedFontSize(PreferencesManager.getFontSize()*mScaleFactor));
+            int bgColor = JayaAppUtils.getColorForDoc(mDocument.getId());
+            mDocContentesTextView.setBackgroundColor(bgColor);
+            mDocPathTextView.setBackgroundColor(bgColor);
         }
 
         public void setItem(ResultDocument item) {
