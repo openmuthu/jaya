@@ -32,9 +32,15 @@ public class PreferencesManager {
     }
 
     public static ScriptType getPreferredOutputScriptType(){
-        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(JayaApp.getAppContext());
-        String scrTypeStr = preferences.getString(PREF_OUTPUT_SCRIPT_TYPE, ScriptType.KANNADA.name());
-        return ScriptType.valueOf(scrTypeStr);
+        ScriptType defaultScript = ScriptType.KANNADA;
+        try {
+            SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(JayaApp.getAppContext());
+            String scrTypeStr = preferences.getString(PREF_OUTPUT_SCRIPT_TYPE, defaultScript.name());
+            return ScriptType.valueOf(scrTypeStr);
+        }catch (Exception ex){
+            setPreferredOutputScriptType(defaultScript);
+        }
+        return defaultScript;
     }
 
     public static void setPreferredOutputScriptType(ScriptType type){
