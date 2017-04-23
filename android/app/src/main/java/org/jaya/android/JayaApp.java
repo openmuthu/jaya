@@ -20,6 +20,7 @@ public class JayaApp extends Application{
         JAYA_1_0
     }
 
+    public static final String gVersionStr = "1.0.0.0";
     public static Version VERSION = Version.JAYA_1_0;
     private static Context mContext;
 
@@ -42,7 +43,11 @@ public class JayaApp extends Application{
     }
 
     public static String getAppExtStorageFolder(){
-        return Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + APP_NAME;
+        return Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + APP_NAME + "/" + gVersionStr;
+    }
+
+    public static String getToBeIndexedFolder(){
+        return getAppExtStorageFolder() + "/to_be_indexed/";
     }
 
     public static String getDocumentsFolder(){
