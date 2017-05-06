@@ -14,6 +14,7 @@ import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.search.TermQuery;
+import org.apache.lucene.store.AlreadyClosedException;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.store.IOContext;
@@ -138,11 +139,11 @@ public class LuceneUnicodeFileIndexer {
 		return path + ".kw";
 	}
 	
-	private String[] getIndexableExtensions(){
+	private static String[] getIndexableExtensions(){
 		return new String[]{".txt"};
 	}
 	
-	private boolean hasIndexableExtension(String path){
+	public static boolean hasIndexableExtension(String path){
 		boolean bIndexableExtFound = false;
 		for(String ext:getIndexableExtensions()){
 			if( path.endsWith(ext) ){
@@ -238,7 +239,13 @@ public class LuceneUnicodeFileIndexer {
 	public void addFilesToIndexOld(String directoryToBeSearched) throws CorruptIndexException, LockObtainFailedException, IOException {
 		
 		File dir = new File(directoryToBeSearched);
-		List<File> files = getListOfFilesToIndex(dir);
+		List<File> files;
+		if( dir.isDirectory() )
+			files = getListOfFilesToIndex(dir);
+		else{
+			files = new ArrayList<File>();
+			files.add(dir);
+		}
 		Set<String> filePathSet = new HashSet<>();
 		for (File file : files) {
 
@@ -259,7 +266,7 @@ public class LuceneUnicodeFileIndexer {
 			BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(path), "UTF-16"));
 			String line = "";
 			String lines = "";
-			path = path.replace(directoryToBeSearched, "");
+			path = path.replace(Constatants.FILES_TO_INDEX_DIRECTORY, "");
 			filePathSet.add(path);
 			for(int i=0;(line=reader.readLine())!=null;i++){
 				if(line.matches("^[\\s\\r\\n]+$")){
@@ -295,8 +302,18 @@ public class LuceneUnicodeFileIndexer {
 		}
 		
 		
-		mIndexWriter.close();
+		mIndexWriter.commit();
 		System.out.println("Index is complete");
+	}
+	
+	public void close(){
+		if( mIndexWriter != null ){
+			try{
+				mIndexWriter.close();
+			}catch(Exception ex){
+				ex.printStackTrace();
+			}
+		}
 	}
 	
 	public void addFilesToIndex(String directoryToBeSearched) throws CorruptIndexException, LockObtainFailedException, IOException {

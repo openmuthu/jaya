@@ -25,6 +25,13 @@ public class JayaIndexMetadata {
 		read();
 	}
 	
+	@Override
+	public String toString(){
+		if( mIndexedFilePathSet == null )
+			return "";
+		return String.join(MD_REC_DELEMITER, Arrays.stream(mIndexedFilePathSet.toArray()).toArray(String[]::new));
+	}
+	
 	public void read(){
 		if( mIndexedFilePathSet != null )
 			return;
