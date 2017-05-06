@@ -70,8 +70,8 @@ public class AssetsManager {
 
             try {
                 ArrayList<String> assetFiles = new ArrayList<>();
-                //listAssetFiles(JayaApp.getAppContext().getAssets(), "to_be_indexed", assetFiles);
-                listAssetFiles(JayaApp.getAppContext().getAssets(), "index", assetFiles);
+                listAssetFiles(JayaApp.getAppContext().getAssets(), "to_be_indexed", assetFiles);
+                //listAssetFiles(JayaApp.getAppContext().getAssets(), "index", assetFiles);
                 for (String fileName : assetFiles) {
                     String dstPath = JayaApp.getAppExtStorageFolder() + "/" + fileName;
                     File dstFile = new File(dstPath);

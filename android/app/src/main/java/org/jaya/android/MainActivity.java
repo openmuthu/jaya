@@ -275,39 +275,39 @@ public class MainActivity extends Activity {
 
     protected void indexFiles(boolean bForceReIndexing)
     {
-        return;
-//        if( !JayaApp.isIndexingRequired() && !bForceReIndexing)
-//            return;
-//        if( mProgress != null )
-//        {
-//            // Indexing is already in progress.. just return
-//            return;
-//        }
-//        mProgress = new ProgressDialog(this);
-//        mProgress.setIndeterminate(true);
-//        mProgress.setMessage("Please wait while indexing is in progress... This may take a few minutes.");
-//        mProgress.show();
-//        Thread t =  new Thread(new Runnable() {
-//            public void run() {
-//                try {
-//                    LuceneUnicodeFileIndexer indexer = new LuceneUnicodeFileIndexer();
-//                    indexer.createIndex(JayaApp.getSearchIndexFolder(), JayaApp.getDocumentsFolder());
-//                }
-//                catch(IOException ex){
-//                    Log.d("Indexer", "IOException in indexFiles");
-//                }
-//                finally {
-//                    // Update the progress bar
-//                    mHandler.post(new Runnable() {
-//                        public void run() {
-//                            mProgress.dismiss();
-//                            mProgress = null;
-//                            showDocumentId(INITIAL_DOCUMENT_ID);
-//                        }
-//                    });
-//                }
-//            }
-//        });
-//        t.start();
+        //return;
+        if( !JayaApp.isIndexingRequired() && !bForceReIndexing)
+            return;
+        if( mProgress != null )
+        {
+            // Indexing is already in progress.. just return
+            return;
+        }
+        mProgress = new ProgressDialog(this);
+        mProgress.setIndeterminate(true);
+        mProgress.setMessage("Please wait while indexing is in progress... This may take a few minutes.");
+        mProgress.show();
+        Thread t =  new Thread(new Runnable() {
+            public void run() {
+                try {
+                    LuceneUnicodeFileIndexer indexer = new LuceneUnicodeFileIndexer();
+                    indexer.createIndex(JayaApp.getSearchIndexFolder(), JayaApp.getToBeIndexedFolder());
+                }
+                catch(IOException ex){
+                    Log.d("Indexer", "IOException in indexFiles");
+                }
+                finally {
+                    // Update the progress bar
+                    mHandler.post(new Runnable() {
+                        public void run() {
+                            mProgress.dismiss();
+                            mProgress = null;
+                            showDocumentId(JayaApp.getSearcher().getRandomDoc());
+                        }
+                    });
+                }
+            }
+        });
+        t.start();
     }
 }

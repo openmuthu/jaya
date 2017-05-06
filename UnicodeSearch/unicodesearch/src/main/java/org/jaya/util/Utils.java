@@ -1,6 +1,8 @@
 package org.jaya.util;
 
+import java.io.Closeable;
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -48,4 +50,39 @@ public class Utils {
 		
 		return retVal;
     }
+    
+	public static List<File> getListOfFiles(File sourceDir) {
+		ArrayList<File> fileList = new ArrayList<>();
+		File[] files = sourceDir.listFiles();
+		for (File file : files) {
+			if (file.isDirectory()) {
+				fileList.addAll(getListOfFiles(file));
+			} else {
+				fileList.add(file);
+			}
+		}
+		return fileList;
+	}  
+	
+	public static List<File> getFirstLevelDirs(File sourceDir) {
+		ArrayList<File> fileList = new ArrayList<>();
+		File[] files = sourceDir.listFiles();
+		for (File file : files) {
+			if (file.isDirectory()) {
+				fileList.add(file);
+			}
+		}
+		return fileList;
+	}	
+	
+	public static void closeSilently(Closeable closable){
+		if( closable == null )
+			return;
+		try{
+			closable.close();
+		}
+		catch(IOException ex){
+			ex.printStackTrace();
+		}
+	}
 }

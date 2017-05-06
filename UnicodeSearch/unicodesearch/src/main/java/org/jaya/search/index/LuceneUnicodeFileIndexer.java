@@ -7,12 +7,19 @@ import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.analysis.standard.StandardTokenizer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
+import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.CorruptIndexException;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
+import org.apache.lucene.index.Term;
+import org.apache.lucene.search.TermQuery;
+import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
+import org.apache.lucene.store.IOContext;
+import org.apache.lucene.store.IndexInput;
 import org.apache.lucene.store.LockObtainFailedException;
+import org.jaya.search.JayaIndexMetadata;
 import org.jaya.util.Constatants;
 import org.jaya.util.Utils;
 
@@ -23,7 +30,10 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -52,7 +62,7 @@ class SingleFileIndexerThread extends Thread{
 				lines = lines + line + "\n";
 				if( (i+1)%4 == 0 ){
 					Document document = new Document();
-					document.add(new TextField(Constatants.FIELD_PATH, path, Field.Store.YES));
+					document.add(new StringField(Constatants.FIELD_PATH, path, Field.Store.YES));
 					
 					document.add(new TextField(Constatants.FIELD_CONTENTS, lines, Field.Store.YES));
 					
@@ -62,7 +72,7 @@ class SingleFileIndexerThread extends Thread{
 			}
 			if( !lines.isEmpty() ){
 				Document document = new Document();
-				document.add(new TextField(Constatants.FIELD_PATH, path, Field.Store.YES));
+				document.add(new StringField(Constatants.FIELD_PATH, path, Field.Store.YES));
 				
 				document.add(new TextField(Constatants.FIELD_CONTENTS, lines, Field.Store.YES));
 				
@@ -78,12 +88,50 @@ class SingleFileIndexerThread extends Thread{
 public class LuceneUnicodeFileIndexer {
 	// private static final Logger LOG =
 	// LoggerFactory.getLogger(CreateIndex.class);
+	
+	private String mIndexStoragePath;
+	private JayaIndexMetadata mIndexMetadata;
+	private IndexWriter mIndexWriter;
+	
+	public LuceneUnicodeFileIndexer(String indexStoragePath) throws IOException{
+		mIndexStoragePath = indexStoragePath;
+		mIndexMetadata = new JayaIndexMetadata(mIndexStoragePath);
+		Analyzer analyzer = new StandardAnalyzer(LUCENE_47);
+//		Analyzer analyzer = new Analyzer() {
+//			@Override
+//			protected TokenStreamComponents createComponents(String fieldName, Reader reader) {
+//				StandardTokenizer source = new StandardTokenizer(LUCENE_47, reader);
+//				//KeywordTokenizer source = new KeywordTokenizer(reader);
+//				//WhitespaceTokenizer wst = new WhitespaceTokenizer(LUCENE_47, reader);
+//				TokenStream filter = new NGramTokenFilter(LUCENE_47, source, 3, 6);
+//				return new TokenStreamComponents(source, filter);
+//			}
+//		};
+		IndexWriterConfig config = new IndexWriterConfig(LUCENE_47, analyzer);
+		config.setOpenMode(IndexWriterConfig.OpenMode.CREATE_OR_APPEND);
+		mIndexWriter = new IndexWriter(FSDirectory.open(new File(mIndexStoragePath)), config);		
+	}
 
 	public static void main(String[] args) throws IOException {
 		// String source = args[0];
 		// String destination = args[1];
-		LuceneUnicodeFileIndexer fileIndexer = new LuceneUnicodeFileIndexer();
-		fileIndexer.createIndex(Constatants.INDEX_DIRECTORY, Constatants.FILES_TO_INDEX_DIRECTORY);
+		LuceneUnicodeFileIndexer fileIndexer = new LuceneUnicodeFileIndexer(Constatants.INDEX_DIRECTORY);
+		fileIndexer.addFilesToIndex(Constatants.FILES_TO_INDEX_DIRECTORY);
+	}
+	
+	public static void testMultipleIndexes(){
+		try{
+			List<File> firstLevelDirs = Utils.getFirstLevelDirs(new File(Constatants.INDEX_DIRECTORY));
+			for(File dir:firstLevelDirs){			
+				String indexDir = dir.getCanonicalPath();
+				indexDir += "_index";
+				
+				LuceneUnicodeFileIndexer fileIndexer = new LuceneUnicodeFileIndexer(indexDir);
+				fileIndexer.addFilesToIndex(dir.getCanonicalPath());				
+			}
+		}catch(Exception ex){
+			ex.printStackTrace();
+		}
 	}
 	
 	private String getTagFilePathForFile(String path){
@@ -148,25 +196,50 @@ public class LuceneUnicodeFileIndexer {
 		}
 		return retVal;
 	}
+	
+	public void deleteIndexEntriesWithFilePath(String path){
+		try{
+			TermQuery query = new TermQuery(new Term(Constatants.FIELD_PATH, path));
+			mIndexWriter.deleteDocuments(query);
+			mIndexWriter.commit();
+		}catch(IOException ex){
+			ex.printStackTrace();
+		}
+	}
+	
+	public void mergeIndexes(List<String> indexPaths){
+		try{
+			HashSet<String> indexedFileSetCumulative = new HashSet<>();
+			List<Directory> indexList = new ArrayList<Directory>();		
+			for(String indexPath: indexPaths){
+				if( mIndexStoragePath == indexPath ){
+					continue;
+				}
+				JayaIndexMetadata metadata = new JayaIndexMetadata(indexPath);
+				Set<String> indexedFilePathSet = metadata.getIndexedFilePathSet();
+				for(String path:indexedFilePathSet){
+					if( mIndexMetadata.hasIndexedFile(path) ){
+						deleteIndexEntriesWithFilePath(path);
+					}
+				}
+				indexedFileSetCumulative.addAll(indexedFilePathSet);
+				indexList.add(FSDirectory.open(new File(indexPath)));
+			}
+			
+			mIndexWriter.addIndexes(Arrays.stream(indexList.toArray()).toArray(Directory[]::new));
+			mIndexMetadata.append(indexedFileSetCumulative);			
+			mIndexWriter.commit();
+		}catch(IOException ex){
+			ex.printStackTrace();
+		}
+		
+	}
 
-	public void createIndexOld(String indexStorageDirectoryPath, String directoryToBeSearched) throws CorruptIndexException, LockObtainFailedException, IOException {
-		Analyzer analyzer = new StandardAnalyzer(LUCENE_47);
-//		Analyzer analyzer = new Analyzer() {
-//			@Override
-//			protected TokenStreamComponents createComponents(String fieldName, Reader reader) {
-//				StandardTokenizer source = new StandardTokenizer(LUCENE_47, reader);
-//				//KeywordTokenizer source = new KeywordTokenizer(reader);
-//				//WhitespaceTokenizer wst = new WhitespaceTokenizer(LUCENE_47, reader);
-//				TokenStream filter = new NGramTokenFilter(LUCENE_47, source, 3, 6);
-//				return new TokenStreamComponents(source, filter);
-//			}
-//		};
-		IndexWriterConfig config = new IndexWriterConfig(LUCENE_47, analyzer);
-		config.setOpenMode(IndexWriterConfig.OpenMode.CREATE_OR_APPEND);
-		IndexWriter indexWriter = new IndexWriter(FSDirectory.open(new File(indexStorageDirectoryPath)), config);
+	public void addFilesToIndexOld(String directoryToBeSearched) throws CorruptIndexException, LockObtainFailedException, IOException {
 		
 		File dir = new File(directoryToBeSearched);
 		List<File> files = getListOfFilesToIndex(dir);
+		Set<String> filePathSet = new HashSet<>();
 		for (File file : files) {
 
 			if( !hasIndexableExtension(file.getCanonicalPath()) ){
@@ -187,6 +260,7 @@ public class LuceneUnicodeFileIndexer {
 			String line = "";
 			String lines = "";
 			path = path.replace(directoryToBeSearched, "");
+			filePathSet.add(path);
 			for(int i=0;(line=reader.readLine())!=null;i++){
 				if(line.matches("^[\\s\\r\\n]+$")){
 					System.out.println("Skipping empty line");
@@ -196,39 +270,38 @@ public class LuceneUnicodeFileIndexer {
 				lines = lines + line + "\n";
 				if( (i+1)%4 == 0 ){
 					Document document = new Document();
-					document.add(new TextField(Constatants.FIELD_PATH, path, Field.Store.YES));
+					document.add(new StringField(Constatants.FIELD_PATH, path, Field.Store.YES));
 					TextField contentsField = new TextField(Constatants.FIELD_CONTENTS, lines, Field.Store.YES);
 					document.add(contentsField);
 					TextField tagsField = new TextField(Constatants.FIELD_TAGS, tags, Field.Store.YES);
 					document.add(tagsField);					
 					
-					indexWriter.addDocument(document);
+					mIndexWriter.addDocument(document);
 					lines = "";
 				}
 			}
 			if( !lines.isEmpty() ){
 				Document document = new Document();
-				document.add(new TextField(Constatants.FIELD_PATH, path, Field.Store.YES));
+				document.add(new StringField(Constatants.FIELD_PATH, path, Field.Store.YES));
 				
 				document.add(new TextField(Constatants.FIELD_CONTENTS, lines, Field.Store.YES));
 				TextField tagsField = new TextField(Constatants.FIELD_TAGS, tags, Field.Store.YES);
 				tagsField.setBoost(2.0f);
 				document.add(tagsField);									
-				indexWriter.addDocument(document);
+				mIndexWriter.addDocument(document);
 			}
-			reader.close();
-
-			
+			mIndexMetadata.append(filePathSet);			
+			reader.close();			
 		}
 		
 		
-		indexWriter.close();
+		mIndexWriter.close();
 		System.out.println("Index is complete");
 	}
 	
-	public void createIndex(String indexStorageDirectoryPath, String directoryToBeSearched) throws CorruptIndexException, LockObtainFailedException, IOException {
+	public void addFilesToIndex(String directoryToBeSearched) throws CorruptIndexException, LockObtainFailedException, IOException {
 		//createIndexParallel(indexStorageDirectoryPath, directoryToBeSearched);
-		createIndexOld(indexStorageDirectoryPath, directoryToBeSearched);
+		addFilesToIndexOld(directoryToBeSearched);
 	}
 	
 	public void createIndexParallel(String indexStorageDirectoryPath, String directoryToBeSearched) throws CorruptIndexException, LockObtainFailedException, IOException {
