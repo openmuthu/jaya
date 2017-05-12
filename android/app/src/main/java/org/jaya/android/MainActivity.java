@@ -26,9 +26,11 @@ import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.SearchView;
 
+import org.jaya.search.JayaQueryParser;
 import org.jaya.search.ResultDocument;
 import org.jaya.search.index.LuceneUnicodeFileIndexer;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -94,7 +96,12 @@ public class MainActivity extends Activity {
         setupNavigationDrawerItems();
 
         mAssetsManager = new AssetsManager(getApplicationContext());
+        new File(JayaApp.getDocumentsFolder()).mkdirs();
+        new File(JayaApp.getIndexMetadataFolder()).mkdirs();
+        new File(JayaApp.getSearchIndexFolder()).mkdirs();
+        JayaQueryParser.setAccurateSubstringSearchEnabled(PreferencesManager.isAccurateSubstringSearchEnabled());
         PermissionRequestor.requestPermissionIfRequired(this, Manifest.permission.WRITE_EXTERNAL_STORAGE, PermissionRequestor.WRITE_EXTERNAL_STORAGE_PERMISSSION_REQUEST_ID);
+        PermissionRequestor.requestPermissionIfRequired(this, Manifest.permission.INTERNET, PermissionRequestor.INTERNET_PERMISSSION_REQUEST_ID);
 
         Intent intent = getIntent();
         if( intent != null )
@@ -205,7 +212,14 @@ public class MainActivity extends Activity {
         ComponentName cn = new ComponentName(this, SearchableActivity.class);
         searchView.setSearchableInfo(
                 searchManager.getSearchableInfo(cn));
+        CommonMenuItemsHandler.onCreateOptionsMenu(menu);
         return true;
+    }
+
+    @Override
+    public boolean onMenuOpened(int featureId, Menu menu) {
+        CommonMenuItemsHandler.onMenuOpened(featureId, menu);
+        return super.onMenuOpened(featureId, menu);
     }
 
     @Override
@@ -217,6 +231,7 @@ public class MainActivity extends Activity {
         else if( item.getItemId() == R.id.action_random_doc ){
             showDocumentId(JayaApp.getSearcher().getRandomDoc());
         }
+        CommonMenuItemsHandler.onOptionsItemSelected(item);
         return super.onOptionsItemSelected(item);
     }
 
@@ -275,39 +290,50 @@ public class MainActivity extends Activity {
 
     protected void indexFiles(boolean bForceReIndexing)
     {
-        //return;
-        if( !JayaApp.isIndexingRequired() && !bForceReIndexing)
-            return;
-        if( mProgress != null )
-        {
-            // Indexing is already in progress.. just return
-            return;
+        LuceneUnicodeFileIndexer indexer = null;
+        try {
+            indexer = new LuceneUnicodeFileIndexer(JayaApp.getSearchIndexFolder());
+            indexer.addADummyDocumentIfIndexIsEmpty();
+        }catch(Exception ex){
+            ex.printStackTrace();
         }
-        mProgress = new ProgressDialog(this);
-        mProgress.setIndeterminate(true);
-        mProgress.setMessage("Please wait while indexing is in progress... This may take a few minutes.");
-        mProgress.show();
-        Thread t =  new Thread(new Runnable() {
-            public void run() {
-                try {
-                    LuceneUnicodeFileIndexer indexer = new LuceneUnicodeFileIndexer();
-                    indexer.createIndex(JayaApp.getSearchIndexFolder(), JayaApp.getToBeIndexedFolder());
-                }
-                catch(IOException ex){
-                    Log.d("Indexer", "IOException in indexFiles");
-                }
-                finally {
-                    // Update the progress bar
-                    mHandler.post(new Runnable() {
-                        public void run() {
-                            mProgress.dismiss();
-                            mProgress = null;
-                            showDocumentId(JayaApp.getSearcher().getRandomDoc());
-                        }
-                    });
-                }
-            }
-        });
-        t.start();
+        finally {
+            if( indexer != null )
+                indexer.close();
+        }
+        return;
+//        if( !JayaApp.isIndexingRequired() && !bForceReIndexing)
+//            return;
+//        if( mProgress != null )
+//        {
+//            // Indexing is already in progress.. just return
+//            return;
+//        }
+//        mProgress = new ProgressDialog(this);
+//        mProgress.setIndeterminate(true);
+//        mProgress.setMessage("Please wait while indexing is in progress... This may take a few minutes.");
+//        mProgress.show();
+//        Thread t =  new Thread(new Runnable() {
+//            public void run() {
+//                try {
+//                    LuceneUnicodeFileIndexer indexer = new LuceneUnicodeFileIndexer();
+//                    indexer.createIndex(JayaApp.getSearchIndexFolder(), JayaApp.getToBeIndexedFolder());
+//                }
+//                catch(IOException ex){
+//                    Log.d("Indexer", "IOException in indexFiles");
+//                }
+//                finally {
+//                    // Update the progress bar
+//                    mHandler.post(new Runnable() {
+//                        public void run() {
+//                            mProgress.dismiss();
+//                            mProgress = null;
+//                            showDocumentId(JayaApp.getSearcher().getRandomDoc());
+//                        }
+//                    });
+//                }
+//            }
+//        });
+//        t.start();
     }
 }

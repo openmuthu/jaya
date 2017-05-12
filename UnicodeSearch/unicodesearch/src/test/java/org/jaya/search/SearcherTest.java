@@ -9,6 +9,7 @@ import org.jaya.scriptconverter.ScriptConverter;
 import org.jaya.scriptconverter.ScriptConverterFactory;
 import org.jaya.scriptconverter.ScriptType;
 import org.jaya.util.Constatants;
+import org.jaya.util.PathUtils;
 
 public class SearcherTest {
 	
@@ -33,11 +34,11 @@ public class SearcherTest {
 	public static void testSearch(){
 		//String searchString = "naraayaNa~ && guNai~ && sarva";
 		//String searchString = "samantabhadrO* bhagavaa* && ({{{tags:}}}amara || {{{tags:}}}bhaarata)/q";
-		String searchString = "jhalaa #kAshikA8";
+		String searchString = "viShNu sarvatra #hari";
 		ScriptConverter it2dev = ScriptConverterFactory.getScriptConverter(ScriptType.ITRANS,
 				ScriptType.DEVANAGARI);
 		String searchStringDev = it2dev.convert(searchString);
-		LuceneUnicodeSearcher searcher = new LuceneUnicodeSearcher(Constatants.INDEX_DIRECTORY);
+		LuceneUnicodeSearcher searcher = new LuceneUnicodeSearcher(PathUtils.get(Constatants.INDEX_DIRECTORY, "final_index_all"));
 		try {
 			searcher.searchIndex(searchStringDev);
 			//searcher.searchIndex(searchStringDev+"~");

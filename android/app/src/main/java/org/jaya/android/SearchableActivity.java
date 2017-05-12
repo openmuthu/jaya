@@ -1,6 +1,7 @@
 package org.jaya.android;
 
 import android.app.ListActivity;
+import android.app.ProgressDialog;
 import android.app.SearchManager;
 import android.content.Context;
 import android.content.Intent;
@@ -9,6 +10,7 @@ import android.text.Html;
 import android.text.Spanned;
 import android.util.Log;
 import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
@@ -31,14 +33,20 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 
 public class SearchableActivity extends ListActivity {
 
+    ProgressDialog mProgressDialog = null;
     SearchResult mSearchResult;
     LuceneUnicodeSearcher mSearcher = null;
     String mCurrentQuery;
     ScriptConverter mITransToDevnagari = ScriptConverterFactory.getScriptConverter(ScriptType.ITRANS,
             ScriptType.DEVANAGARI);
+
+    private static ScheduledThreadPoolExecutor gThreadPool = new ScheduledThreadPoolExecutor(2);
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -60,20 +68,50 @@ public class SearchableActivity extends ListActivity {
         }
     }
 
-    private void doMySearch(String query) {
+    private void doMySearch(final String query) {
         try {
             Log.d(JayaApp.APP_NAME, "doMySearch");
-            mSearcher = JayaApp.getSearcher();
-            mSearchResult = mSearcher.searchITRANSString(query);
+            if( mProgressDialog == null )
+                mProgressDialog = new ProgressDialog(this);
+            if( mProgressDialog != null ) {
+                mProgressDialog.setMessage(getResources().getString(R.string.please_wait));
+                mProgressDialog.show();
+            }
 
-            mCurrentQuery = mITransToDevnagari.convert(query);
+            FutureTask<Integer> ft = new FutureTask<Integer>(new Callable<Integer>() {
+                @Override
+                public Integer call() throws Exception {
 
-            setListAdapter();
+                    try {
+                        mSearcher = JayaApp.getSearcher();
+                        mSearchResult = mSearcher.searchITRANSString(query);
+
+                        mCurrentQuery = mITransToDevnagari.convert(query);
+                    }catch (Exception ex){
+                        Log.e(JayaApp.APP_NAME, "Exception: "+ Log.getStackTraceString(ex));
+                    }
+
+                    JayaApp.runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            if( mProgressDialog != null ) {
+                                mProgressDialog.dismiss();
+                                mProgressDialog = null;
+                            }
+                            setListAdapter();
+                        }
+                    });
+
+                    return null;
+                }
+            });
+
+            gThreadPool.submit(ft);
+
+            //ft.get();
+
         }
-        catch (IOException ex){
-            ex.printStackTrace();
-        }
-        catch (ParseException ex){
+        catch (Exception ex){
             ex.printStackTrace();
         }
 
@@ -186,6 +224,19 @@ public class SearchableActivity extends ListActivity {
                 (SearchView) menu.findItem(R.id.search).getActionView();
         searchView.setSearchableInfo(
                 searchManager.getSearchableInfo(getComponentName()));
+        CommonMenuItemsHandler.onCreateOptionsMenu(menu);
         return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        CommonMenuItemsHandler.onOptionsItemSelected(item);
+        return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public boolean onMenuOpened(int featureId, Menu menu) {
+        CommonMenuItemsHandler.onMenuOpened(featureId, menu);
+        return super.onMenuOpened(featureId, menu);
     }
 }

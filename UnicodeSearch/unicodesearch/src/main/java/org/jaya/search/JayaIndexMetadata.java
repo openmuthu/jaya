@@ -9,6 +9,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.jaya.util.StringUtils;
 import org.jaya.util.Utils;
 
 public class JayaIndexMetadata {
@@ -29,7 +30,7 @@ public class JayaIndexMetadata {
 	public String toString(){
 		if( mIndexedFilePathSet == null )
 			return "";
-		return String.join(MD_REC_DELEMITER, Arrays.stream(mIndexedFilePathSet.toArray()).toArray(String[]::new));
+		return StringUtils.join(MD_REC_DELEMITER, mIndexedFilePathSet.toArray(new String[mIndexedFilePathSet.size()]));
 	}
 	
 	public void read(){
@@ -75,7 +76,7 @@ public class JayaIndexMetadata {
 		for( String file: filePathSet ){
 			mIndexedFilePathSet.add(file);
 		}
-		String indexedFilePaths = String.join(MD_REC_DELEMITER, Arrays.stream(mIndexedFilePathSet.toArray()).toArray(String[]::new));
+		String indexedFilePaths = StringUtils.join(MD_REC_DELEMITER, mIndexedFilePathSet.toArray(new String[mIndexedFilePathSet.size()]));
 		FileWriter fw = null;
 		try{
 			fw = new FileWriter(getMetadataFile());

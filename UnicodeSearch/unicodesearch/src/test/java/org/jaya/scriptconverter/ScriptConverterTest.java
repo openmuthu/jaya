@@ -5,10 +5,10 @@ public class ScriptConverterTest {
 		ScriptConverter dev2it = ScriptConverterFactory.getScriptConverter(ScriptType.DEVANAGARI,
 				ScriptType.ITRANS);
 		ScriptConverter it2dev = ScriptConverterFactory.getScriptConverter(ScriptType.ITRANS,
-				ScriptType.DEVANAGARI);
+				ScriptType.TELUGU);
 
 		String[] inputs = new String[] { "bRhaddhaatukOSa", "nArAyaNaM guNaiH sarvairudIrNaM dOShavarjitam",
-				"jnEyaM gamyaM gurUMshcaapi natvaa sUtraartha uchyatE", "rAyaNaM" };
+				"jnEyaM gamyaM gurUMshcaapi natvaa sUtraartha uchyatE", "rAyaNaM", "yadAdisatyE viprEndra narA viShNuparAyaNAH ।" };
 		String input;
 		for (int i = 0; i < inputs.length; i++) {
 			input = inputs[i];

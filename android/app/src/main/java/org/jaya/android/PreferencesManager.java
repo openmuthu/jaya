@@ -4,6 +4,7 @@ import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 
 import org.jaya.scriptconverter.ScriptType;
+import org.jaya.search.JayaQueryParser;
 
 /**
  * Created by murthy on 12/03/17.
@@ -15,6 +16,7 @@ public class PreferencesManager {
     public static final String PREF_OUTPUT_SCRIPT_TYPE = "com.org.jaya.PREF_OUTPUT_SCRIPT_TYPE";
     public static final String PREF_FONT_SIZE = "com.org.jaya.PREF_FONT_SIZE";
     public static final String PREF_LAST_VIEWED_DOC_ID = "com.org.jaya.PREF_LAST_VIEWED_DOC_ID";
+    public static final String PREF_ACCURATE_SUBSTRING_SEARCH_ENABLED = "com.org.jaya.PREF_ACCURATE_SUBSTRING_SEARCH_ENABLED";
 
     public static final float MIN_FONT_SIZE = 12.f;
     public static final float MAX_FONT_SIZE = 72.f;
@@ -76,4 +78,20 @@ public class PreferencesManager {
         editor.putInt(PREF_LAST_VIEWED_DOC_ID, docId);
         editor.apply();
     }
+
+    public static boolean isAccurateSubstringSearchEnabled() {
+        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(JayaApp.getAppContext());
+        boolean retVal = preferences.getBoolean(PREF_ACCURATE_SUBSTRING_SEARCH_ENABLED, false);
+        return retVal;
+    }
+
+    public static void setAccurateSubstringSearchEnabled(boolean bEnabled){
+        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(JayaApp.getAppContext());
+        SharedPreferences.Editor editor = preferences.edit();
+        editor.putBoolean(PREF_ACCURATE_SUBSTRING_SEARCH_ENABLED, bEnabled);
+        editor.apply();
+        JayaQueryParser.setAccurateSubstringSearchEnabled(bEnabled);
+    }
+
+
 }

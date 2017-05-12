@@ -3,6 +3,7 @@ package org.jaya.android;
 
 import android.annotation.TargetApi;
 import android.app.ActionBar;
+import android.app.Fragment;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Configuration;
@@ -14,7 +15,15 @@ import android.preference.PreferenceActivity;
 import android.preference.PreferenceFragment;
 import android.preference.PreferenceManager;
 import android.preference.RingtonePreference;
+import android.support.annotation.Nullable;
+import android.view.LayoutInflater;
 import android.view.MenuItem;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.ListView;
+
+import org.apache.lucene.document.Field;
+import org.jaya.indexsync.IndexCatalogue;
 
 import java.util.List;
 
@@ -169,6 +178,7 @@ public class SettingsActivity extends PreferenceActivity {
     protected boolean isValidFragment(String fragmentName) {
         return PreferenceFragment.class.getName().equals(fragmentName)
                 || GeneralPreferenceFragment.class.getName().equals(fragmentName)
+                || IndexCatalogueFragment.class.getName().equals(fragmentName)
 //                || DataSyncPreferenceFragment.class.getName().equals(fragmentName)
 //                || NotificationPreferenceFragment.class.getName().equals(fragmentName)
         ;
@@ -205,6 +215,66 @@ public class SettingsActivity extends PreferenceActivity {
 //            }
 //            return super.onOptionsItemSelected(item);
 //        }
+    }
+
+    @TargetApi(Build.VERSION_CODES.HONEYCOMB)
+    public static class IndexCatalogueFragment extends Fragment implements IndexCatalogue.EventListener{
+
+        private IndexCatalogListAdapter mIndexCatalogueListAdapter;
+        private static IndexCatalogue gIndexCatalogue;
+
+        @Override
+        public void onCreate(Bundle savedInstanceState) {
+            super.onCreate(savedInstanceState);
+            setHasOptionsMenu(true);
+
+//        @Override
+//        public boolean onOptionsItemSelected(MenuItem item) {
+//            int id = item.getItemId();
+//            if (id == android.R.id.home) {
+//                //startActivity(new Intent(getActivity(), SettingsActivity.class));
+//                getActivity().onBackPressed();
+//                return true;
+//            }
+//            return super.onOptionsItemSelected(item);
+//        }
+        }
+
+        @Nullable
+        @Override
+        public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+            if( gIndexCatalogue == null ){
+                gIndexCatalogue = IndexCatalogue.getInstance();
+                gIndexCatalogue.initialize(JayaApp.getIndexMetadataFolder(), JayaApp.getIndexCatalogueBaseUrl(), JayaApp.getSearchIndexFolder());
+                gIndexCatalogue.addEventListener(this);
+            }
+            return inflater.inflate(R.layout.index_catalogue_fragment, container, false);
+        }
+
+        @Override
+        public void onViewCreated(View view, Bundle savedInstanceState) {
+            super.onViewCreated(view, savedInstanceState);
+            gIndexCatalogue.readCatalog();
+            ListView listView =  (ListView)getView().findViewById(R.id.index_catalogue_list);
+            if( mIndexCatalogueListAdapter == null )
+                mIndexCatalogueListAdapter = new IndexCatalogListAdapter(getActivity());
+            listView.setAdapter(mIndexCatalogueListAdapter);
+        }
+
+        @Override
+        public void onCatalogueUpdated(int error) {
+            JayaApp.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    if( mIndexCatalogueListAdapter != null )
+                        mIndexCatalogueListAdapter.setIndexCatalogueAndUpdateView(gIndexCatalogue);
+                }
+            });
+        }
+
+        @Override
+        public void onCatalogueDetailsUpdated(int error) {
+        }
     }
 
     /**

@@ -9,10 +9,13 @@ public class ScriptConverterFactory {
 		m_scriptConverterList = new ArrayList<ScriptConverter>();
 		
 		ScriptConverterFactory.registerScriptConverter(new ITRANSToDevaNagariConverter());
-		ScriptConverterFactory.registerScriptConverter(new DevaNagariToITRANSConverter());
+		ScriptConverterFactory.registerScriptConverter(new DevaNagariToITRANSConverter());		
 		ScriptConverterFactory.registerScriptConverter(new ITRANSToKannadaConverter());
+		ScriptConverterFactory.registerScriptConverter(new ITRANSToTeluguConverter());
 		ScriptConverterFactory.registerScriptConverter(new DevanagariToKannadaConverter());
 		ScriptConverterFactory.registerScriptConverter(new KannadaToDevanagariConverter());
+		ScriptConverterFactory.registerScriptConverter(new KannadaToITRANSConverter());
+		ScriptConverterFactory.registerScriptConverter(new DevanagariToTeluguConverter());
 	}
 	
 	private static List<ScriptConverter> m_scriptConverterList;
