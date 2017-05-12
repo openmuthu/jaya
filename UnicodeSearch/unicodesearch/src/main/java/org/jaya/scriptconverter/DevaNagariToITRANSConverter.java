@@ -25,10 +25,10 @@ public class DevaNagariToITRANSConverter implements ScriptConverter {
 		//devaNagariToITRANSMap.put("\u090C", "L^i");
 		devaNagariToITRANSMap.put("\u0961", "LLI");
 		//devaNagariToITRANSMap.put("\u0961", "L^I");
-		//devaNagariToITRANSMap.put("\u090F", "e");
+		devaNagariToITRANSMap.put("\u090E", "e");
 		devaNagariToITRANSMap.put("\u090F", "E");
 		devaNagariToITRANSMap.put("\u0910", "ai");
-		//devaNagariToITRANSMap.put("\u0913", "o");
+		devaNagariToITRANSMap.put("\u0912", "o");
 		devaNagariToITRANSMap.put("\u0913", "O");
 		devaNagariToITRANSMap.put("\u0914", "au");
 		devaNagariToITRANSMap.put("\u0902", "M");
@@ -41,8 +41,10 @@ public class DevaNagariToITRANSConverter implements ScriptConverter {
 		devaNagariToITRANSMap.put("\u0942", "U");
 		devaNagariToITRANSMap.put("\u0943", "R");
 		devaNagariToITRANSMap.put("\u0944", "RR");
+		devaNagariToITRANSMap.put("\u0946", "e");
 		devaNagariToITRANSMap.put("\u0947", "E");
 		devaNagariToITRANSMap.put("\u0948", "ai");
+		devaNagariToITRANSMap.put("\u094A", "o");
 		devaNagariToITRANSMap.put("\u094B", "O");
 		devaNagariToITRANSMap.put("\u094C", "au");
 		

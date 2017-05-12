@@ -1,5 +1,8 @@
 package org.jaya.android;
 
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
+
 /**
  * Created by murthy on 22/04/17.
  */
@@ -29,6 +32,18 @@ public class JayaAppUtils {
     public static int getColorForDoc(int docId){
         int iBgColorIndex = docId % sListItemBackgroundColors.length;
         return sListItemBackgroundColors[iBgColorIndex];
+    }
+
+    public static int getRandomColor(){
+        int iBgColorIndex = ((int)(Math.random()*100)) % sListItemBackgroundColors.length;
+        return sListItemBackgroundColors[iBgColorIndex];
+    }
+
+    public static boolean isNetworkAvailable() {
+        ConnectivityManager connectivityManager
+                = (ConnectivityManager) JayaApp.getAppContext().getSystemService(JayaApp.getAppContext().CONNECTIVITY_SERVICE);
+        NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
+        return activeNetworkInfo != null && activeNetworkInfo.isConnected();
     }
 
 }

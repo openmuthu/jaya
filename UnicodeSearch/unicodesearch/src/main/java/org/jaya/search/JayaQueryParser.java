@@ -5,7 +5,9 @@ import java.util.List;
 
 public class JayaQueryParser {
 	
-	String mSearchString = "";
+	public static boolean sbAccurateSubstringSearch = false;
+	
+	String mSearchString = "";	
 	boolean mbIsFuzzyQuery = false;
 	boolean mbIsLuceneQueryParserQuery = false;
 	boolean mbIsRegExPrefixQuery = false; // Is this query some thing like *searchString* ?
@@ -25,6 +27,10 @@ public class JayaQueryParser {
 	public JayaQueryParser(String searchString){
 		mSearchString = searchString;
 		parse();
+	}
+	
+	public static void setAccurateSubstringSearchEnabled(boolean bEnabled){
+		sbAccurateSubstringSearch = bEnabled;
 	}
 	
 	public String getOriginalSearchString(){
@@ -52,6 +58,7 @@ public class JayaQueryParser {
 	}
 	
 	protected void parse(){
+		mbIsRegExPrefixQuery = sbAccurateSubstringSearch;
 		if( mSearchString.startsWith("f/") ){
 			mbIsFuzzyQuery = true;
 			mSearchString = mSearchString.replace("f/", "");

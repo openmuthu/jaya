@@ -21,10 +21,10 @@ public class KannadaConverterTest {
 			String devanagariString = FileUtils.readFileToString(new File(path), "UTF-16");
 			ScriptConverter devanagariToITransConverter = ScriptConverterFactory.getScriptConverter(ScriptType.DEVANAGARI, ScriptType.ITRANS);
 			String itransString = devanagariToITransConverter.convert(devanagariString);
-			ScriptConverter itransToKannadaConverter = ScriptConverterFactory.getScriptConverter(ScriptType.ITRANS, ScriptType.KANNADA);
+			ScriptConverter itransToKannadaConverter = ScriptConverterFactory.getScriptConverter(ScriptType.ITRANS, ScriptType.TELUGU);
 			System.out.println("itrans: " + itransString);			
 			String kannadaString = itransToKannadaConverter.convert(itransString);
-			System.out.println("kannada: " + kannadaString);
+			//System.out.println("kannada: " + kannadaString);
 		}catch(IOException ex){
 			ex.printStackTrace();
 		}

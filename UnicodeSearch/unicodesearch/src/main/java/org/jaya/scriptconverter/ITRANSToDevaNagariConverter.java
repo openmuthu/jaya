@@ -28,10 +28,10 @@ public class ITRANSToDevaNagariConverter implements ScriptConverter {
 		itransToSanskritMap.put("L^i", "\u090C");
 		itransToSanskritMap.put("LLI", "\u0961");
 		itransToSanskritMap.put("L^I", "\u0961");
-		itransToSanskritMap.put("e", "\u090F");
+		itransToSanskritMap.put("e", "\u090E");
 		itransToSanskritMap.put("E", "\u090F");
 		itransToSanskritMap.put("ai", "\u0910");
-		itransToSanskritMap.put("o", "\u0913");
+		itransToSanskritMap.put("o", "\u0912");
 		itransToSanskritMap.put("O", "\u0913");
 		itransToSanskritMap.put("au", "\u0914");
 		itransToSanskritMap.put("M", "\u0902");

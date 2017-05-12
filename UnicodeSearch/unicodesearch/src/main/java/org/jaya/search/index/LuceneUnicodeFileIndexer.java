@@ -22,6 +22,7 @@ import org.apache.lucene.store.IndexInput;
 import org.apache.lucene.store.LockObtainFailedException;
 import org.jaya.search.JayaIndexMetadata;
 import org.jaya.util.Constatants;
+import org.jaya.util.PathUtils;
 import org.jaya.util.Utils;
 
 import java.io.BufferedReader;
@@ -110,7 +111,8 @@ public class LuceneUnicodeFileIndexer {
 //		};
 		IndexWriterConfig config = new IndexWriterConfig(LUCENE_47, analyzer);
 		config.setOpenMode(IndexWriterConfig.OpenMode.CREATE_OR_APPEND);
-		mIndexWriter = new IndexWriter(FSDirectory.open(new File(mIndexStoragePath)), config);		
+		mIndexWriter = new IndexWriter(FSDirectory.open(new File(mIndexStoragePath)), config);
+		addADummyDocumentIfIndexIsEmpty();
 	}
 
 	public static void main(String[] args) throws IOException {
@@ -227,7 +229,7 @@ public class LuceneUnicodeFileIndexer {
 				indexList.add(FSDirectory.open(new File(indexPath)));
 			}
 			
-			mIndexWriter.addIndexes(Arrays.stream(indexList.toArray()).toArray(Directory[]::new));
+			mIndexWriter.addIndexes(indexList.toArray(new Directory[indexList.size()]));
 			mIndexMetadata.append(indexedFileSetCumulative);			
 			mIndexWriter.commit();
 		}catch(IOException ex){
@@ -235,6 +237,24 @@ public class LuceneUnicodeFileIndexer {
 		}
 		
 	}
+	
+	public void addADummyDocumentIfIndexIsEmpty(){
+		try{
+			File segmentsFile = new File(PathUtils.get(mIndexStoragePath, "segments.gen"));
+			if( segmentsFile.exists() )
+				return;
+			Document document = new Document();
+			document.add(new StringField(Constatants.FIELD_PATH, "", Field.Store.YES));
+			TextField contentsField = new TextField(Constatants.FIELD_CONTENTS, "shrI rAma", Field.Store.YES);
+			document.add(contentsField);
+			TextField tagsField = new TextField(Constatants.FIELD_TAGS, "", Field.Store.YES);
+			document.add(tagsField);								
+			mIndexWriter.addDocument(document);
+			mIndexWriter.commit();
+		}catch(IOException ex){
+			ex.printStackTrace();
+		}
+	}	
 
 	public void addFilesToIndexOld(String directoryToBeSearched) throws CorruptIndexException, LockObtainFailedException, IOException {
 		
@@ -258,25 +278,35 @@ public class LuceneUnicodeFileIndexer {
 
 //			Reader reader = new InputStreamReader(new FileInputStream(path), "UTF-8");
 //			document.add(new TextField(Constatants.FIELD_CONTENTS, reader));
+			int maxCharsPerDoc = 512;
+			int minCharsPerDoc = 128;
+			int docLengthSofar = 0;
 			String path = file.getCanonicalPath();
 			
 			String tags = getTagsForFile(getTagFilePathForFile(path));
 			tags += " " + getTagsFromFileName(path);
 			System.out.println("tags for file: " + path + " are : " + tags);
-			BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(path), "UTF-16"));
+			String encoding = Utils.guessFileEncoding(path);
+			BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(path), encoding));
 			String line = "";
 			String lines = "";
 			path = path.replace(Constatants.FILES_TO_INDEX_DIRECTORY, "");
 			filePathSet.add(path);
+			int docLocalId = 0;
 			for(int i=0;(line=reader.readLine())!=null;i++){
-				if(line.matches("^[\\s\\r\\n]+$")){
+				if(line.trim().matches("^[\\s\\r\\n]+$")){
 					System.out.println("Skipping empty line");
 					i--;
 					continue;
 				}
 				lines = lines + line + "\n";
-				if( (i+1)%4 == 0 ){
+				docLengthSofar += line.length();
+				//if( (i+1)%4 == 0 ){
+				if( (docLengthSofar >= minCharsPerDoc && Utils.containsViramaChars(line))
+						|| docLengthSofar > maxCharsPerDoc ){
+					docLengthSofar = 0;
 					Document document = new Document();
+					document.add(new StringField(Constatants.FIELD_DOC_LOCAL_ID, new Integer(docLocalId++).toString(), Field.Store.YES));
 					document.add(new StringField(Constatants.FIELD_PATH, path, Field.Store.YES));
 					TextField contentsField = new TextField(Constatants.FIELD_CONTENTS, lines, Field.Store.YES);
 					document.add(contentsField);
@@ -290,7 +320,7 @@ public class LuceneUnicodeFileIndexer {
 			if( !lines.isEmpty() ){
 				Document document = new Document();
 				document.add(new StringField(Constatants.FIELD_PATH, path, Field.Store.YES));
-				
+				document.add(new StringField(Constatants.FIELD_DOC_LOCAL_ID, new Integer(docLocalId++).toString(), Field.Store.YES));
 				document.add(new TextField(Constatants.FIELD_CONTENTS, lines, Field.Store.YES));
 				TextField tagsField = new TextField(Constatants.FIELD_TAGS, tags, Field.Store.YES);
 				tagsField.setBoost(2.0f);

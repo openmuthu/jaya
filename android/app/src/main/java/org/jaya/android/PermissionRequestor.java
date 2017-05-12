@@ -14,6 +14,8 @@ import android.support.v4.content.ContextCompat;
 public class PermissionRequestor {
 
     public static final int WRITE_EXTERNAL_STORAGE_PERMISSSION_REQUEST_ID = 1;
+    public static final int INTERNET_PERMISSSION_REQUEST_ID = 2;
+
 
     public static boolean requestPermissionIfRequired(Activity activity, String permission, int requestId){
         if (ContextCompat.checkSelfPermission(activity, permission)

@@ -61,12 +61,18 @@ public class LuceneUnicodeSearcher {
 		}
 	}
 
+	public void reopenIndex(){
+		close();
+		createIndexSearcherIfRequired();
+	}
+
 	public void close(){
 		try {
 			if(mReader != null) {
 				mReader.close();
 				mReader = null;
 			}
+			mIndexSearcher = null;
 		}
 		catch (IOException ex){
 			ex.printStackTrace();
@@ -124,7 +130,7 @@ public class LuceneUnicodeSearcher {
 		int maxDoc = mReader.maxDoc();		
 		do{
 			int adjDocId =  docId+(dir*i);
-			if( adjDocId < 0 || adjDocId > maxDoc )
+			if( adjDocId < 0 || adjDocId >= maxDoc )
 				break;
 			Document doc = mIndexSearcher.doc(adjDocId);
 			++i;			
@@ -154,7 +160,7 @@ public class LuceneUnicodeSearcher {
 		if( mReader == null )
 			return null;
 		int maxDoc = mReader.maxDoc();		
-		if( docId < 0 || docId > maxDoc )
+		if( docId < 0 || docId >= maxDoc )
 			return null;
 		return new ResultDocument(docId, mIndexSearcher.doc(docId));
 	}	

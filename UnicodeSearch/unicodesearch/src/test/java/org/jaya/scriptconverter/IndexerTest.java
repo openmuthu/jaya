@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.zip.ZipEntry;
@@ -19,11 +18,12 @@ import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
+import org.jaya.indexsync.IndexCatalogue;
 import org.jaya.search.JayaIndexMetadata;
 import org.jaya.search.index.LuceneUnicodeFileIndexer;
 import org.jaya.util.Constatants;
+import org.jaya.util.TimestampUtils;
 import org.jaya.util.Utils;
-import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
 import static org.apache.lucene.util.Version.LUCENE_47;
@@ -129,14 +129,14 @@ public class IndexerTest {
 			String suffix = "";
 			String indexName = "";
 			File[] filesInThisDir = rootDir.listFiles();
-			for(File dir:filesInThisDir){
-				if( alreadyIndexedFilesInThisDir.contains(dir) ){
-					System.out.println("Skipping file as it is indexed seperately: " + dir.getCanonicalPath());
+			for(File file:filesInThisDir){
+				if( alreadyIndexedFilesInThisDir.contains(file) ){
+					System.out.println("Skipping file as it is indexed seperately: " + file.getCanonicalPath());
 					continue;
 				}
-				if( !LuceneUnicodeFileIndexer.hasIndexableExtension(dir.getCanonicalPath()) )
+				if( !file.isDirectory() && !LuceneUnicodeFileIndexer.hasIndexableExtension(file.getCanonicalPath()) )
 					continue;
-				if( totalSizeSoFar + FileUtils.sizeOf(dir) > Constatants.MAX_INDEX_SIZE ){
+				if( totalSizeSoFar + FileUtils.sizeOf(file) > Constatants.MAX_INDEX_SIZE ){
 					currentIndex++;
 					suffix = String.format("%d", currentIndex);
 					if( fileIndexer != null )
@@ -148,9 +148,9 @@ public class IndexerTest {
 					indexName = (suffix.isEmpty())?indexDir:indexDir + "_" + suffix;
 					fileIndexer = new LuceneUnicodeFileIndexer(indexName);
 				}
-				System.out.println("Adding file: " + dir.getCanonicalPath() + " to index: " + indexName);
-				fileIndexer.addFilesToIndex(dir.getCanonicalPath());
-				totalSizeSoFar += FileUtils.sizeOf(dir);
+				System.out.println("Adding file: " + file.getCanonicalPath() + " to index: " + indexName);
+				fileIndexer.addFilesToIndex(file.getCanonicalPath());
+				totalSizeSoFar += FileUtils.sizeOf(file);
 			}
 			if( fileIndexer != null )
 				fileIndexer.close();			
@@ -165,8 +165,18 @@ public class IndexerTest {
 		if( zipOutputPath == null || zipOutputPath.isEmpty() )
 			zipOutputPath = Constatants.INDEX_ZIP_OUTPUT_DIRECTORY;		
 		
-		JSONObject indexZipInfo = new JSONObject();
-		JSONArray list = new JSONArray();
+		JSONObject indexCatalogue = new JSONObject();
+		JSONObject indexAdditionalInfo = new JSONObject();
+		JSONObject indexCatalogueItemList = new JSONObject();
+		JSONObject indexAdditionalInfoItemList = new JSONObject();
+		String timestamp = TimestampUtils.nowAsString();
+		
+		indexCatalogue.put("version", IndexCatalogue.INDEX_CATALOGUE_VERSION);
+		indexCatalogue.put("lastModified", timestamp);
+		
+		indexAdditionalInfo.put("version", IndexCatalogue.INDEX_CATALOGUE_VERSION);
+		indexAdditionalInfo.put("lastModified", timestamp);
+		
 		File rootDir = new File(rootDirPath);
 		List<File> firstLevelDirs = Utils.getFirstLevelDirs(rootDir);
 		for(File dir:firstLevelDirs){
@@ -175,28 +185,39 @@ public class IndexerTest {
 				String zipPath = Paths.get(zipOutputPath, Utils.getBaseName(path)+".zip").toString();
 				zipFolder(path, zipPath);
 				
+				String itemName = Utils.getBaseName(path);
+				
 				String md = new JayaIndexMetadata(path).toString();
-				JSONObject obj = new JSONObject();
-				obj.put("name", Utils.getBaseName(path));
-				obj.put("url", path);
-				obj.put("lastModified", Instant.now().toString());
-				obj.put("size", FileUtils.sizeOf(new File(zipPath)));
-				obj.put("info", md);
-				list.add(obj);
+				JSONObject indexAdditionalInfoItem = new JSONObject();
+				JSONObject indexCatalogueItem = new JSONObject();
+				indexCatalogueItem.put("url", Constatants.INDEX_CATALOGUE_BASE_URL + "/" + Utils.getFileName(zipPath));
+				indexCatalogueItem.put("lastModified", timestamp);
+				indexCatalogueItem.put("size", FileUtils.sizeOf(new File(zipPath)));				
+				indexCatalogueItemList.put(itemName, indexCatalogueItem);
+				
+				indexAdditionalInfoItem.put("files", md);	
+				indexAdditionalInfoItemList.put(itemName, indexAdditionalInfoItem);
 			}catch(IOException ex){
 				ex.printStackTrace();
 			}
 		}
-		indexZipInfo.put("list", list);
-		FileWriter infoFile = null;
+		indexAdditionalInfo.put("items", indexAdditionalInfoItemList);
+		indexCatalogue.put("items", indexCatalogueItemList);
+		FileWriter catalogueFile = null;
+		FileWriter additionalInfoFile = null;
 		try{
-			infoFile = new FileWriter(Paths.get(zipOutputPath, "info.txt").toString());
-			infoFile.write(indexZipInfo.toJSONString());
-			infoFile.flush();
+			catalogueFile = new FileWriter(Paths.get(zipOutputPath, IndexCatalogue.INDEX_CATALOG_FILE_NAME).toString());
+			catalogueFile.write(indexCatalogue.toJSONString());
+			catalogueFile.flush();
+			
+			additionalInfoFile = new FileWriter(Paths.get(zipOutputPath, IndexCatalogue.INDEX_CATALOG_DETAILS_FILE_NAME).toString());
+			additionalInfoFile.write(indexAdditionalInfo.toJSONString());
+			additionalInfoFile.flush();			
 		}catch(IOException ex){
 			ex.printStackTrace();
 		}finally{
-			Utils.closeSilently(infoFile);
+			Utils.closeSilently(catalogueFile);
+			Utils.closeSilently(additionalInfoFile);
 		}
 	}
 	

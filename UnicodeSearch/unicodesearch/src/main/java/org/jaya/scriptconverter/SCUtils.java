@@ -8,8 +8,11 @@ public class SCUtils {
 	public static ScriptType guessScript(String str){
 		ScriptType type = ScriptType.ITRANS;
 		int skippableCharCount = 0;
-		for(int i=0; (i<str.length()) && (i < MAX_CHARACTERS_TO_TRY+skippableCharCount);i++){
-			char ch = str.charAt(i);
+		int stride = str.length()/MAX_CHARACTERS_TO_TRY;
+		stride = Math.max(1, stride);
+		for(int i=0, j=0; (j<str.length()) && (i < MAX_CHARACTERS_TO_TRY+skippableCharCount);i++){
+			char ch = str.charAt(j);
+			j += stride;
 			int chInt = (int)ch;
 			// 0x0964 is '|' and 0x0965 is '||'. Don't consider these chars and whitespace while guessing script
 			if(Character.isWhitespace(ch) || chInt == 0x0964 || chInt == 0x0965 ){
@@ -29,6 +32,8 @@ public class SCUtils {
 			return ScriptType.DEVANAGARI;
 		else if( isKannada(ch) )
 			return ScriptType.KANNADA;
+		else if( isTelugu(ch) )
+			return ScriptType.TELUGU;		
 		return type;
 	}
 	
@@ -42,6 +47,11 @@ public class SCUtils {
 		return (chInt >= 0x0C80) && (chInt <= 0x0CFF);
 	}
 	
+	public static boolean isTelugu(char ch){
+		int chInt = (int)ch;
+		return (chInt >= 0x0C00) && (chInt <= 0x0C7F);
+	}	
+	
 	public static boolean isDependentCharacter(char ch){
 		boolean retVal = false;
 		ScriptType type = guessScript(ch);
@@ -50,6 +60,8 @@ public class SCUtils {
 			return isKannadaDependentCharacter(ch);
 		case DEVANAGARI:
 			return isDevanagariDependentCharacter(ch);
+		case TELUGU:
+			return isTeluguDependentCharacter(ch);			
 		default:
 			break;
 		}
@@ -70,6 +82,13 @@ public class SCUtils {
 			return true;
 		return false;
 	}	
+	
+	public static boolean isTeluguDependentCharacter(char ch){
+		int c1 = (int)ch;
+		if( (c1 >= 0x0C02 && c1 <= 0x0C03 ) || (c1 >= 0x0C3A && c1 <= 0x0C4F)  )
+			return true;
+		return false;
+	}		
 	
 	public static String convertStringToScript(String str, ScriptType destScriptType){
 		if( destScriptType == null )
