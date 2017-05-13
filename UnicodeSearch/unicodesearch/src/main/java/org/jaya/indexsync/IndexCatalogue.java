@@ -140,8 +140,6 @@ public class IndexCatalogue {
 			File catalogDetailsFile = getLocalCatalogDetailsFile();
 			if( !catalogDetailsFile.exists() )
 				return;
-			if( sbCatalogueDetailsUpdateInProgress )
-				return;			
 			JSONParser parser = new JSONParser();
 			mCatalogueDetails = (JSONObject)parser.parse(new FileReader(catalogDetailsFile));
 		}catch(Exception ex){
@@ -304,6 +302,7 @@ public class IndexCatalogue {
 				updateItem(item, (JSONObject)oldCatalogueItems.get(key));				
 			}
 			mCatalogue.put("lastModified", newCatalog.get("lastModified"));
+			mCatalogue.put("baseUrl", newCatalog.get("baseUrl"));
 			
 		}catch(Exception ex){
 			ex.printStackTrace();
