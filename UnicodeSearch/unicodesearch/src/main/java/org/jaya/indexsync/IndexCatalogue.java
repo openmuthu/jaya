@@ -372,8 +372,9 @@ public class IndexCatalogue {
 			try{
 				if( mParentCatalogue.get() == null )
 					return "";
-				JSONObject obj = (JSONObject)((JSONObject)mParentCatalogue.get().mCatalogue.get("items")).get(mName);
-				return (String)obj.get("url");
+				JSONObject catalogue = mParentCatalogue.get().mCatalogue;
+				JSONObject obj = (JSONObject)((JSONObject)catalogue.get("items")).get(mName);
+				return (String)catalogue.get("baseUrl") + "/" + (String)obj.get("relPath");
 					
 			}catch(Exception ex){
 				
