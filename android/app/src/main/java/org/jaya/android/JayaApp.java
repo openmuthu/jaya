@@ -10,8 +10,13 @@ import junit.framework.AssertionFailedError;
 
 import org.jaya.search.LuceneUnicodeSearcher;
 import org.jaya.util.Constatants;
+import org.jaya.util.Utils;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
 
 import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
 
 /**
  * Created by murthy on 12/03/17.
@@ -50,7 +55,7 @@ public class JayaApp extends Application{
     }
 
     public static String getAppExtStorageFolder(){
-        return Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + APP_NAME + "/" + gVersionStr;
+        return Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + APP_NAME;
     }
 
     public static String getToBeIndexedFolder(){
@@ -78,6 +83,32 @@ public class JayaApp extends Application{
     public static String getIndexCatalogueBaseUrl(){
         //return "http://10.193.123.248:8080";
         //return "https://raw.githubusercontent.com/openmuthu/jaya/indexing-revamp/UnicodeSearch/unicodesearch/index-zip-output";
+        File iniFile = new File(getDocumentsFolder()+".jaya.ini");
+        if( iniFile.exists() ){
+            try{
+                JSONParser parser = new JSONParser();
+                JSONObject iniObj = (JSONObject) parser.parse(new FileReader(iniFile));
+                if( iniObj.containsKey("indexCatalogueBaseUrl") ){
+                    return (String)iniObj.get("indexCatalogueBaseUrl");
+                }
+            }catch(Exception ex){
+                ex.printStackTrace();
+            }
+        }
+        else{
+            JSONObject iniObj = new JSONObject();
+            iniObj.put("indexCatalogueBaseUrl", Constatants.getIndexCatalogBaseUrl());
+            FileWriter fw = null;
+            try{
+                fw = new FileWriter(iniFile);
+                fw.write(iniObj.toJSONString());
+            }catch (Exception ex){
+                ex.printStackTrace();
+            }
+            finally {
+                Utils.closeSilently(fw);
+            }
+        }
         return Constatants.getIndexCatalogBaseUrl();
     }
 

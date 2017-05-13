@@ -173,6 +173,7 @@ public class IndexerTest {
 		
 		indexCatalogue.put("version", IndexCatalogue.INDEX_CATALOGUE_VERSION);
 		indexCatalogue.put("lastModified", timestamp);
+		indexCatalogue.put("baseUrl", Constatants.INDEX_CATALOGUE_BASE_URL);
 		
 		indexAdditionalInfo.put("version", IndexCatalogue.INDEX_CATALOGUE_VERSION);
 		indexAdditionalInfo.put("lastModified", timestamp);
@@ -190,7 +191,7 @@ public class IndexerTest {
 				String md = new JayaIndexMetadata(path).toString();
 				JSONObject indexAdditionalInfoItem = new JSONObject();
 				JSONObject indexCatalogueItem = new JSONObject();
-				indexCatalogueItem.put("url", Constatants.INDEX_CATALOGUE_BASE_URL + "/" + Utils.getFileName(zipPath));
+				indexCatalogueItem.put("relPath", Utils.getFileName(zipPath));
 				indexCatalogueItem.put("lastModified", timestamp);
 				indexCatalogueItem.put("size", FileUtils.sizeOf(new File(zipPath)));				
 				indexCatalogueItemList.put(itemName, indexCatalogueItem);

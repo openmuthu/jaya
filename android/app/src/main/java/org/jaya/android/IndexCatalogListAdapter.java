@@ -19,6 +19,7 @@ import org.jaya.util.Utils;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.logging.Handler;
 
 /**
@@ -45,7 +46,10 @@ public class IndexCatalogListAdapter extends BaseAdapter {
     private void setIndexCatalogue(IndexCatalogue indexCatalogue){
         mIndexCatalogue = indexCatalogue;
         mItemList.clear();
-        for(String itemName: mIndexCatalogue.getItemNames() ){
+        Set<String> itemNames = mIndexCatalogue.getItemNames();
+        if( itemNames == null )
+            return;
+        for(String itemName: itemNames ){
             mItemList.add(mIndexCatalogue.getItemByName(itemName));
         }
     }

@@ -96,9 +96,6 @@ public class MainActivity extends Activity {
         setupNavigationDrawerItems();
 
         mAssetsManager = new AssetsManager(getApplicationContext());
-        new File(JayaApp.getDocumentsFolder()).mkdirs();
-        new File(JayaApp.getIndexMetadataFolder()).mkdirs();
-        new File(JayaApp.getSearchIndexFolder()).mkdirs();
         JayaQueryParser.setAccurateSubstringSearchEnabled(PreferencesManager.isAccurateSubstringSearchEnabled());
         PermissionRequestor.requestPermissionIfRequired(this, Manifest.permission.WRITE_EXTERNAL_STORAGE, PermissionRequestor.WRITE_EXTERNAL_STORAGE_PERMISSSION_REQUEST_ID);
         PermissionRequestor.requestPermissionIfRequired(this, Manifest.permission.INTERNET, PermissionRequestor.INTERNET_PERMISSSION_REQUEST_ID);
@@ -127,6 +124,9 @@ public class MainActivity extends Activity {
         {
             case PermissionRequestor.WRITE_EXTERNAL_STORAGE_PERMISSSION_REQUEST_ID:
                 {
+                    new File(JayaApp.getDocumentsFolder()).mkdirs();
+                    new File(JayaApp.getIndexMetadataFolder()).mkdirs();
+                    new File(JayaApp.getSearchIndexFolder()).mkdirs();
                     if( mAssetsManager == null )
                         return;
                     mAssetsManager.copyResourcesToCacheIfRequired(this);
