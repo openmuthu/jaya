@@ -14,8 +14,8 @@ import org.jaya.util.Utils;
 
 public class JayaIndexMetadata {
 	
-	private static final String MD_REC_DELEMITER = "\r\n";
-	private static final String MD_FILE_NAME = ".jaya-index-md.txt";
+	public static final String MD_REC_DELEMITER = "\r\n";
+	public static final String MD_FILE_NAME = ".jaya-index-md.txt";
 	
 	private String mIndexStorageDirectoryPath;
 	private HashSet<String> mIndexedFilePathSet = null;
@@ -54,6 +54,17 @@ public class JayaIndexMetadata {
 		finally{
 			Utils.closeSilently(br);			
 		}
+	}
+
+	public static Set<String> getIndexedFilePathSet(String filePaths){
+		Set<String> retVal = new HashSet<>();
+		if( filePaths == null || filePaths.isEmpty() )
+			return retVal;
+		String[] pathsArray = filePaths.split(MD_REC_DELEMITER);
+		for(String path:pathsArray){
+			retVal.add(path);
+		}
+		return retVal;
 	}
 	
 	public Set<String> getIndexedFilePathSet(){

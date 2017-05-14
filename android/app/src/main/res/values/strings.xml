@@ -41,6 +41,7 @@
     <string name="pref_header_index_catalogue">Download/Update Content</string>
 
     <string name="download">Download</string>
+    <string name="remove">Remove</string>
     <string name="update">Update</string>
     <string name="learn_more">Learn More</string>
     <string name="cancel">Cancel</string>
