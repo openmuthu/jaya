@@ -202,8 +202,10 @@ public class IndexCatalogue {
 	
 	public void syncCatalogueAdditionalDetailsFromRemoteIfRequired(EventListener listener){
 		addEventListener(listener);
-		if( sbCatalogueDetailsUpdateInProgress )
+		if( sbCatalogueDetailsUpdateInProgress ) {
+			System.out.println("Catalogue Details Update In Progress");
 			return;
+		}
 		loadCatalogDetailsFromFileIfRequired(false);
 		if( getCatalogDetailsLastModifedDate().equals(getLastModifedDate()) ){
 			notifyCatalogueDetailsUpdate(0);
@@ -477,6 +479,9 @@ public class IndexCatalogue {
 							ex.printStackTrace();
 						}
 						mCallback.get().onDataArrived(files, error);
+					}
+					else{
+						System.out.println("IndexCatalogue.getIncludedFiles(): callback is null");
 					}
 					removeEventListener(this);
 				}

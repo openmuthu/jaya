@@ -31,8 +31,8 @@ import static org.apache.lucene.util.Version.LUCENE_47;
 public class IndexerTest {
 	
 	public static void main(String[] args){
-		//createMultipleIndexes("", "");
-		createIndexZipFiles("", "");
+		createMultipleIndexes("", "");
+		//createIndexZipFiles("", "");
 		//mergeIndexes();
 		//deleteIndexFiles();
 	}

@@ -13,7 +13,9 @@ import android.widget.TextView;
 
 import org.jaya.indexsync.IndexCatalogue;
 import org.jaya.indexsync.IndexCatalogueItemDownloader;
+import org.jaya.indexsync.IndexCatalogueItemInstaller;
 import org.jaya.scriptconverter.SCUtils;
+import org.jaya.search.JayaIndexMetadata;
 import org.jaya.util.FileDownloader;
 import org.jaya.util.Utils;
 
@@ -32,6 +34,7 @@ public class IndexCatalogListAdapter extends BaseAdapter {
     private IndexCatalogueItemDownloader mIndexCatalogueItemDownloader = IndexCatalogueItemDownloader.getInstance();
     private List<IndexCatalogue.Item> mItemList = new ArrayList<>();
     private Context mContext;
+    ProgressDialog progressDialog = null;
 
     public IndexCatalogListAdapter(Context context){
         mContext = context;
@@ -100,9 +103,35 @@ public class IndexCatalogListAdapter extends BaseAdapter {
         private TextView mCatalogItemNameView;
         private TextView mCatalogItemSizeView;
         private TextView mBytesDownloadedView;
+        private Button mBtnRemove;
         private Button mBtnInfo;
         private Button mBtnDownloadOrUpdate;
         private ProgressBar mProgressBar;
+
+        private void showProgressBar(){
+            if( progressDialog == null )
+                progressDialog = new ProgressDialog(mBtnInfo.getContext());
+            if( progressDialog != null ) {
+                progressDialog.setMessage(mBtnInfo.getResources().getString(R.string.please_wait));
+                progressDialog.show();
+            }
+        }
+
+        private void dismissProgressBar(){
+            if( progressDialog.isShowing() )
+                progressDialog.dismiss();
+            progressDialog = null;
+        }
+
+        private String convertCatalogItemDetailsToPreferredScript(String itemDetails){
+            String[] lines = itemDetails.split(JayaIndexMetadata.MD_REC_DELEMITER);
+            String retVal = "";
+            for(String line:lines){
+                retVal += SCUtils.convertStringToScript(Utils.removeExtension(line), PreferencesManager.getPreferredOutputScriptType());
+                retVal += "\n";
+            }
+            return retVal;
+        }
 
         public ViewHolder(IndexCatalogue.Item item, View itemView) {
 
@@ -110,6 +139,7 @@ public class IndexCatalogListAdapter extends BaseAdapter {
             mCatalogItemSizeView = (TextView) itemView.findViewById(R.id.index_catalogue_item_size);
             mBtnInfo = (Button)itemView.findViewById(R.id.btnIndexCatalogueItemInfo);
             mBtnDownloadOrUpdate = (Button)itemView.findViewById(R.id.btnIndexCatalogueDownloadOrUpdate);
+            mBtnRemove = (Button)itemView.findViewById(R.id.btnIndexCatalogueItemRemove);
             mProgressBar = (ProgressBar)itemView.findViewById(R.id.progressBarIndexCatalogueItem);
             mBytesDownloadedView = (TextView) itemView.findViewById(R.id.index_catalogue_item_bytes_downloaded);
 
@@ -117,24 +147,22 @@ public class IndexCatalogListAdapter extends BaseAdapter {
             itemView.setBackgroundColor(bgColor);
             mCatalogItem = item;
             mBtnInfo.setOnClickListener(new View.OnClickListener() {
-                ProgressDialog progressDialog = null;
+                //ProgressDialog progressDialog = null;
                 @Override
                 public void onClick(View v) {
-                    if( progressDialog == null )
-                        progressDialog = new ProgressDialog(mBtnInfo.getContext());
+                    showProgressBar();
                     mCatalogItem.getIncludedFiles(new IndexCatalogue.ItemDetailsCallback(){
                         @Override
                         public void onDataArrived(final String data, final int error){
                             JayaApp.runOnUiThread(new Runnable() {
                                 @Override
                                 public void run() {
-                                    if( progressDialog.isShowing() )
-                                        progressDialog.dismiss();
-                                    progressDialog = null;
+                                    dismissProgressBar();
                                     //if( error == 0 ) {
                                         AlertDialog alertDialog = new AlertDialog.Builder(mBtnInfo.getContext()).create();
                                         alertDialog.setTitle(mBtnInfo.getResources().getString(R.string.included_files));
-                                        alertDialog.setMessage(data);
+                                        String convertedData = convertCatalogItemDetailsToPreferredScript(data);
+                                        alertDialog.setMessage(convertedData);
                                         alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK",
                                                 new DialogInterface.OnClickListener() {
                                                     public void onClick(DialogInterface dialog, int which) {
@@ -149,10 +177,6 @@ public class IndexCatalogListAdapter extends BaseAdapter {
                             });
                         }
                     });
-                    if( progressDialog != null ) {
-                        progressDialog.setMessage(mBtnInfo.getResources().getString(R.string.please_wait));
-                        progressDialog.show();
-                    }
                 }
             });
 
@@ -215,6 +239,31 @@ public class IndexCatalogListAdapter extends BaseAdapter {
                     }
                 }
             });
+
+            mBtnRemove.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(final View view) {
+                    showProgressBar();
+                    mBtnDownloadOrUpdate.setEnabled(false);
+                    IndexCatalogueItemInstaller installer = IndexCatalogueItemInstaller.getInstance();
+                    installer.unistallItem(mCatalogItem, IndexCatalogue.getInstance().getAppIndexFolderPath(),
+                            new IndexCatalogueItemInstaller.OnUninstalledCallback() {
+                                @Override
+                                public void onUninstalled(int error, IndexCatalogue.Item item) {
+                                    JayaApp.runOnUiThread(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            dismissProgressBar();
+                                            mBtnDownloadOrUpdate.setEnabled(true);
+                                            refresh();
+                                            view.invalidate();
+                                        }
+                                    });
+                                }
+                            });
+                }
+            });
+
             refresh();
         }
 
@@ -229,6 +278,17 @@ public class IndexCatalogListAdapter extends BaseAdapter {
             else{
                 mProgressBar.setVisibility(View.INVISIBLE);
                 mBytesDownloadedView.setVisibility(View.INVISIBLE);
+            }
+        }
+
+        private void updateRemoveButtonState(){
+            if( mCatalogItem == null )
+                return;
+            if( mCatalogItem.getIsInstalled() ){
+                mBtnRemove.setEnabled(true);
+            }
+            else{
+                mBtnRemove.setEnabled(false);
             }
         }
 
@@ -258,6 +318,7 @@ public class IndexCatalogListAdapter extends BaseAdapter {
             mCatalogItemSizeView.setText(Utils.getHumanReadableSize(mCatalogItem.getSize()));
             updateDownloadButtonState();
             updateProgressBarState();
+            updateRemoveButtonState();
         }
 
         public void setItem(IndexCatalogue.Item item) {

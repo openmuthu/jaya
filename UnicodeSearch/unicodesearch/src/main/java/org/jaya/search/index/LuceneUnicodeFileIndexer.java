@@ -291,17 +291,18 @@ public class LuceneUnicodeFileIndexer {
 			String line = "";
 			String lines = "";
 			path = path.replace(Constatants.FILES_TO_INDEX_DIRECTORY, "");
+			path = path.replace("\\", "/");
 			filePathSet.add(path);
 			int docLocalId = 0;
 			for(int i=0;(line=reader.readLine())!=null;i++){
-				if(line.trim().matches("^[\\s\\r\\n]+$")){
+				//if(line.trim().matches("^[\\s\\r\\n]+$")){
+				if(line.trim().isEmpty()){
 					System.out.println("Skipping empty line");
 					i--;
 					continue;
 				}
 				lines = lines + line + "\n";
 				docLengthSofar += line.length();
-				//if( (i+1)%4 == 0 ){
 				if( (docLengthSofar >= minCharsPerDoc && Utils.containsViramaChars(line))
 						|| docLengthSofar > maxCharsPerDoc ){
 					docLengthSofar = 0;

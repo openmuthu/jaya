@@ -26,6 +26,12 @@ public class Utils {
 		basename = basename.replaceAll("[\\s-]+", "");
 		System.out.println(basename);		 
 	}
+	
+	public static final String removeExtension(final String filename){
+		if (filename == null) return null;
+		int dotIndex = filename.lastIndexOf(".");
+		return filename.substring(0, dotIndex);
+	}
 
     public static final String getFileExtension(final String filename) {
         if (filename == null) return null;
