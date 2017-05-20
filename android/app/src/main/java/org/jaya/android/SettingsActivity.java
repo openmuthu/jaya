@@ -3,8 +3,10 @@ package org.jaya.android;
 
 import android.annotation.TargetApi;
 import android.app.ActionBar;
+import android.app.AlertDialog;
 import android.app.Fragment;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.os.Build;
@@ -255,6 +257,18 @@ public class SettingsActivity extends PreferenceActivity {
         public void onViewCreated(View view, Bundle savedInstanceState) {
             super.onViewCreated(view, savedInstanceState);
             gIndexCatalogue.readCatalog();
+            if( !JayaAppUtils.isNetworkAvailable() ){
+                AlertDialog alertDialog = new AlertDialog.Builder(getActivity()).create();
+                alertDialog.setTitle(getResources().getString(R.string.alert));
+                alertDialog.setMessage(getResources().getString(R.string.no_internet_message));
+                alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK",
+                        new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int which) {
+                                dialog.dismiss();
+                            }
+                        });
+                alertDialog.show();
+            }
             ListView listView =  (ListView)getView().findViewById(R.id.index_catalogue_list);
             if( mIndexCatalogueListAdapter == null )
                 mIndexCatalogueListAdapter = new IndexCatalogListAdapter(getActivity());

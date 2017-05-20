@@ -16,14 +16,14 @@ public class FileDownloader {
 	private String mURL;
 	private String mDestPath;
 	private FutureTask<Integer> mTask;
-	private WeakReference<ProgressCallback> mProgressCallback = new WeakReference<FileDownloader.ProgressCallback>(null);
+	private ProgressCallback mProgressCallback = null;
 	
 	private static ScheduledThreadPoolExecutor mExecutor;
 	
 	public FileDownloader(String url, String destPath, ProgressCallback callback){
 		mURL = url;
 		mDestPath = destPath;
-		mProgressCallback = new WeakReference<>(callback);
+		mProgressCallback = callback;
 	}
 	
 	public FutureTask<Integer> getTask(){
@@ -35,8 +35,9 @@ public class FileDownloader {
 			mExecutor = new ScheduledThreadPoolExecutor(4);
 		}
 		if( mTask != null ){
-			if( !mTask.isDone() )
+			if( !mTask.isDone() ) {
 				return mTask;
+			}
 		}
 		mTask = new FutureTask<Integer>(
 	            new Callable<Integer>() {
@@ -56,8 +57,8 @@ public class FileDownloader {
 		                	int totalBytes = conn.getContentLength();
 		                	
 		                	if( totalBytes > 0 ){
-		                		if( mProgressCallback.get() != null )
-		                			mProgressCallback.get().onContentLength(totalBytes);		                		
+		                		if( mProgressCallback != null )
+		                			mProgressCallback.onContentLength(totalBytes);
 		                	}
 		                	
 		                	long bytesSoFar = 0;
@@ -67,8 +68,8 @@ public class FileDownloader {
 		                	while( (bytesRead=stream.read(buffer)) >= 0 ){
 		                		outputStream.write(buffer, 0, bytesRead);
 		                		bytesSoFar += bytesRead;
-		                		if( mProgressCallback.get() != null )
-		                			mProgressCallback.get().onBytesDownloaded(bytesSoFar);
+		                		if( mProgressCallback != null )
+		                			mProgressCallback.onBytesDownloaded(bytesSoFar);
 		                	}
 	                	}catch(Exception ex){
 	                		retVal = -1;
@@ -79,9 +80,11 @@ public class FileDownloader {
 	                		Utils.closeSilently(outputStream);	                		
 	                		if( conn != null )
 	                			conn.disconnect();
+							if( mProgressCallback != null )
+								mProgressCallback.onComplete(retVal);
+							else
+								System.out.println("FutureTask.loadAsync: callback is null");
 	                	}
-	                	if( mProgressCallback.get() != null )
-	                		mProgressCallback.get().onComplete(retVal);
 	                	return retVal;
 	                }
 	            });

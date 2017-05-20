@@ -34,7 +34,7 @@ public class IndexCatalogue {
 	private JSONObject mCatalogue;
 	private JSONObject mCatalogueDetails;
 	
-	private static List<WeakReference<EventListener>> mEventListeners = Collections.synchronizedList(new ArrayList<WeakReference<EventListener>>());
+	private static List<EventListener> mEventListeners = Collections.synchronizedList(new ArrayList<EventListener>());
 	private static boolean sbCatalogueUpdateInProgress = false;
 	private static boolean sbCatalogueDetailsUpdateInProgress = false;
 	private IndexCatalogueItemDownloader mCatalogueItemDownloader;
@@ -82,29 +82,29 @@ public class IndexCatalogue {
 	
 	public void addEventListener(EventListener listener){
 		try{
-			Iterator<WeakReference<EventListener>> iterator = mEventListeners.iterator();
+			Iterator<EventListener> iterator = mEventListeners.iterator();
 			while( iterator.hasNext() ){
-				WeakReference<EventListener> p = iterator.next();
-				if( p.get() == null )
+				EventListener p = iterator.next();
+				if( p == null )
 					iterator.remove();
 			}	
 		}catch(Exception ex){
 			ex.printStackTrace();
 		}
-		for(WeakReference<EventListener> p:mEventListeners){
-			if( p.get() == listener ){
+		for(EventListener p:mEventListeners){
+			if( p == listener ){
 				return;
 			}
 		}
-		mEventListeners.add(new WeakReference<IndexCatalogue.EventListener>(listener));
+		mEventListeners.add(listener);
 	}
 	
 	private void removeEventListener(EventListener listener){
 		try{
-			Iterator<WeakReference<EventListener>> iterator = mEventListeners.iterator();
+			Iterator<EventListener> iterator = mEventListeners.iterator();
 			while( iterator.hasNext() ){
-				WeakReference<EventListener> p = iterator.next();
-				if( p.get() == listener )
+				EventListener p = iterator.next();
+				if( p == listener )
 					iterator.remove();
 			}	
 		}catch(Exception ex){
@@ -121,6 +121,7 @@ public class IndexCatalogue {
 				return;			
 			long seconds = TimestampUtils.diffInSeconds(new Date(), getLastModifedDate());
 			if( seconds > TimestampUtils.SECONDS_IN_DAY*7 ){
+				System.out.println("syncCatalogueFromRemote"); //temp
 				syncCatalogueFromRemote();
 			}
 			else{
@@ -172,6 +173,7 @@ public class IndexCatalogue {
 	public void syncCatalogueFromRemote(){
 		if( sbCatalogueUpdateInProgress )
 			return;
+		System.out.println("Inside syncCatalogueFromRemote"); //temp
 		sbCatalogueUpdateInProgress = true;
 		final String downloadedCatalogFilePath = PathUtils.get(mLocalCatalogFolder, INDEX_CATALOG_FILE_NAME+"_r");
 		FileDownloader fd = new FileDownloader(
@@ -181,14 +183,17 @@ public class IndexCatalogue {
 					@Override
 					public void onComplete(int error) {
 						try{
+							System.out.println("onComplete 1"); //temp
 							if( error == 0 ){
 								JSONParser parser = new JSONParser();
 								JSONObject newCatalog = (JSONObject)parser.parse(new FileReader(new File(downloadedCatalogFilePath)));
 								mergeWithCatalog(newCatalog);
+								System.out.println("onComplete 2"); //temp
 							}
-							notifyCatalogueUpdate(error);
 						}catch(Exception ex){
 							ex.printStackTrace();
+						}finally {
+							notifyCatalogueUpdate(error);
 						}
 					}
 					@Override
@@ -241,9 +246,9 @@ public class IndexCatalogue {
 	
 	private void notifyCatalogueUpdate(int error){
 		try {
-			for (WeakReference<EventListener> p : mEventListeners) {
-				if (p.get() != null) {
-					p.get().onCatalogueUpdated(error);
+			for (EventListener p : mEventListeners) {
+				if (p != null) {
+					p.onCatalogueUpdated(error);
 				}
 			}
 		}catch(Exception ex){
@@ -256,9 +261,9 @@ public class IndexCatalogue {
 	
 	private void notifyCatalogueDetailsUpdate(int error){
 		try {
-			for (WeakReference<EventListener> p : mEventListeners) {
-				if (p.get() != null) {
-					p.get().onCatalogueDetailsUpdated(error);
+			for (EventListener p : mEventListeners) {
+				if (p != null) {
+					p.onCatalogueDetailsUpdated(error);
 				}
 			}
 		}catch (Exception ex){
@@ -302,6 +307,14 @@ public class IndexCatalogue {
 					oldCatalogueItems.put(key, item.clone());
 				}
 				updateItem(item, (JSONObject)oldCatalogueItems.get(key));				
+			}
+			// Remove items from existing catalog if they are not present in the newly downloaded one.
+			Set<Object> keySet = oldCatalogueItems.keySet();
+			for(Object key:keySet){
+				if( !newCatalogItems.containsKey(key) ) {
+					// TODO: We should also remove the corresponding docs from the index, in this case
+					oldCatalogueItems.remove(key);
+				}
 			}
 			mCatalogue.put("lastModified", newCatalog.get("lastModified"));
 			mCatalogue.put("baseUrl", newCatalog.get("baseUrl"));
@@ -428,6 +441,8 @@ public class IndexCatalogue {
 					return;
 				JSONObject obj = (JSONObject)((JSONObject)mParentCatalogue.get().mCatalogue.get("items")).get(mName);
 				obj.put("installed", (bInstalled)?"true":"false");
+				if( bInstalled )
+					obj.put("updateAvailable", "false");
 				writeCatalogue();
 					
 			}catch(Exception ex){
@@ -456,29 +471,30 @@ public class IndexCatalogue {
 	public class ItemDetails{
 		private WeakReference<IndexCatalogue> mParentCatalogue;
 		private WeakReference<Item> mItem;
-		private WeakReference<ItemDetailsCallback> mCallback;
+		private ItemDetailsCallback mCallback;
 		public ItemDetails(IndexCatalogue parent, Item item){
 			mParentCatalogue = new WeakReference<IndexCatalogue>(parent);
 			mItem = new WeakReference<IndexCatalogue.Item>(item);
 		}
 		
 		public void getIncludedFiles(ItemDetailsCallback callback){
-			mCallback = new WeakReference<IndexCatalogue.ItemDetailsCallback>(callback);
+			mCallback = callback;
 			mParentCatalogue.get().syncCatalogueAdditionalDetailsFromRemoteIfRequired(new EventListener() {
 				@Override
 				public void onCatalogueUpdated(int error) {
 				}
 				@Override
 				public void onCatalogueDetailsUpdated(int error) {
-					if( mCallback.get() != null ){
+					if( mCallback != null ){
 						String files = "Data unavailable";
 						try{
 							JSONObject items = (JSONObject)mCatalogueDetails.get("items");
 							files = (String)((JSONObject)(items.get(mItem.get().getName()))).get("files");
 						}catch(Exception ex){
 							ex.printStackTrace();
+						}finally{
+							mCallback.onDataArrived(files, error);
 						}
-						mCallback.get().onDataArrived(files, error);
 					}
 					else{
 						System.out.println("IndexCatalogue.getIncludedFiles(): callback is null");
