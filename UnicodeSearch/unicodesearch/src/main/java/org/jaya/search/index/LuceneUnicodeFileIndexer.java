@@ -301,9 +301,10 @@ public class LuceneUnicodeFileIndexer {
 					i--;
 					continue;
 				}
+				boolean containsVirama = Utils.containsViramaChars(line);
 				lines = lines + line + "\n";
 				docLengthSofar += line.length();
-				if( (docLengthSofar >= minCharsPerDoc && Utils.containsViramaChars(line))
+				if( (docLengthSofar >= minCharsPerDoc && containsVirama)
 						|| docLengthSofar > maxCharsPerDoc ){
 					docLengthSofar = 0;
 					Document document = new Document();
