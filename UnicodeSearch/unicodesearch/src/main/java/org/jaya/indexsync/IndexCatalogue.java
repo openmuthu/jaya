@@ -11,6 +11,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
+import org.jaya.scriptconverter.SCUtils;
+import org.jaya.scriptconverter.ScriptType;
 import org.jaya.util.FileDownloader;
 import org.jaya.util.FileDownloader.ProgressCallback;
 import org.jaya.util.PathUtils;
@@ -371,11 +373,23 @@ public class IndexCatalogue {
 		private WeakReference<IndexCatalogue> mParentCatalogue;
 		private ItemDetails mItemDetails;
 		private String mName;
+		private String mNameInPreferredScript = null;
+		private ScriptType mCurrentScriptType = ScriptType.ITRANS;
 
 		public Item(IndexCatalogue parent, String name){
 			mParentCatalogue = new WeakReference<IndexCatalogue>(parent);
 			mName = name;
 			mItemDetails = new ItemDetails(parent, this);
+		}
+
+		public String getNameInPreferredScript(ScriptType scriptType){
+			if( scriptType == ScriptType.ITRANS )
+				return mName;
+			if( mCurrentScriptType == scriptType && mNameInPreferredScript != null )
+				return mNameInPreferredScript;
+			mNameInPreferredScript = SCUtils.convertStringToScript(mName, scriptType);
+			mCurrentScriptType = scriptType;
+			return mNameInPreferredScript;
 		}
 
 		public String getName() {

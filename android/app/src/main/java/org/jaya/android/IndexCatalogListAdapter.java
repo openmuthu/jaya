@@ -15,11 +15,16 @@ import org.jaya.indexsync.IndexCatalogue;
 import org.jaya.indexsync.IndexCatalogueItemDownloader;
 import org.jaya.indexsync.IndexCatalogueItemInstaller;
 import org.jaya.scriptconverter.SCUtils;
+import org.jaya.scriptconverter.ScriptType;
 import org.jaya.search.JayaIndexMetadata;
 import org.jaya.util.FileDownloader;
+import org.jaya.util.StringUtils;
 import org.jaya.util.Utils;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 import java.util.logging.Handler;
@@ -55,6 +60,14 @@ public class IndexCatalogListAdapter extends BaseAdapter {
         for(String itemName: itemNames ){
             mItemList.add(mIndexCatalogue.getItemByName(itemName));
         }
+
+        Collections.sort(mItemList, new Comparator<IndexCatalogue.Item>() {
+            @Override
+            public int compare(IndexCatalogue.Item it1, IndexCatalogue.Item it2) {
+                ScriptType scriptType = PreferencesManager.getPreferredOutputScriptType();
+                return it1.getNameInPreferredScript(scriptType).compareTo(it2.getNameInPreferredScript(scriptType));
+            }
+        });
     }
 
     @Override
@@ -125,12 +138,14 @@ public class IndexCatalogListAdapter extends BaseAdapter {
 
         private String convertCatalogItemDetailsToPreferredScript(String itemDetails){
             String[] lines = itemDetails.split(JayaIndexMetadata.MD_REC_DELEMITER);
-            String retVal = "";
+            String[] convertedLines = new String[lines.length];
+            int i = 0;
             for(String line:lines){
-                retVal += SCUtils.convertStringToScript(Utils.removeExtension(line), PreferencesManager.getPreferredOutputScriptType());
-                retVal += "\n";
+                convertedLines[i] = SCUtils.convertStringToScript(Utils.removeExtension(line), PreferencesManager.getPreferredOutputScriptType());
+                i++;
             }
-            return retVal;
+            Arrays.sort(convertedLines);
+            return StringUtils.join("\n", convertedLines);
         }
 
         public ViewHolder(IndexCatalogue.Item item, View itemView) {
