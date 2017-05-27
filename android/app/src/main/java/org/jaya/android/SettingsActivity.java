@@ -5,6 +5,7 @@ import android.annotation.TargetApi;
 import android.app.ActionBar;
 import android.app.AlertDialog;
 import android.app.Fragment;
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -23,6 +24,7 @@ import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.ListView;
 
 import org.apache.lucene.document.Field;
@@ -226,6 +228,8 @@ public class SettingsActivity extends PreferenceActivity {
 
         private IndexCatalogListAdapter mIndexCatalogueListAdapter;
         private static IndexCatalogue gIndexCatalogue;
+        ProgressDialog progressDialog = null;
+        Button mBtnCheckUpdate = null;
 
         @Override
         public void onCreate(Bundle savedInstanceState) {
@@ -258,7 +262,7 @@ public class SettingsActivity extends PreferenceActivity {
         @Override
         public void onViewCreated(View view, Bundle savedInstanceState) {
             super.onViewCreated(view, savedInstanceState);
-            gIndexCatalogue.readCatalog();
+            gIndexCatalogue.readCatalog(false);
             if( !JayaAppUtils.isNetworkAvailable() ){
                 AlertDialog alertDialog = new AlertDialog.Builder(getActivity()).create();
                 alertDialog.setTitle(getResources().getString(R.string.alert));
@@ -275,8 +279,31 @@ public class SettingsActivity extends PreferenceActivity {
             if( mIndexCatalogueListAdapter == null )
                 mIndexCatalogueListAdapter = new IndexCatalogListAdapter(getActivity());
             listView.setAdapter(mIndexCatalogueListAdapter);
+            mBtnCheckUpdate = (Button) getView().findViewById(R.id.btnCheckUpdate);
+            mBtnCheckUpdate.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    IndexCatalogue indexCatalogue = IndexCatalogue.getInstance();
+                    indexCatalogue.readCatalog(true);
+                    showProgressBar();
+                }
+            });
+
+        }
+        private void showProgressBar(){
+            if( progressDialog == null )
+                progressDialog = new ProgressDialog(mBtnCheckUpdate.getContext());
+            if( progressDialog != null ) {
+                progressDialog.setMessage(mBtnCheckUpdate.getResources().getString(R.string.please_wait));
+                progressDialog.show();
+            }
         }
 
+        private void dismissProgressBar(){
+            if(progressDialog != null && progressDialog.isShowing() )
+                progressDialog.dismiss();
+            progressDialog = null;
+        }
         @Override
         public void onCatalogueUpdated(int error) {
             JayaApp.runOnUiThread(new Runnable() {
@@ -284,6 +311,7 @@ public class SettingsActivity extends PreferenceActivity {
                 public void run() {
                     if( mIndexCatalogueListAdapter != null )
                         mIndexCatalogueListAdapter.setIndexCatalogueAndUpdateView(gIndexCatalogue);
+                    dismissProgressBar();
                 }
             });
         }

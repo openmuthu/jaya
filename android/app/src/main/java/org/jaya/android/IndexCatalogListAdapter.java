@@ -131,7 +131,7 @@ public class IndexCatalogListAdapter extends BaseAdapter {
         }
 
         private void dismissProgressBar(){
-            if( progressDialog.isShowing() )
+            if(progressDialog != null && progressDialog.isShowing() )
                 progressDialog.dismiss();
             progressDialog = null;
         }
@@ -278,6 +278,7 @@ public class IndexCatalogListAdapter extends BaseAdapter {
                             });
                 }
             });
+
 
             refresh();
         }

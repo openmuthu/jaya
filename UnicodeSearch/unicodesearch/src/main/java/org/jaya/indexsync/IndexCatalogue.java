@@ -114,15 +114,15 @@ public class IndexCatalogue {
 		}		
 	}
 	
-	public void readCatalog(){
+	public void readCatalog(boolean force){
 		try{
 			File catalogFile = getLocalCatalogFile();
 			JSONParser parser = new JSONParser();
 			mCatalogue = (JSONObject)parser.parse(new FileReader(catalogFile));
 			if( sbCatalogueUpdateInProgress )
 				return;			
-			long seconds = TimestampUtils.diffInSeconds(new Date(), getLastModifedDate());
-			if( seconds > TimestampUtils.SECONDS_IN_DAY*7 ){
+			long seconds = TimestampUtils.diffInSeconds(new Date(), getLastSyncDate());
+			if( seconds > TimestampUtils.SECONDS_IN_DAY*7 || force){
 				System.out.println("syncCatalogueFromRemote"); //temp
 				syncCatalogueFromRemote();
 			}
@@ -160,6 +160,21 @@ public class IndexCatalogue {
 		}
 		return new Date(0L);
 	}
+
+    Date getLastSyncDate(){
+        if( mCatalogue == null )
+            return new Date(0L);
+        try{
+            Date lastSyncDate = TimestampUtils.getDateFromISO8601String((String)mCatalogue.get("lastSyncDate"));
+            if(lastSyncDate == null){
+                return new Date(0L);
+            }
+            return lastSyncDate;
+        }catch(Exception ex){
+            ex.printStackTrace();
+        }
+        return new Date(0L);
+    }
 	
 	Date getCatalogDetailsLastModifedDate(){
 		if( mCatalogueDetails == null )
@@ -319,6 +334,7 @@ public class IndexCatalogue {
 				}
 			}
 			mCatalogue.put("lastModified", newCatalog.get("lastModified"));
+			mCatalogue.put("lastSyncDate", TimestampUtils.nowAsString());
 			mCatalogue.put("baseUrl", newCatalog.get("baseUrl"));
 			
 		}catch(Exception ex){
