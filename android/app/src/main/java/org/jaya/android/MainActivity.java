@@ -2,11 +2,13 @@ package org.jaya.android;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.ListActivity;
 import android.app.ProgressDialog;
 import android.app.SearchManager;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
@@ -60,6 +62,18 @@ public class MainActivity extends Activity {
     }
 
     private void handleIntent(Intent intent) {
+        if( JayaApp.getSearcher().numDocs() < 10 ){
+            AlertDialog alertDialog = new AlertDialog.Builder(this).create();
+            alertDialog.setTitle(getResources().getString(R.string.alert));
+            alertDialog.setMessage(getResources().getString(R.string.download_content_message));
+            alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK",
+                    new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int which) {
+                            dialog.dismiss();
+                        }
+                    });
+            alertDialog.show();
+        }
         if (intent.getAction().equals(JayaApp.INTENT_OPEN_DOCUMENT_ID)) {
             int docId = intent.getIntExtra("documentId", 0);
             showDocumentId(docId);
@@ -284,6 +298,9 @@ public class MainActivity extends Activity {
             mDrawerLayout.closeDrawer(mDrawerList);
             if( position == 0 ){
                 startActivity(new Intent(MainActivity.this, SettingsActivity.class));
+            }
+            else if( position == 1 ){
+                startActivity(new Intent(MainActivity.this, HelpActivity.class));
             }
         }
     }
