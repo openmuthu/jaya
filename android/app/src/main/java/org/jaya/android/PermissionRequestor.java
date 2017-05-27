@@ -4,6 +4,7 @@ import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.os.Build;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 
@@ -44,7 +45,9 @@ public class PermissionRequestor {
             return false;
         }
         else {
-            activity.onRequestPermissionsResult(requestId, new String[]{permission}, new int[]{1});
+            if( android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                activity.onRequestPermissionsResult(requestId, new String[]{permission}, new int[]{PackageManager.PERMISSION_GRANTED});
+            }
             return true;
         }
     }

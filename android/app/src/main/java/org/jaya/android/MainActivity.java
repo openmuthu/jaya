@@ -10,6 +10,8 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.NonNull;
@@ -111,8 +113,14 @@ public class MainActivity extends Activity {
 
         mAssetsManager = new AssetsManager(getApplicationContext());
         JayaQueryParser.setAccurateSubstringSearchEnabled(PreferencesManager.isAccurateSubstringSearchEnabled());
-        PermissionRequestor.requestPermissionIfRequired(this, Manifest.permission.WRITE_EXTERNAL_STORAGE, PermissionRequestor.WRITE_EXTERNAL_STORAGE_PERMISSSION_REQUEST_ID);
-        PermissionRequestor.requestPermissionIfRequired(this, Manifest.permission.INTERNET, PermissionRequestor.INTERNET_PERMISSSION_REQUEST_ID);
+        if( android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            PermissionRequestor.requestPermissionIfRequired(this, Manifest.permission.WRITE_EXTERNAL_STORAGE, PermissionRequestor.WRITE_EXTERNAL_STORAGE_PERMISSSION_REQUEST_ID);
+            PermissionRequestor.requestPermissionIfRequired(this, Manifest.permission.INTERNET, PermissionRequestor.INTERNET_PERMISSSION_REQUEST_ID);
+        }
+        else{
+            onRequestPermissionsResult(PermissionRequestor.WRITE_EXTERNAL_STORAGE_PERMISSSION_REQUEST_ID,
+                    new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, new int[]{PackageManager.PERMISSION_GRANTED});
+        }
 
         Intent intent = getIntent();
         if( intent != null )
@@ -138,14 +146,23 @@ public class MainActivity extends Activity {
         {
             case PermissionRequestor.WRITE_EXTERNAL_STORAGE_PERMISSSION_REQUEST_ID:
                 {
-                    new File(JayaApp.getDocumentsFolder()).mkdirs();
-                    new File(JayaApp.getIndexMetadataFolder()).mkdirs();
-                    new File(JayaApp.getSearchIndexFolder()).mkdirs();
-                    if( mAssetsManager == null )
-                        return;
-                    mAssetsManager.copyResourcesToCacheIfRequired(this);
-                    JayaApp.getSearcher().createIndexSearcherIfRequired();
-                    indexFiles(false);
+                    for (int i = 0; i < permissions.length; i++) {
+                        String permission = permissions[i];
+                        int grantResult = grantResults[i];
+
+                        if (permission.equals(Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
+                            if (grantResult == PackageManager.PERMISSION_GRANTED) {
+                                new File(JayaApp.getDocumentsFolder()).mkdirs();
+                                new File(JayaApp.getIndexMetadataFolder()).mkdirs();
+                                new File(JayaApp.getSearchIndexFolder()).mkdirs();
+                                if (mAssetsManager == null)
+                                    return;
+                                mAssetsManager.copyResourcesToCacheIfRequired(this);
+                                JayaApp.getSearcher().createIndexSearcherIfRequired();
+                                indexFiles(false);
+                            }
+                        }
+                    }
                 }
                 break;
         }
