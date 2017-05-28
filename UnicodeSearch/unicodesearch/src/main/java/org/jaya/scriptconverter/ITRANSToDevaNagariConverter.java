@@ -19,6 +19,8 @@ public class ITRANSToDevaNagariConverter implements ScriptConverter {
 		itransToSanskritMap.put("U", "\u090A");
 		itransToSanskritMap.put("uu", "\u090A");
 		itransToSanskritMap.put("R", "\u090B");
+		itransToSanskritMap.put("Ru", "\u090B");
+		itransToSanskritMap.put("Ri", "\u090B");
 		itransToSanskritMap.put("RRi", "\u090B");
 		itransToSanskritMap.put("R^i", "\u090B");
 		itransToSanskritMap.put("RR", "\u0960");
@@ -36,9 +38,12 @@ public class ITRANSToDevaNagariConverter implements ScriptConverter {
 		itransToSanskritMap.put("au", "\u0914");
 		itransToSanskritMap.put("M", "\u0902");
 		itransToSanskritMap.put("H", "\u0903");
+		itransToSanskritMap.put(":", "\u0903");		
 		itransToSanskritMap.put("k", "\u0915");
+		itransToSanskritMap.put("K", "\u0916");
 		itransToSanskritMap.put("kh", "\u0916");
 		itransToSanskritMap.put("g", "\u0917");
+		itransToSanskritMap.put("G", "\u0918");
 		itransToSanskritMap.put("gh", "\u0918");
 		itransToSanskritMap.put("~", "~");
 		itransToSanskritMap.put("~N", "\u0919");
@@ -47,6 +52,7 @@ public class ITRANSToDevaNagariConverter implements ScriptConverter {
 		itransToSanskritMap.put("C", "\u091B");
 		itransToSanskritMap.put("Ch", "\u091B");
 		itransToSanskritMap.put("j", "\u091C");
+		itransToSanskritMap.put("J", "\u091D");
 		itransToSanskritMap.put("jh", "\u091D");
 		itransToSanskritMap.put("~n", "\u091E");
 		itransToSanskritMap.put("jn", "\u091C\u094D\u091E");
@@ -61,8 +67,10 @@ public class ITRANSToDevaNagariConverter implements ScriptConverter {
 		itransToSanskritMap.put("dh", "\u0927");
 		itransToSanskritMap.put("n", "\u0928");
 		itransToSanskritMap.put("p", "\u092A");
+		itransToSanskritMap.put("P", "\u092B");
 		itransToSanskritMap.put("ph", "\u092B");
 		itransToSanskritMap.put("b", "\u092C");
+		itransToSanskritMap.put("B", "\u092D");
 		itransToSanskritMap.put("bh", "\u092D");
 		itransToSanskritMap.put("m", "\u092E");
 		itransToSanskritMap.put("y", "\u092F");
@@ -76,7 +84,6 @@ public class ITRANSToDevaNagariConverter implements ScriptConverter {
 		itransToSanskritMap.put("s", "\u0938");
 		itransToSanskritMap.put("h", "\u0939");
 		itransToSanskritMap.put("x", "\u0915\u094D\u0937");
-		itransToSanskritMap.put("om", "\u0950");
 		itransToSanskritMap.put("OM", "\u0950");
 		itransToSanskritMap.put(".", ".");
 		itransToSanskritMap.put(".a", "\u093D");

@@ -20,6 +20,8 @@ public class ITRANSToTeluguConverter implements ScriptConverter {
 		itransToTeluguMap.put("uu", "\u0C0A");
 		itransToTeluguMap.put("R", "\u0C0B");
 		itransToTeluguMap.put("RRi", "\u0C0B");
+		itransToTeluguMap.put("Ri", "\u0C0B");
+		itransToTeluguMap.put("Ru", "\u0C0B");
 		itransToTeluguMap.put("R^i", "\u0C0B");
 		itransToTeluguMap.put("RR", "\u0C60");
 		itransToTeluguMap.put("RRI", "\u0C60");
@@ -36,9 +38,12 @@ public class ITRANSToTeluguConverter implements ScriptConverter {
 		itransToTeluguMap.put("au", "\u0C14");
 		itransToTeluguMap.put("M", "\u0C02");
 		itransToTeluguMap.put("H", "\u0C03");
+		itransToTeluguMap.put(":", "\u0C03");
 		itransToTeluguMap.put("k", "\u0C15");
+		itransToTeluguMap.put("K", "\u0C16");
 		itransToTeluguMap.put("kh", "\u0C16");
 		itransToTeluguMap.put("g", "\u0C17");
+		itransToTeluguMap.put("G", "\u0C18");
 		itransToTeluguMap.put("gh", "\u0C18");
 		itransToTeluguMap.put("~", "~");
 		itransToTeluguMap.put("~N", "\u0C19");
@@ -47,6 +52,7 @@ public class ITRANSToTeluguConverter implements ScriptConverter {
 		itransToTeluguMap.put("C", "\u0C1B");
 		itransToTeluguMap.put("Ch", "\u0C1B");
 		itransToTeluguMap.put("j", "\u0C1C");
+		itransToTeluguMap.put("J", "\u0C1D");
 		itransToTeluguMap.put("jh", "\u0C1D");
 		itransToTeluguMap.put("~n", "\u0C1E");
 		itransToTeluguMap.put("jn", "\u0C1C\u0C4D\u0C1E");
@@ -61,8 +67,10 @@ public class ITRANSToTeluguConverter implements ScriptConverter {
 		itransToTeluguMap.put("dh", "\u0C27");
 		itransToTeluguMap.put("n", "\u0C28");
 		itransToTeluguMap.put("p", "\u0C2A");
+		itransToTeluguMap.put("P", "\u0C2B");
 		itransToTeluguMap.put("ph", "\u0C2B");
 		itransToTeluguMap.put("b", "\u0C2C");
+		itransToTeluguMap.put("B", "\u0C2D");
 		itransToTeluguMap.put("bh", "\u0C2D");
 		itransToTeluguMap.put("m", "\u0C2E");
 		itransToTeluguMap.put("y", "\u0C2F");
@@ -76,7 +84,6 @@ public class ITRANSToTeluguConverter implements ScriptConverter {
 		itransToTeluguMap.put("s", "\u0C38");
 		itransToTeluguMap.put("h", "\u0C39");
 		itransToTeluguMap.put("x", "\u0C15\u0C4D\u0C37");
-		itransToTeluguMap.put("om", "\u0C50");
 		itransToTeluguMap.put("OM", "\u0C50");
 		itransToTeluguMap.put(".", ".");
 		itransToTeluguMap.put(".a", "\u0C3D");
