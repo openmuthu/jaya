@@ -7,6 +7,8 @@
     <string name="action_random_doc">Random quote</string>
     <string name="accurate_substring_search">Accurate Search(slower)</string>
     <string name="download_content_message">Please download granthas by tapping App icon(top left) > Settings > Download/Update Content</string>
+    <string name="permission_denied">No permission</string>
+    <string name="no_results_found">No results found</string>
 
 
     <!-- Strings related to Settings -->
@@ -17,6 +19,7 @@
     <string name="pref_title_preferred_output_script">Preferred output script</string>
     <string name="pref_description_preferred_output_script">You can change the script to ITrans, deva nagari, or kannada
     </string>
+    <string name="remove_unused_from_index">Remove unused files from index</string>
 
     <string-array name="pref_preferred_output_script_list_titles">
         <item>ITrans</item>

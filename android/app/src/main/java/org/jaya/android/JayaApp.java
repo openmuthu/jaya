@@ -8,6 +8,7 @@ import android.os.Looper;
 
 import junit.framework.AssertionFailedError;
 
+import org.jaya.indexsync.IndexCatalogue;
 import org.jaya.search.LuceneUnicodeSearcher;
 import org.jaya.util.Constatants;
 import org.jaya.util.Utils;
@@ -36,6 +37,7 @@ public class JayaApp extends Application{
     private static Handler mJayaAppHandler = null;
 
     private static LuceneUnicodeSearcher mSearcher = null;
+    private static IndexCatalogue mIndexCatalog = null;
 
     public void onCreate(){
         super.onCreate();
@@ -74,6 +76,14 @@ public class JayaApp extends Application{
 
     public static String getIndexMetadataFolder(){
         return getAppExtStorageFolder() + "/Index_md/";
+    }
+
+    public static IndexCatalogue getIndexCatalog(){
+        if( mIndexCatalog == null ) {
+            mIndexCatalog = IndexCatalogue.getInstance();
+            mIndexCatalog.initialize(JayaApp.getIndexMetadataFolder(), JayaApp.getIndexCatalogueBaseUrl(), JayaApp.getSearchIndexFolder());
+        }
+        return mIndexCatalog;
     }
 
     public static boolean isIndexPresent(){

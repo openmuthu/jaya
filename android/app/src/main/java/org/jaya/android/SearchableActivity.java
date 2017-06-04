@@ -19,6 +19,7 @@ import android.widget.ListView;
 import android.widget.SearchView;
 import android.widget.SimpleAdapter;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import org.apache.lucene.document.Document;
 import org.apache.lucene.queryparser.classic.ParseException;
@@ -126,6 +127,10 @@ public class SearchableActivity extends ListActivity {
             return;
 
         ListView listView = getListView();
+
+        if(mSearchResult.getResultDocs().size() == 0){
+            Toast.makeText(this, R.string.no_results_found, Toast.LENGTH_SHORT).show();
+        }
 
         listView.setAdapter(new DocumentListAdapter(this, mSearchResult));
 

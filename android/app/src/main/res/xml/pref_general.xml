@@ -30,4 +30,6 @@
         android:positiveButtonText="@null"
         android:title="@string/pref_title_preferred_output_script" />
 
+    <Preference android:title="@string/remove_unused_from_index" android:key="org.jaya.REMOVE_UNUSED_FILES_FROM_INDEX"/>
+
 </PreferenceScreen>

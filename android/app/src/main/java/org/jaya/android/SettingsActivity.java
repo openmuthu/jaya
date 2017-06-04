@@ -29,6 +29,7 @@ import android.widget.ListView;
 
 import org.apache.lucene.document.Field;
 import org.jaya.indexsync.IndexCatalogue;
+import org.jaya.indexsync.IndexCatalogueItemInstaller;
 
 import java.util.List;
 
@@ -196,6 +197,9 @@ public class SettingsActivity extends PreferenceActivity {
      */
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)
     public static class GeneralPreferenceFragment extends PreferenceFragment {
+
+        ProgressDialog mPrpgressDialog = null;
+
         @Override
         public void onCreate(Bundle savedInstanceState) {
             super.onCreate(savedInstanceState);
@@ -209,6 +213,32 @@ public class SettingsActivity extends PreferenceActivity {
             //bindPreferenceSummaryToValue(findPreference("example_text"));
             //bindPreferenceSummaryToValue(findPreference("example_list"));
             bindPreferenceSummaryToValue(findPreference(PreferencesManager.PREF_OUTPUT_SCRIPT_TYPE));
+
+            Preference button = (Preference)getPreferenceManager().findPreference("org.jaya.REMOVE_UNUSED_FILES_FROM_INDEX");
+            if (button != null) {
+                button.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
+                    @Override
+                    public boolean onPreferenceClick(Preference arg0) {
+                        if( mPrpgressDialog == null ){
+                            mPrpgressDialog = new ProgressDialog(getActivity());
+                            mPrpgressDialog.setTitle(R.string.please_wait);
+                            mPrpgressDialog.show();
+                        }
+                        IndexCatalogue indexCatalogue = JayaApp.getIndexCatalog();
+                        IndexCatalogueItemInstaller indexCatalogueItemInstaller = IndexCatalogueItemInstaller.getInstance();
+                        indexCatalogueItemInstaller.removeObsoleteFilesFromIndex(indexCatalogue, JayaApp.getSearchIndexFolder(), new IndexCatalogueItemInstaller.OnFilesRemovedCallback() {
+                            @Override
+                            public void onFilesRemoved(int error, String[] filesRemoved) {
+                                if(mPrpgressDialog != null && mPrpgressDialog.isShowing() ){
+                                    mPrpgressDialog.dismiss();
+                                    mPrpgressDialog = null;
+                                }
+                            }
+                        });
+                        return true;
+                    }
+                });
+            }
         }
 
 //        @Override
@@ -251,11 +281,8 @@ public class SettingsActivity extends PreferenceActivity {
         @Nullable
         @Override
         public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-            if( gIndexCatalogue == null ){
-                gIndexCatalogue = IndexCatalogue.getInstance();
-                gIndexCatalogue.initialize(JayaApp.getIndexMetadataFolder(), JayaApp.getIndexCatalogueBaseUrl(), JayaApp.getSearchIndexFolder());
-                gIndexCatalogue.addEventListener(this);
-            }
+            gIndexCatalogue = JayaApp.getIndexCatalog();
+            gIndexCatalogue.addEventListener(this);
             return inflater.inflate(R.layout.index_catalogue_fragment, container, false);
         }
 

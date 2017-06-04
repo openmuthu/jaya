@@ -31,9 +31,10 @@ import static org.apache.lucene.util.Version.LUCENE_47;
 public class IndexerTest {
 	
 	public static void main(String[] args){
+		//System.out.println( Utils.getTagsBasedOnFilePath("/mahAbhArata/02-sabhA-parva.txt"));
 		createMultipleIndexes("", "");
-		createIndexZipFiles("", "");
-		//mergeIndexes();
+		//createIndexZipFiles("", "");
+		mergeIndexes();
 		//deleteIndexFiles();
 	}
 

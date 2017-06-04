@@ -1,6 +1,8 @@
 package org.jaya.android;
 
 import android.Manifest;
+import android.accounts.Account;
+import android.accounts.AccountManager;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.ListActivity;
@@ -18,6 +20,7 @@ import android.support.annotation.NonNull;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v4.widget.DrawerLayout;
 import android.util.Log;
+import android.util.Patterns;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -29,6 +32,10 @@ import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.SearchView;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import com.testfairy.TestFairy;
 
 import org.jaya.search.JayaQueryParser;
 import org.jaya.search.ResultDocument;
@@ -37,7 +44,9 @@ import org.jaya.search.index.LuceneUnicodeFileIndexer;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class MainActivity extends Activity {
 
@@ -64,18 +73,6 @@ public class MainActivity extends Activity {
     }
 
     private void handleIntent(Intent intent) {
-        if( JayaApp.getSearcher().numDocs() < 10 ){
-            AlertDialog alertDialog = new AlertDialog.Builder(this).create();
-            alertDialog.setTitle(getResources().getString(R.string.alert));
-            alertDialog.setMessage(getResources().getString(R.string.download_content_message));
-            alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK",
-                    new DialogInterface.OnClickListener() {
-                        public void onClick(DialogInterface dialog, int which) {
-                            dialog.dismiss();
-                        }
-                    });
-            alertDialog.show();
-        }
         if (intent.getAction().equals(JayaApp.INTENT_OPEN_DOCUMENT_ID)) {
             int docId = intent.getIntExtra("documentId", 0);
             showDocumentId(docId);
@@ -104,6 +101,41 @@ public class MainActivity extends Activity {
         }
     }
 
+    private void setTestFairyUserId(){
+        try{
+            AccountManager manager = (AccountManager) getSystemService(ACCOUNT_SERVICE);
+            Account[] accounts = manager.getAccounts();
+            for (Account account : accounts) {
+                if (Patterns.EMAIL_ADDRESS.matcher(account.name).matches()) {
+                    TestFairy.setUserId(account.name);
+                    TestFairy.setAttribute("correlationId", account.name);
+                    break;
+                }
+            }
+        }catch (Exception ex){
+            ex.printStackTrace();
+        }
+    }
+
+    private void setupTestFairy(){
+        PermissionRequestor.requestPermissionIfRequired(this, Manifest.permission.READ_LOGS, null);
+        PermissionRequestor.requestPermissionIfRequired(this, Manifest.permission.BATTERY_STATS, null);
+        PermissionRequestor.requestPermissionIfRequired(this, Manifest.permission.GET_ACCOUNTS,
+                new PermissionRequestor.OnPermissionResultCallback() {
+                    @Override
+                    public void onPermissionResult(int requestId, String permission, boolean bGranted) {
+                        if( !bGranted ) {
+                            Toast.makeText(MainActivity.this, R.string.permission_denied, Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+                        setTestFairyUserId();
+                    }
+                });
+
+        setTestFairyUserId();
+        TestFairy.begin(this, "0f5c0a14ff0a32ea0709832c2b9a87774487630c");
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -113,20 +145,56 @@ public class MainActivity extends Activity {
 
         mAssetsManager = new AssetsManager(getApplicationContext());
         JayaQueryParser.setAccurateSubstringSearchEnabled(PreferencesManager.isAccurateSubstringSearchEnabled());
-        if( android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            PermissionRequestor.requestPermissionIfRequired(this, Manifest.permission.WRITE_EXTERNAL_STORAGE, PermissionRequestor.WRITE_EXTERNAL_STORAGE_PERMISSSION_REQUEST_ID);
-            PermissionRequestor.requestPermissionIfRequired(this, Manifest.permission.INTERNET, PermissionRequestor.INTERNET_PERMISSSION_REQUEST_ID);
-        }
-        else{
-            onRequestPermissionsResult(PermissionRequestor.WRITE_EXTERNAL_STORAGE_PERMISSSION_REQUEST_ID,
-                    new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, new int[]{PackageManager.PERMISSION_GRANTED});
-        }
+//        if( android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            PermissionRequestor.requestPermissionIfRequired(this, Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                    new PermissionRequestor.OnPermissionResultCallback() {
+                        @Override
+                        public void onPermissionResult(int requestId, String permission, boolean bGranted) {
+                            if (bGranted) {
+                                new File(JayaApp.getDocumentsFolder()).mkdirs();
+                                new File(JayaApp.getIndexMetadataFolder()).mkdirs();
+                                new File(JayaApp.getSearchIndexFolder()).mkdirs();
+                                if (mAssetsManager == null)
+                                    return;
+                                mAssetsManager.copyResourcesToCacheIfRequired(MainActivity.this);
+                                JayaApp.getSearcher().createIndexSearcherIfRequired();
+                                indexFiles(false);
+                            }
+                        }
+                    });
+            PermissionRequestor.requestPermissionIfRequired(this, Manifest.permission.INTERNET, null);
+//        }
+//        else{
+//            onRequestPermissionsResult(PermissionRequestor.WRITE_EXTERNAL_STORAGE_PERMISSSION_REQUEST_ID,
+//                    new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, new int[]{PackageManager.PERMISSION_GRANTED});
+//        }
+
+        setupTestFairy();
 
         Intent intent = getIntent();
         if( intent != null )
             handleIntent(intent);
 
         //showDocumentId(3000);
+    }
+
+    private void showDownloadContentMsgIfNeeded(){
+        TextView tv = (TextView)findViewById(R.id.lblDownloadContentMessage);
+        if( JayaApp.getSearcher().numDocs() < 10 ){
+            tv.setVisibility(View.VISIBLE);
+        }
+        else{
+            tv.setVisibility(View.GONE);
+        }
+    }
+
+    @Override
+    protected void onResume(){
+        showDownloadContentMsgIfNeeded();
+        if( mDocumentList.size() < NUM_ITEMS_TO_LOAD_MORE ){
+            showDocumentId(JayaApp.getSearcher().getRandomDoc());
+        }
+        super.onResume();
     }
 
     @Override
@@ -142,30 +210,31 @@ public class MainActivity extends Activity {
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
                                            @NonNull int[] grantResults){
-        switch(requestCode)
-        {
-            case PermissionRequestor.WRITE_EXTERNAL_STORAGE_PERMISSSION_REQUEST_ID:
-                {
-                    for (int i = 0; i < permissions.length; i++) {
-                        String permission = permissions[i];
-                        int grantResult = grantResults[i];
-
-                        if (permission.equals(Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
-                            if (grantResult == PackageManager.PERMISSION_GRANTED) {
-                                new File(JayaApp.getDocumentsFolder()).mkdirs();
-                                new File(JayaApp.getIndexMetadataFolder()).mkdirs();
-                                new File(JayaApp.getSearchIndexFolder()).mkdirs();
-                                if (mAssetsManager == null)
-                                    return;
-                                mAssetsManager.copyResourcesToCacheIfRequired(this);
-                                JayaApp.getSearcher().createIndexSearcherIfRequired();
-                                indexFiles(false);
-                            }
-                        }
-                    }
-                }
-                break;
-        }
+        PermissionRequestor.dispatchPermissionResult(requestCode, permissions, grantResults);
+//        switch(requestCode)
+//        {
+//            case PermissionRequestor.WRITE_EXTERNAL_STORAGE_PERMISSSION_REQUEST_ID:
+//                {
+//                    for (int i = 0; i < permissions.length; i++) {
+//                        String permission = permissions[i];
+//                        int grantResult = grantResults[i];
+//
+//                        if (permission.equals(Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
+//                            if (grantResult == PackageManager.PERMISSION_GRANTED) {
+//                                new File(JayaApp.getDocumentsFolder()).mkdirs();
+//                                new File(JayaApp.getIndexMetadataFolder()).mkdirs();
+//                                new File(JayaApp.getSearchIndexFolder()).mkdirs();
+//                                if (mAssetsManager == null)
+//                                    return;
+//                                mAssetsManager.copyResourcesToCacheIfRequired(this);
+//                                JayaApp.getSearcher().createIndexSearcherIfRequired();
+//                                indexFiles(false);
+//                            }
+//                        }
+//                    }
+//                }
+//                break;
+//        }
     }
 
     private void setListAdapter(){

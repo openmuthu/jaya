@@ -13,6 +13,7 @@ import java.util.Set;
 
 import org.jaya.scriptconverter.SCUtils;
 import org.jaya.scriptconverter.ScriptType;
+import org.jaya.search.JayaIndexMetadata;
 import org.jaya.util.FileDownloader;
 import org.jaya.util.FileDownloader.ProgressCallback;
 import org.jaya.util.PathUtils;
@@ -66,6 +67,7 @@ public class IndexCatalogue {
 			writeCatalogue();
 		}
 		mIsInitialized = true;
+		readCatalog(false);
 		return true;
 		//readCatalogFile(catalogFile);
 	}
@@ -123,7 +125,7 @@ public class IndexCatalogue {
 				return;			
 			long seconds = TimestampUtils.diffInSeconds(new Date(), getLastSyncDate());
 			if( seconds > TimestampUtils.SECONDS_IN_DAY*7 || force){
-				System.out.println("syncCatalogueFromRemote"); //temp
+//				System.out.println("syncCatalogueFromRemote"); //temp
 				syncCatalogueFromRemote();
 			}
 			else{
@@ -190,7 +192,7 @@ public class IndexCatalogue {
 	public void syncCatalogueFromRemote(){
 		if( sbCatalogueUpdateInProgress )
 			return;
-		System.out.println("Inside syncCatalogueFromRemote"); //temp
+		//System.out.println("Inside syncCatalogueFromRemote"); //temp
 		sbCatalogueUpdateInProgress = true;
 		final String downloadedCatalogFilePath = PathUtils.get(mLocalCatalogFolder, INDEX_CATALOG_FILE_NAME+"_r");
 		FileDownloader fd = new FileDownloader(
@@ -200,12 +202,12 @@ public class IndexCatalogue {
 					@Override
 					public void onComplete(int error) {
 						try{
-							System.out.println("onComplete 1"); //temp
+							//System.out.println("onComplete 1"); //temp
 							if( error == 0 ){
 								JSONParser parser = new JSONParser();
 								JSONObject newCatalog = (JSONObject)parser.parse(new FileReader(new File(downloadedCatalogFilePath)));
 								mergeWithCatalog(newCatalog);
-								System.out.println("onComplete 2"); //temp
+								//System.out.println("onComplete 2"); //temp
 							}
 						}catch(Exception ex){
 							ex.printStackTrace();
@@ -310,7 +312,7 @@ public class IndexCatalogue {
 		}
 	}
 	
-	public boolean mergeWithCatalog(JSONObject newCatalog){
+	public synchronized boolean mergeWithCatalog(JSONObject newCatalog){
 		boolean retVal = false;
 		try{
 			if( !mCatalogue.get("version").equals(newCatalog.get("version")) )
@@ -327,15 +329,26 @@ public class IndexCatalogue {
 			}
 			// Remove items from existing catalog if they are not present in the newly downloaded one.
 			Set<Object> keySet = oldCatalogueItems.keySet();
+			boolean bNeedsIndexOptimization = false;
 			for(Object key:keySet){
 				if( !newCatalogItems.containsKey(key) ) {
-					// TODO: We should also remove the corresponding docs from the index, in this case
+					// We should also remove the corresponding docs from the index, in this case
+					bNeedsIndexOptimization = true;
 					oldCatalogueItems.remove(key);
 				}
 			}
 			mCatalogue.put("lastModified", newCatalog.get("lastModified"));
 			mCatalogue.put("lastSyncDate", TimestampUtils.nowAsString());
 			mCatalogue.put("baseUrl", newCatalog.get("baseUrl"));
+			if(bNeedsIndexOptimization){
+				IndexCatalogueItemInstaller.getInstance().removeObsoleteFilesFromIndex(this, mAppSearchIndexFolder, new IndexCatalogueItemInstaller.OnFilesRemovedCallback() {
+					@Override
+					public void onFilesRemoved(int error, String[] filesRemoved) {
+						if( error != 0 )
+							System.err.println("mergeWithCatalog(): removeObsoleteFilesFromIndex failed");
+					}
+				});
+			}
 			
 		}catch(Exception ex){
 			ex.printStackTrace();
@@ -382,6 +395,39 @@ public class IndexCatalogue {
 		if( !getItemNames().contains(name) )
 			return null;
 		return new Item(this, name);
+	}
+	
+	public void getAllIncludedFiles(final ItemDetailsCallback callback){
+		final Set<String> itemNames = getItemNames();
+		if( itemNames == null || itemNames.size() == 0 ){
+			if( callback != null ){
+				callback.onDataArrived("", 1);
+			}
+			return;
+		}
+		Item item = null;
+		for(String name:itemNames){
+			item = getItemByName(name);
+			break;
+		}
+		item.getIncludedFiles(new IndexCatalogue.ItemDetailsCallback() {
+			@Override
+			public void onDataArrived(String data, int error) {
+				if( error != 0 || mCatalogueDetails == null ){
+					if( callback != null )
+						callback.onDataArrived(data, 1);
+					return;
+				}
+				StringBuffer includedFiles = new StringBuffer(12*1024);
+				JSONObject items = (JSONObject)mCatalogueDetails.get("items");
+				for(String name:itemNames){
+					includedFiles.append((String)((JSONObject)(items.get(name))).get("files"));
+					includedFiles.append(JayaIndexMetadata.MD_REC_DELEMITER);
+				}
+				if( callback != null )
+					callback.onDataArrived(includedFiles.toString(), error);				
+			}
+		});
 	}
 	
 	public class Item{

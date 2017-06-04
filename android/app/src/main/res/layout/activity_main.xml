@@ -23,10 +23,22 @@
         android:id="@+id/content_frame"
         android:layout_width="match_parent"
         android:layout_height="match_parent" >
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical">
+        <TextView
+            android:id="@+id/lblDownloadContentMessage"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/download_content_message"
+            android:visibility="invisible"
+            android:padding="5dp"/>
         <org.jaya.android.JayaDocListView xmlns:android="http://schemas.android.com/apk/res/android"
             android:id="@+id/doc_list_view"
             android:layout_width="fill_parent"
             android:layout_height="fill_parent" />
+        </LinearLayout>
     </FrameLayout>
 
     <!-- android:layout_gravity="start" tells DrawerLayout to treat

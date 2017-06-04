@@ -62,13 +62,15 @@ public class JayaIndexMetadata {
 			return retVal;
 		String[] pathsArray = filePaths.split(MD_REC_DELEMITER);
 		for(String path:pathsArray){
-			retVal.add(path);
+			if( !path.isEmpty() )
+				retVal.add(path);
 		}
 		return retVal;
 	}
 	
+	@SuppressWarnings("unchecked")
 	public Set<String> getIndexedFilePathSet(){
-		return mIndexedFilePathSet;
+		return (Set<String>) mIndexedFilePathSet.clone();
 	}
 	
 	public boolean hasIndexedFile(String path){
@@ -87,6 +89,10 @@ public class JayaIndexMetadata {
 		for( String file: filePathSet ){
 			mIndexedFilePathSet.add(file);
 		}
+		writeToFile();
+	}	
+	
+	private void writeToFile(){
 		String indexedFilePaths = StringUtils.join(MD_REC_DELEMITER, mIndexedFilePathSet.toArray(new String[mIndexedFilePathSet.size()]));
 		FileWriter fw = null;
 		try{
@@ -99,6 +105,14 @@ public class JayaIndexMetadata {
 		}
 		finally{
 			Utils.closeSilently(fw);
+		}		
+	}
+	
+	public void remove(Set<String> pathsToRemove){
+		if( mIndexedFilePathSet == null || pathsToRemove == null ){
+			return;
 		}
-	}	
+		if( mIndexedFilePathSet.removeAll(pathsToRemove) )
+			writeToFile();
+	}
 }

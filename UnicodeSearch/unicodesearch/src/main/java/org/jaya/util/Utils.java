@@ -7,7 +7,10 @@ import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.jaya.scriptconverter.ScriptConverter;
 import org.jaya.scriptconverter.ScriptConverterFactory;
@@ -44,6 +47,8 @@ public class Utils {
     public static final String getBaseName(final String filename) {
         if (filename == null) return null;
         int lastSlashIndex = filename.lastIndexOf(File.separatorChar);
+        if( lastSlashIndex < 0 && File.separatorChar != '/')
+        	lastSlashIndex = filename.lastIndexOf("/");
         final String afterLastSlash = filename.substring(lastSlashIndex + 1);
         final int dotIndex = afterLastSlash.lastIndexOf('.');
         return (dotIndex == -1) ? afterLastSlash.substring(0) : afterLastSlash.substring(0, dotIndex);
@@ -56,13 +61,20 @@ public class Utils {
         return afterLastSlash;
     }    
     
-    public static final String getTagsBasedOnFileName(String fileName){
-		String basename = getBaseName(fileName);
+    public static final String getTagsBasedOnFilePath(String fileRelativePath){
+		String basename = getBaseName(fileRelativePath);
 		String retVal = basename.replaceAll("[\\s-]+", "");
 		
 		ScriptConverter it2dev = ScriptConverterFactory.getScriptConverter(ScriptType.ITRANS,
 				ScriptType.DEVANAGARI);
 		retVal += " " + it2dev.convert(retVal);
+		
+		String tagsForPath = fileRelativePath.replaceAll("[\\s-]+", "").replaceAll("/", " ").trim();
+		retVal += " " + it2dev.convert(tagsForPath);
+		String baseNameWithoutNumberPrefix = basename.replaceAll("[\\s-]+", "").replaceAll("[0-9]+", "");
+		retVal += " " + it2dev.convert(baseNameWithoutNumberPrefix);
+		HashSet<String> tagSet = new HashSet<String>(Arrays.asList(retVal.split(" ")));
+		retVal = StringUtils.join(" ", tagSet.toArray(new String[0]));
 		
 		return retVal;
     }

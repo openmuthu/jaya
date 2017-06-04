@@ -156,11 +156,11 @@ public class LuceneUnicodeFileIndexer {
 		return bIndexableExtFound;
 	}
 	
-	private String getTagsFromFileName(String fileName){
-		if( !hasIndexableExtension(fileName) )
+	private String getTagsFromFilePath(String filePath){
+		if( !hasIndexableExtension(filePath) )
 			return "";
 		
-		return Utils.getTagsBasedOnFileName(fileName);	
+		return Utils.getTagsBasedOnFilePath(filePath);	
 	}
 	
 	private String getTagsForFile(String path){
@@ -203,8 +203,9 @@ public class LuceneUnicodeFileIndexer {
 	public void deleteIndexEntriesWithFilePath(String path){
 		try{
 			TermQuery query = new TermQuery(new Term(Constatants.FIELD_PATH, path));
-			mIndexWriter.deleteDocuments(query);
+			mIndexWriter.deleteDocuments(query);			
 			mIndexWriter.commit();
+			mIndexMetadata.remove(JayaIndexMetadata.getIndexedFilePathSet(path));
 		}catch(IOException ex){
 			ex.printStackTrace();
 		}
@@ -283,9 +284,7 @@ public class LuceneUnicodeFileIndexer {
 			int docLengthSofar = 0;
 			String path = file.getCanonicalPath();
 			
-			String tags = getTagsForFile(getTagFilePathForFile(path));
-			tags += " " + getTagsFromFileName(path);
-			System.out.println("tags for file: " + path + " are : " + tags);
+			String tags = getTagsForFile(getTagFilePathForFile(path));			
 			String encoding = Utils.guessFileEncoding(path);
 			BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(path), encoding));
 			String line = "";
@@ -293,11 +292,13 @@ public class LuceneUnicodeFileIndexer {
 			path = path.replace(Constatants.FILES_TO_INDEX_DIRECTORY, "");
 			path = path.replace("\\", "/");
 			filePathSet.add(path);
+			tags += " " + getTagsFromFilePath(path);
+			System.out.println("tags for file: " + path + " are : " + tags);			
 			int docLocalId = 0;
 			for(int i=0;(line=reader.readLine())!=null;i++){
 				//if(line.trim().matches("^[\\s\\r\\n]+$")){
 				if(line.trim().isEmpty()){
-					System.out.println("Skipping empty line");
+					//System.out.println("Skipping empty line");
 					i--;
 					continue;
 				}
