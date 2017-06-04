@@ -16,8 +16,6 @@ import org.jaya.search.SearchResult;
 import org.jaya.util.Constatants;
 
 import java.util.List;
-import java.util.prefs.PreferenceChangeEvent;
-import java.util.prefs.PreferenceChangeListener;
 
 /**
  * Created by murthy on 08/04/17.

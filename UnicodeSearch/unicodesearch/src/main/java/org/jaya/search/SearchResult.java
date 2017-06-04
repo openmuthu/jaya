@@ -1,10 +1,10 @@
 package org.jaya.search;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.jaya.scriptconverter.SCUtils;
 import org.jaya.scriptconverter.ScriptType;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class SearchResult {
 	

@@ -1,21 +1,16 @@
 package org.jaya.indexsync;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.ExecutorService;
-
-import org.apache.lucene.util.CollectionUtil;
 import org.jaya.search.JayaIndexMetadata;
 import org.jaya.search.index.LuceneUnicodeFileIndexer;
 import org.jaya.util.PathUtils;
 import org.jaya.util.Utils;
 import org.jaya.util.ZipUtils;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 
 public class IndexCatalogueItemInstaller {
 
@@ -37,7 +32,7 @@ public class IndexCatalogueItemInstaller {
 	}
 	
 	public void removeObsoleteFilesFromIndex(final IndexCatalogue indexCatalog, final String indexFolder, final OnFilesRemovedCallback callback){
-		final Thread currentThread = Thread.currentThread();
+		final long currentThreadId = Thread.currentThread().getId();
 		JayaIndexMetadata jayaIndexMetadata = new JayaIndexMetadata(indexFolder);
 		final Set<String> indexedFilePathSet = jayaIndexMetadata.getIndexedFilePathSet();
 		indexCatalog.getAllIncludedFiles(new IndexCatalogue.ItemDetailsCallback() {			
@@ -78,7 +73,7 @@ public class IndexCatalogueItemInstaller {
 						}
 					}
 				};
-				if( currentThread.getId() == Thread.currentThread().getId() )
+				if( currentThreadId == Thread.currentThread().getId() )
 					new Thread(r).start();
 				else
 					r.run();
@@ -87,29 +82,40 @@ public class IndexCatalogueItemInstaller {
 	}
 
 	public void unistallItem(final IndexCatalogue.Item item, final String indexFolder, final OnUninstalledCallback callback){
+		final long currentThreadId = Thread.currentThread().getId();
 		item.getIncludedFiles(new IndexCatalogue.ItemDetailsCallback() {
 			@Override
-			public void onDataArrived(String data, int error) {
-				synchronized(mInstance){
-					LuceneUnicodeFileIndexer indexer = null;
-					try {
-						if( error == 0 ){
-							indexer = new LuceneUnicodeFileIndexer(indexFolder);
-							Set<String> filePathSet = JayaIndexMetadata.getIndexedFilePathSet(data);
-							for(String path:filePathSet){
-								indexer.deleteIndexEntriesWithFilePath(path);
+			public void onDataArrived(final String data, final int error) {
+				Runnable r = new Runnable() {
+					@Override
+					public void run() {
+						synchronized(mInstance){
+							LuceneUnicodeFileIndexer indexer = null;
+							try {
+								if( error == 0 ){
+									indexer = new LuceneUnicodeFileIndexer(indexFolder);
+									Set<String> filePathSet = JayaIndexMetadata.getIndexedFilePathSet(data);
+									for(String path:filePathSet){
+										indexer.deleteIndexEntriesWithFilePath(path);
+									}
+									item.setIsInstalled(false);
+								}
+							}catch(Exception ex){
+								ex.printStackTrace();
+							}finally {
+								if( indexer != null )
+									indexer.close();
+								if( callback != null )
+									callback.onUninstalled(error, item);
 							}
-							item.setIsInstalled(false);
 						}
-					}catch(Exception ex){
-						ex.printStackTrace();
-					}finally {
-						if( indexer != null )
-							indexer.close();
-						if( callback != null )
-							callback.onUninstalled(error, item);
 					}
-				}
+				};
+
+				if( currentThreadId == Thread.currentThread().getId() )
+					new Thread(r).start();
+				else
+					r.run();
 			}
 		});
 	}

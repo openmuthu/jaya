@@ -107,7 +107,7 @@ public class JayaQueryParser {
 		for( String token: tokensBySpace ){
 			if(token.isEmpty())
 				continue;
-			if( token.startsWith("#") ){
+			if( token.startsWith("#") || token.startsWith(",") ){
 				mSearchTags.add(token.substring(1));
 			}
 			else{
@@ -123,7 +123,10 @@ public class JayaQueryParser {
 			retVal += word + suffix + " ";
 		}
 		if( mSearchTags.size() > 0 ){
-			retVal = "(" + retVal + ")&&(";
+			if( mSearchWords.size() > 0 )
+				retVal = "(" + retVal + ")&&(";
+			else
+				retVal = "(";
 		}
 		for(int i=0;i<mSearchTags.size();i++){
 			if( i!=0 )
@@ -132,6 +135,9 @@ public class JayaQueryParser {
 		}
 		if( mSearchTags.size() > 0 )
 			retVal += ")";		
+		if( mSearchTags.size() == 1 && mSearchWords.size() == 0 ){
+			retVal += "&&(docLocalId:0)"; 
+		}
 		return retVal;
 	}
 }

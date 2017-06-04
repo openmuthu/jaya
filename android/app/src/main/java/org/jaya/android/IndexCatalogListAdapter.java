@@ -2,8 +2,10 @@ package org.jaya.android;
 
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
+import android.app.SearchManager;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
@@ -27,7 +29,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
-import java.util.logging.Handler;
 
 /**
  * Created by murthy on 07/05/17.
@@ -119,6 +120,7 @@ public class IndexCatalogListAdapter extends BaseAdapter {
         private Button mBtnRemove;
         private Button mBtnInfo;
         private Button mBtnDownloadOrUpdate;
+        private Button mBtnOpen;
         private ProgressBar mProgressBar;
 
         private void showProgressBar(){
@@ -154,6 +156,7 @@ public class IndexCatalogListAdapter extends BaseAdapter {
             mCatalogItemSizeView = (TextView) itemView.findViewById(R.id.index_catalogue_item_size);
             mBtnInfo = (Button)itemView.findViewById(R.id.btnIndexCatalogueItemInfo);
             mBtnDownloadOrUpdate = (Button)itemView.findViewById(R.id.btnIndexCatalogueDownloadOrUpdate);
+            mBtnOpen = (Button)itemView.findViewById(R.id.btnIndexCatalogueItemOpen);
             mBtnRemove = (Button)itemView.findViewById(R.id.btnIndexCatalogueItemRemove);
             mProgressBar = (ProgressBar)itemView.findViewById(R.id.progressBarIndexCatalogueItem);
             mBytesDownloadedView = (TextView) itemView.findViewById(R.id.index_catalogue_item_bytes_downloaded);
@@ -279,6 +282,37 @@ public class IndexCatalogListAdapter extends BaseAdapter {
                 }
             });
 
+            mBtnOpen.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    try {
+                        String name = mCatalogItem.getName();
+                        String[] parts = mCatalogItem.getName().split("_");
+                        for(int i=parts.length-1;i>=0;i--){
+                            try {
+                                Integer.parseInt(parts[i]);
+                            }catch (NumberFormatException ex){
+                                name = parts[i];
+                                break;
+                            }
+                        }
+                        Intent intent = new Intent(mContext, SearchableActivity.class);
+                        intent.setAction(Intent.ACTION_SEARCH);
+                        intent.putExtra(SearchManager.QUERY, ","+name);
+                        mContext.startActivity(intent);
+//                        SearchResult sr =  JayaApp.getSearcher().searchITRANSString(","+name);
+//                        if( sr.getResultDocs().size() > 0 ){
+//                            int docId = sr.getResultDocs().get(0).getId();
+//                            Intent intent = new Intent(mContext, MainActivity.class);
+//                            intent.setAction(JayaApp.INTENT_OPEN_DOCUMENT_ID);
+//                            intent.putExtra("documentId", docId);
+//                            mContext.startActivity(intent);
+//                        }
+                    }catch (Exception ex){
+                        ex.printStackTrace();
+                    }
+                }
+            });
 
             refresh();
         }
@@ -302,9 +336,11 @@ public class IndexCatalogListAdapter extends BaseAdapter {
                 return;
             if( mCatalogItem.getIsInstalled() ){
                 mBtnRemove.setEnabled(true);
+                mBtnOpen.setEnabled(true);
             }
             else{
                 mBtnRemove.setEnabled(false);
+                mBtnOpen.setEnabled(false);
             }
         }
 

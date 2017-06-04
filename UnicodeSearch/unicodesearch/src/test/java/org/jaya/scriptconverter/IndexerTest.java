@@ -30,11 +30,13 @@ import static org.apache.lucene.util.Version.LUCENE_47;
 
 public class IndexerTest {
 	
+	private static final String FINAL_INDEX_NAME = "final_index_all";
+	
 	public static void main(String[] args){
 		//System.out.println( Utils.getTagsBasedOnFilePath("/mahAbhArata/02-sabhA-parva.txt"));
-		createMultipleIndexes("", "");
-		//createIndexZipFiles("", "");
-		mergeIndexes();
+		//createMultipleIndexes("", "");
+		createIndexZipFiles("", "");
+		//mergeIndexes();
 		//deleteIndexFiles();
 	}
 
@@ -53,7 +55,7 @@ public class IndexerTest {
 	
 	public static void mergeIndexes(){
 		try{
-			String finalIndexDir = Constatants.INDEX_DIRECTORY + File.separator +"final_index_all";
+			String finalIndexDir = Constatants.INDEX_DIRECTORY + File.separator + FINAL_INDEX_NAME;
 			LuceneUnicodeFileIndexer indexer = new LuceneUnicodeFileIndexer(finalIndexDir);
 			List<String> indexPaths = new ArrayList<>();
 			List<File> firstLevelDirs = Utils.getFirstLevelDirs(new File(Constatants.INDEX_DIRECTORY));
@@ -62,7 +64,7 @@ public class IndexerTest {
 				indexPaths.clear();
 				for(int j=0;i<firstLevelDirs.size()&&j<2;i++,j++){
 					String str = firstLevelDirs.get(i).getCanonicalPath();
-					if( str.endsWith("final_index_all"))
+					if( str.endsWith(FINAL_INDEX_NAME))
 						continue;
 					indexPaths.add(str);
 				}
@@ -184,6 +186,8 @@ public class IndexerTest {
 		for(File dir:firstLevelDirs){
 			try{
 				String path = dir.getCanonicalPath();
+				if( Utils.getBaseName(path).endsWith(FINAL_INDEX_NAME))
+					continue;
 				String zipPath = Paths.get(zipOutputPath, Utils.getBaseName(path)+".zip").toString();
 				zipFolder(path, zipPath);
 				

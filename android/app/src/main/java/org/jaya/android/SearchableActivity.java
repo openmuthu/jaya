@@ -5,7 +5,6 @@ import android.app.ProgressDialog;
 import android.app.SearchManager;
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.text.Html;
 import android.text.Spanned;
@@ -22,7 +21,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import org.apache.lucene.document.Document;
-import org.apache.lucene.queryparser.classic.ParseException;
 import org.jaya.scriptconverter.ScriptConverter;
 import org.jaya.scriptconverter.ScriptConverterFactory;
 import org.jaya.scriptconverter.ScriptType;
@@ -31,7 +29,6 @@ import org.jaya.search.ResultDocument;
 import org.jaya.search.SearchResult;
 import org.jaya.util.Constatants;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -123,8 +120,10 @@ public class SearchableActivity extends ListActivity {
     }
 
     private void setListAdapter() {
-        if (mSearchResult == null)
+        if (mSearchResult == null) {
+            Toast.makeText(this, R.string.no_results_found, Toast.LENGTH_SHORT).show();
             return;
+        }
 
         ListView listView = getListView();
 

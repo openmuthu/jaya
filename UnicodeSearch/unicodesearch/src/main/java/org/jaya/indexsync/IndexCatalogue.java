@@ -1,16 +1,5 @@
 package org.jaya.indexsync;
 
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.lang.ref.WeakReference;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
-
 import org.jaya.scriptconverter.SCUtils;
 import org.jaya.scriptconverter.ScriptType;
 import org.jaya.search.JayaIndexMetadata;
@@ -21,6 +10,17 @@ import org.jaya.util.TimestampUtils;
 import org.jaya.util.Utils;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
+
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.lang.ref.WeakReference;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
 
 public class IndexCatalogue {
 	

@@ -1,5 +1,8 @@
 package org.jaya.indexsync;
 
+import org.jaya.util.FileDownloader;
+import org.jaya.util.FileDownloader.ProgressCallback;
+
 import java.io.File;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
@@ -7,9 +10,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.FutureTask;
-
-import org.jaya.util.FileDownloader;
-import org.jaya.util.FileDownloader.ProgressCallback;
 
 public class IndexCatalogueItemDownloader {
 	
