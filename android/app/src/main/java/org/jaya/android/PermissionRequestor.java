@@ -8,6 +8,7 @@ import android.os.Build;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -19,11 +20,34 @@ public class PermissionRequestor {
 
     public static Map<Integer, OnPermissionResultCallback> mPermissionResultCallbackMap = new TreeMap<>();
     public static int mRequestId = 0;
+    private static ArrayList<PermissionRequest> mPendingRequests = new ArrayList<>();
 
     private static int nextRequestId(){
         return ++mRequestId;
     }
 
+    static class PermissionRequest{
+        private Activity activity;
+        private String permission;
+        private OnPermissionResultCallback callback;
+        PermissionRequest(Activity a, String p, OnPermissionResultCallback c){
+            activity = a;
+            permission = p;
+            callback = c;
+        }
+
+        public String getPermission(){ return permission; }
+        public OnPermissionResultCallback getCallback(){ return callback; }
+
+        public Activity getActivity(){ return activity;}
+    }
+    public static boolean queuePermissionRequest(final Activity activity, final String permission, OnPermissionResultCallback callback) {
+        mPendingRequests.add(new PermissionRequest(activity, permission, callback));
+        if (mPendingRequests.size() > 1) {
+            return false;
+        }
+        return requestPermissionIfRequired(activity, permission, callback);
+    }
 
     public static boolean requestPermissionIfRequired(final Activity activity, final String permission, OnPermissionResultCallback callback){
         final int requestId = nextRequestId();
@@ -74,22 +98,35 @@ public class PermissionRequestor {
     }
 
     public static void dispatchPermissionResult(int requestId, String[] permissions, int[] grantResults){
-        if( !mPermissionResultCallbackMap.containsKey(requestId) )
-            return;
-        OnPermissionResultCallback callback = mPermissionResultCallbackMap.get(requestId);
-        mPermissionResultCallbackMap.remove(requestId);
-        if(callback != null){
-            for(int i=0;i<permissions.length;i++) {
-                callback.onPermissionResult(requestId, permissions[i], grantResults[i] == PackageManager.PERMISSION_GRANTED);
+        try {
+            if (!mPermissionResultCallbackMap.containsKey(requestId))
+                return;
+            OnPermissionResultCallback callback = mPermissionResultCallbackMap.get(requestId);
+            mPermissionResultCallbackMap.remove(requestId);
+            if (callback != null) {
+                for (int i = 0; i < permissions.length; i++) {
+                    callback.onPermissionResult(requestId, permissions[i], grantResults[i] == PackageManager.PERMISSION_GRANTED);
+                }
             }
+        }catch (Exception ex){
+            ex.printStackTrace();
         }
+        if( mPendingRequests.size() == 0 )
+            return;
+        PermissionRequest pr = mPendingRequests.remove(0);
+        try {
+            requestPermissionIfRequired(pr.getActivity(), pr.getPermission(), pr.getCallback());
+        }catch (Exception ex){
+            ex.printStackTrace();
+        }
+
     }
 
     private static void showMessageOKCancel(Activity activity, String message, DialogInterface.OnClickListener okListener) {
         new AlertDialog.Builder(activity)
                 .setMessage(message)
                 .setPositiveButton("OK", okListener)
-                .setNegativeButton("Cancel", null)
+                .setCancelable(false)
                 .create()
                 .show();
     }

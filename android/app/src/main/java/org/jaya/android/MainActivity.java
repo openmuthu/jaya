@@ -135,29 +135,23 @@ public class MainActivity extends Activity {
 
         mAssetsManager = new AssetsManager(getApplicationContext());
         JayaQueryParser.setAccurateSubstringSearchEnabled(PreferencesManager.isAccurateSubstringSearchEnabled());
-//        if( android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            PermissionRequestor.requestPermissionIfRequired(this, Manifest.permission.WRITE_EXTERNAL_STORAGE,
-                    new PermissionRequestor.OnPermissionResultCallback() {
-                        @Override
-                        public void onPermissionResult(int requestId, String permission, boolean bGranted) {
-                            if (bGranted) {
-                                new File(JayaApp.getDocumentsFolder()).mkdirs();
-                                new File(JayaApp.getIndexMetadataFolder()).mkdirs();
-                                new File(JayaApp.getSearchIndexFolder()).mkdirs();
-                                if (mAssetsManager == null)
-                                    return;
-                                mAssetsManager.copyResourcesToCacheIfRequired(MainActivity.this);
-                                JayaApp.getSearcher().createIndexSearcherIfRequired();
-                                indexFiles(false);
-                            }
+        PermissionRequestor.requestPermissionIfRequired(this, Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                new PermissionRequestor.OnPermissionResultCallback() {
+                    @Override
+                    public void onPermissionResult(int requestId, String permission, boolean bGranted) {
+                        if (bGranted) {
+                            new File(JayaApp.getDocumentsFolder()).mkdirs();
+                            new File(JayaApp.getIndexMetadataFolder()).mkdirs();
+                            new File(JayaApp.getSearchIndexFolder()).mkdirs();
+                            if (mAssetsManager == null)
+                                return;
+                            mAssetsManager.copyResourcesToCacheIfRequired(MainActivity.this);
+                            JayaApp.getSearcher().createIndexSearcherIfRequired();
+                            indexFiles(false);
                         }
-                    });
-            PermissionRequestor.requestPermissionIfRequired(this, Manifest.permission.INTERNET, null);
-//        }
-//        else{
-//            onRequestPermissionsResult(PermissionRequestor.WRITE_EXTERNAL_STORAGE_PERMISSSION_REQUEST_ID,
-//                    new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, new int[]{PackageManager.PERMISSION_GRANTED});
-//        }
+                    }
+                });
+        PermissionRequestor.requestPermissionIfRequired(this, Manifest.permission.INTERNET, null);
 
         setupTestFairy();
 
