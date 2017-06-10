@@ -155,9 +155,11 @@ public class MainActivity extends Activity {
 
         setupTestFairy();
 
-        Intent intent = getIntent();
-        if( intent != null )
-            handleIntent(intent);
+        if( savedInstanceState == null ) { // If savedInstanceState is not null, onRestoreInstanceState() will take care of loading the doc
+            Intent intent = getIntent();
+            if (intent != null)
+                handleIntent(intent);
+        }
 
         //showDocumentId(3000);
     }
@@ -179,6 +181,27 @@ public class MainActivity extends Activity {
             showDocumentId(JayaApp.getSearcher().getRandomDoc());
         }
         super.onResume();
+    }
+
+    @Override
+    public void onRestoreInstanceState(Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+        if( savedInstanceState != null ) {
+            int docId = savedInstanceState.getInt("documentId");
+            System.out.println("onCreate - docId: " + docId);
+            showDocumentId(docId);
+        }
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle b) {
+        super.onSaveInstanceState(b);
+        final ListView listView = (ListView) findViewById(R.id.doc_list_view);
+        if( listView != null && mDocumentList != null ) {
+            ResultDocument doc = mDocumentList.get(listView.getFirstVisiblePosition());
+            System.out.println("onSaveInstanceState - docid: " + doc.getId());
+            b.putInt("documentId", doc.getId());
+        }
     }
 
     @Override
@@ -226,7 +249,7 @@ public class MainActivity extends Activity {
 
         DocumentListAdapter docListAdapter = new DocumentListAdapter(this, mDocumentList);
         listView.setAdapter(docListAdapter);//sets the adapter for listView
-
+        listView.setSelection(0);
 
         listView.setOnScrollListener(new AbsListView.OnScrollListener(){
 
