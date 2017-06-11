@@ -8,9 +8,11 @@ import android.os.Looper;
 
 import junit.framework.AssertionFailedError;
 
+import org.jaya.annotation.AnnotationManager;
 import org.jaya.indexsync.IndexCatalogue;
 import org.jaya.search.LuceneUnicodeSearcher;
 import org.jaya.util.Constatants;
+import org.jaya.util.PathUtils;
 import org.jaya.util.Utils;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -18,6 +20,7 @@ import org.json.simple.parser.JSONParser;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 
 /**
  * Created by murthy on 12/03/17.
@@ -38,6 +41,11 @@ public class JayaApp extends Application{
 
     private static LuceneUnicodeSearcher mSearcher = null;
     private static IndexCatalogue mIndexCatalog = null;
+    private static AnnotationManager mMRUDocsManager = null;
+    private static AnnotationManager mAnnotationManager = null;
+    private static Object mJayaAppSingletonMutex = new Object();
+
+    private static ScheduledThreadPoolExecutor mExecutor = new ScheduledThreadPoolExecutor(2);
 
     public void onCreate(){
         super.onCreate();
@@ -51,7 +59,10 @@ public class JayaApp extends Application{
 
     public static LuceneUnicodeSearcher getSearcher(){
         if (mSearcher == null) {
-            mSearcher = new LuceneUnicodeSearcher(JayaApp.getSearchIndexFolder());
+            synchronized (mJayaAppSingletonMutex) {
+                if( mSearcher == null )
+                    mSearcher = new LuceneUnicodeSearcher(JayaApp.getSearchIndexFolder());
+            }
         }
         return mSearcher;
     }
@@ -76,6 +87,10 @@ public class JayaApp extends Application{
 
     public static String getIndexMetadataFolder(){
         return getAppExtStorageFolder() + "/Index_md/";
+    }
+
+    public static String getAppDataFolder(){
+        return getAppExtStorageFolder() + "/md/";
     }
 
     public static IndexCatalogue getIndexCatalog(){
@@ -127,6 +142,39 @@ public class JayaApp extends Application{
         File sigFile = new File(sigFilePath);
 
         return !sigFile.exists();
+    }
+
+    public static AnnotationManager getMRUDocsManager(){
+        if( mMRUDocsManager == null ) {
+            synchronized (mJayaAppSingletonMutex) {
+                if( mMRUDocsManager == null )
+                    mMRUDocsManager = new AnnotationManager(getSearcher(), PathUtils.get(getAppDataFolder(), "mru.json"), 100);
+            }
+        }
+        return mMRUDocsManager;
+    }
+
+    public static AnnotationManager getAnnotationManager(){
+        if( mAnnotationManager == null ) {
+            synchronized (mJayaAppSingletonMutex) {
+                if( mAnnotationManager == null )
+                    mAnnotationManager = new AnnotationManager(getSearcher(), PathUtils.get(getAppDataFolder(), "annotations.json"));
+            }
+        }
+        return mAnnotationManager;
+    }
+
+    public static void saveMRUAndAnnotationsIfDirty(){
+        if( mMRUDocsManager != null ){
+            mMRUDocsManager.saveIfDirty();
+        }
+        if( mAnnotationManager != null ){
+            mAnnotationManager.saveIfDirty();
+        }
+    }
+
+    public static void runOnWorkerThread(Runnable r){
+        mExecutor.submit(r);
     }
 
     public static void runOnUiThread(Runnable r) {

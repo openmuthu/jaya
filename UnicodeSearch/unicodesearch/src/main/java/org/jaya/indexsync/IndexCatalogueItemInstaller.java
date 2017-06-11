@@ -48,7 +48,8 @@ public class IndexCatalogueItemInstaller {
 							return;
 						}
 						Set<String> allValidFilePathSet = JayaIndexMetadata.getIndexedFilePathSet(allValidFiles);
-						if( !indexedFilePathSet.removeAll(allValidFilePathSet) ){
+						if( allValidFilePathSet == null || allValidFilePathSet.isEmpty()
+								|| !indexedFilePathSet.removeAll(allValidFilePathSet) ){
 							if( callback != null )
 								callback.onFilesRemoved(error, new String[]{});
 							return;

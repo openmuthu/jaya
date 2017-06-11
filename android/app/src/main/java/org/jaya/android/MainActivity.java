@@ -13,9 +13,12 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.v4.widget.DrawerLayout;
+import android.support.v7.app.ActionBarActivity;
 import android.support.v7.app.ActionBarDrawerToggle;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.util.Patterns;
+import android.view.ActionMode;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -29,19 +32,24 @@ import android.widget.Toast;
 
 import com.testfairy.TestFairy;
 
+import org.jaya.annotation.Annotation;
+import org.jaya.annotation.AnnotationManager;
 import org.jaya.search.JayaQueryParser;
 import org.jaya.search.ResultDocument;
 import org.jaya.search.index.LuceneUnicodeFileIndexer;
+import org.jaya.util.TimestampUtils;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 public class MainActivity extends Activity {
 
     public static final int NUM_ITEMS_TO_LOAD_MORE = 4;
 
+    private static ActionMode mActionMode = null;
     private DrawerLayout mDrawerLayout;
     private ListView mDrawerList;
     private String[] mDrawerListTitles;
@@ -55,6 +63,8 @@ public class MainActivity extends Activity {
     AssetsManager mAssetsManager;
 
     List<ResultDocument> mDocumentList = new ArrayList<>();
+
+    private Annotation mLastAnnotation = null;
 
     @Override
     protected void onNewIntent(Intent intent) {
@@ -143,6 +153,7 @@ public class MainActivity extends Activity {
                             new File(JayaApp.getDocumentsFolder()).mkdirs();
                             new File(JayaApp.getIndexMetadataFolder()).mkdirs();
                             new File(JayaApp.getSearchIndexFolder()).mkdirs();
+                            new File(JayaApp.getAppDataFolder()).mkdirs();
                             if (mAssetsManager == null)
                                 return;
                             mAssetsManager.copyResourcesToCacheIfRequired(MainActivity.this);
@@ -188,7 +199,6 @@ public class MainActivity extends Activity {
         super.onRestoreInstanceState(savedInstanceState);
         if( savedInstanceState != null ) {
             int docId = savedInstanceState.getInt("documentId");
-            System.out.println("onCreate - docId: " + docId);
             showDocumentId(docId);
         }
     }
@@ -198,19 +208,35 @@ public class MainActivity extends Activity {
         super.onSaveInstanceState(b);
         final ListView listView = (ListView) findViewById(R.id.doc_list_view);
         if( listView != null && mDocumentList != null ) {
-            ResultDocument doc = mDocumentList.get(listView.getFirstVisiblePosition());
-            System.out.println("onSaveInstanceState - docid: " + doc.getId());
-            b.putInt("documentId", doc.getId());
+            try {
+                ResultDocument doc = mDocumentList.get(listView.getFirstVisiblePosition());
+                b.putInt("documentId", doc.getId());
+            }catch (Exception ex){
+                ex.printStackTrace();
+            }
         }
     }
 
     @Override
     protected void onPause() {
-//        final ListView listView = (ListView) findViewById(R.id.doc_list_view);
-//        if( listView != null && mDocumentList != null ){
-//            ResultDocument doc =  mDocumentList.get( listView.getFirstVisiblePosition() );
-//            PreferencesManager.setLastViewedDocId(doc.getId());
-//        }
+        final ListView listView = (ListView) findViewById(R.id.doc_list_view);
+        if( listView != null && mDocumentList != null ){
+            final ResultDocument doc =  mDocumentList.get( listView.getFirstVisiblePosition() );
+            //PreferencesManager.setLastViewedDocId(doc.getId());
+            JayaApp.runOnWorkerThread(new Runnable() {
+                @Override
+                public void run() {
+                    AnnotationManager mruDocsMgr = JayaApp.getMRUDocsManager();
+                    mruDocsMgr.removeAnnotation(mLastAnnotation);
+                    mLastAnnotation = mruDocsMgr.addAnnotation(doc, TimestampUtils.getISO8601StringForDate(new Date()));
+                    JayaApp.saveMRUAndAnnotationsIfDirty();
+                }
+            });
+        }
+        if( mActionMode != null ) {
+            mActionMode.finish();
+            mActionMode = null;
+        }
         super.onPause();
     }
 
@@ -297,6 +323,23 @@ public class MainActivity extends Activity {
                 }catch (IOException ex){
                     ex.printStackTrace();
                 }
+            }
+        });
+
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+                final ListView listView = (ListView) findViewById(R.id.doc_list_view);
+                ResultDocument doc = null;
+                if( listView != null && mDocumentList != null ) {
+                    DocumentListAdapter.ViewHolder viewHolder = (DocumentListAdapter.ViewHolder)view.getTag();
+                    doc = viewHolder.getItem();
+                    //doc = mDocumentList.get(listView.getFirstVisiblePosition());
+                }
+                if( mActionMode != null )
+                    mActionMode.finish();
+                mActionMode = MainActivity.this.startActionMode(new MainActivityActionBarCallBack(doc));
+                mActionMode.setTag(doc);
             }
         });
     }
@@ -394,6 +437,12 @@ public class MainActivity extends Activity {
             }
             else if( position == 1 ){
                 startActivity(new Intent(MainActivity.this, HelpActivity.class));
+            }
+            else if( position == 2 ){
+                startActivity(new Intent(MainActivity.this, RecentlyViewedItemsActivity.class));
+            }
+            else if( position == 3 ){
+                startActivity(new Intent(MainActivity.this, AnnotationsActivity.class));
             }
         }
     }

@@ -3,6 +3,11 @@ package org.jaya.android;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 
+import org.jaya.annotation.Annotation;
+import org.jaya.search.ResultDocument;
+
+import java.io.IOException;
+
 /**
  * Created by murthy on 22/04/17.
  */
@@ -44,6 +49,16 @@ public class JayaAppUtils {
                 = (ConnectivityManager) JayaApp.getAppContext().getSystemService(JayaApp.getAppContext().CONNECTIVITY_SERVICE);
         NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
         return activeNetworkInfo != null && activeNetworkInfo.isConnected();
+    }
+
+    public static ResultDocument getDoc(Annotation item){
+        ResultDocument doc = null;
+        try {
+            doc = JayaApp.getSearcher().getDoc(item.getDocPath(), item.getDocLocalId());
+        }catch (IOException ex){
+            ex.printStackTrace();
+        }
+        return doc;
     }
 
 }

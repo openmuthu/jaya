@@ -2,13 +2,20 @@
     <string name="app_name">आगमान्वेषिणी</string>
     <string name="search_label">Search</string>
     <string name="search_hint">Search</string>
+    <string name="search_results">Search results</string>
     <string name="title_activity_settings">Settings</string>
     <string name="title_activity_help">Help</string>
+    <string name="title_activity_recent_items">Recently viewed</string>
+    <string name="title_activity_bookmarks">Bookmarks</string>
     <string name="action_random_doc">Random quote</string>
     <string name="accurate_substring_search">Accurate Search(slower)</string>
     <string name="download_content_message">Please download granthas by tapping App icon(top left) > Settings > Download/Update Content</string>
     <string name="permission_denied">No permission</string>
     <string name="no_results_found">No results found</string>
+    <string name="action_bookmark">Add bookmark</string>
+    <string name="action_bookmark_add">Add bookmark</string>
+    <string name="action_bookmark_delete">Delete bookmark</string>
+    <string name="action_copy">Copy</string>
 
 
     <!-- Strings related to Settings -->
@@ -37,6 +44,8 @@
     <string-array name="drawer_options_array">
         <item>Settings</item>
         <item>Help</item>
+        <item>Recently viewed</item>
+        <item>Bookmarks</item>
         <!--<item>About</item>-->
     </string-array>
 

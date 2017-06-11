@@ -14,6 +14,7 @@ import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.RegexpQuery;
 import org.apache.lucene.search.ScoreDoc;
+import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.util.Version;
@@ -150,6 +151,22 @@ public class LuceneUnicodeSearcher {
 		if( mReader == null )
 			return 0;
 		return mReader.maxDoc();
+	}
+
+	public ResultDocument getDoc(String docPath, String docLocalId) throws IOException{
+		createIndexSearcherIfRequired();
+		if( mReader == null )
+			return null;
+		BooleanQuery bq = new BooleanQuery();
+		TermQuery pathQuery = new TermQuery(new Term(Constatants.FIELD_PATH, docPath));
+		TermQuery localIdQuery = new TermQuery(new Term(Constatants.FIELD_DOC_LOCAL_ID, docLocalId));
+		bq.add(pathQuery, Occur.MUST);
+		bq.add(localIdQuery, Occur.MUST);
+		TopDocs topDocs = mIndexSearcher.search(bq, 1);
+		if( topDocs == null || topDocs.scoreDocs == null || topDocs.scoreDocs.length == 0 )
+			return null;
+		int docId = topDocs.scoreDocs[0].doc;
+		return new ResultDocument(docId, mIndexSearcher.doc(docId));
 	}
 	
 	public ResultDocument getDoc(int docId) throws IOException{
