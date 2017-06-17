@@ -134,8 +134,8 @@ class DocumentListAdapter extends BaseAdapter implements JayaDocListView.IListAd
             Document doc = mDocument.getDoc();
             if (doc == null)
                 return;
-            mDocPathTextView.setText(doc.get(Constatants.FIELD_PATH));
             ScriptType preferredScriptType = PreferencesManager.getPreferredOutputScriptType();
+            mDocPathTextView.setText(mDocument.getPathSansExtensionForScriptType(preferredScriptType));
             String contents = mDocument.getDocContentsForScriptType(preferredScriptType).trim();
             if( mSearchResult != null ) {
                 contents = mSearchResult.getSpannedStringBasedOnCurrentQuery(contents, preferredScriptType);

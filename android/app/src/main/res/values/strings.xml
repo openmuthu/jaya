@@ -7,6 +7,7 @@
     <string name="title_activity_help">Help</string>
     <string name="title_activity_recent_items">Recently viewed</string>
     <string name="title_activity_bookmarks">Bookmarks</string>
+    <string name="title_activity_table_of_contents">Table of contents</string>
     <string name="action_random_doc">Random quote</string>
     <string name="accurate_substring_search">Accurate Search(slower)</string>
     <string name="download_content_message">Please download granthas by tapping App icon(top left) > Settings > Download/Update Content</string>
@@ -46,6 +47,7 @@
         <item>Help</item>
         <item>Recently viewed</item>
         <item>Bookmarks</item>
+        <item>Table Of Contents</item>
         <!--<item>About</item>-->
     </string-array>
 

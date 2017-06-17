@@ -64,7 +64,9 @@
             android:label="@string/title_activity_recent_items" />
         <activity
             android:name=".AnnotationsActivity"
-            android:label="@string/title_activity_bookmarks"></activity>
+            android:label="@string/title_activity_bookmarks" />
+        <activity android:name=".TableOfContentsActivity"
+            android:label="@string/title_activity_table_of_contents"></activity>
     </application>
 
 </manifest>

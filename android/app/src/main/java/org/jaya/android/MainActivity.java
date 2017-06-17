@@ -444,6 +444,9 @@ public class MainActivity extends Activity {
             else if( position == 3 ){
                 startActivity(new Intent(MainActivity.this, AnnotationsActivity.class));
             }
+            else if( position == 4 ){
+                startActivity(new Intent(MainActivity.this, TableOfContentsActivity.class));
+            }
         }
     }
 

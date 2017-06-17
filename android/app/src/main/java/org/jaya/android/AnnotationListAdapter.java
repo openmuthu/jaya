@@ -145,8 +145,8 @@ class AnnotationListAdapter extends BaseAdapter implements JayaDocListView.IList
             Document doc = mDocument.getDoc();
             if (doc == null)
                 return;
-            mDocPathTextView.setText(doc.get(Constatants.FIELD_PATH));
             ScriptType preferredScriptType = PreferencesManager.getPreferredOutputScriptType();
+            mDocPathTextView.setText(mDocument.getPathSansExtensionForScriptType(preferredScriptType));
             String contents = mDocument.getDocContentsForScriptType(preferredScriptType).trim();
             contents = contents.substring(0, 100) + "...";
             mDocContentesTextView.setText(contents);

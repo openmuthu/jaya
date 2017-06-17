@@ -9,7 +9,9 @@ import android.view.Menu;
 import android.view.MenuItem;
 
 import org.jaya.annotation.Annotation;
+import org.jaya.scriptconverter.ScriptType;
 import org.jaya.search.ResultDocument;
+import org.jaya.util.Constatants;
 import org.jaya.util.TimestampUtils;
 
 import java.lang.ref.WeakReference;
@@ -45,7 +47,13 @@ class MainActivityActionBarCallBack implements ActionMode.Callback {
                     case R.id.action_copy:
                     {
                         ClipboardManager clipboard = (ClipboardManager) JayaApp.getAppContext().getSystemService(Context.CLIPBOARD_SERVICE);
-                        ClipData clip = ClipData.newPlainText("", doc.getDocContentsForScriptType(PreferencesManager.getPreferredOutputScriptType()));
+                        StringBuffer buf = new StringBuffer();
+                        ScriptType dstType = PreferencesManager.getPreferredOutputScriptType();
+                        buf.append(doc.getDocContentsForScriptType(dstType));
+                        buf.append(System.getProperty("line.separator")).append("@@@[");
+                        buf.append(doc.getPathSansExtensionForScriptType(dstType));
+                        buf.append("]");
+                        ClipData clip = ClipData.newPlainText("", buf.toString());
                         clipboard.setPrimaryClip(clip);
                     }
                         break;

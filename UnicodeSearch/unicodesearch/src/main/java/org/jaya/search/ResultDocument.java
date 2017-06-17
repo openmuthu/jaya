@@ -6,6 +6,7 @@ import org.jaya.scriptconverter.ScriptConverter;
 import org.jaya.scriptconverter.ScriptConverterFactory;
 import org.jaya.scriptconverter.ScriptType;
 import org.jaya.util.Constatants;
+import org.jaya.util.Utils;
 
 public class ResultDocument {
 	private int mDocId;
@@ -22,6 +23,21 @@ public class ResultDocument {
 	
 	public Document getDoc(){
 		return mDocument;
+	}
+	
+	public String getPathSansExtensionForScriptType(ScriptType dstType){
+		if( mDocument == null )
+			return "";
+		String str = Utils.removeExtension(mDocument.get(Constatants.FIELD_PATH));
+		ScriptType srcType = ScriptType.ITRANS;
+		if( srcType == dstType )
+			return str;
+		ScriptConverter converter = ScriptConverterFactory.getScriptConverter(srcType, dstType);
+		if( converter == null ){
+			System.out.println("No script converter available for specified types. srcType: " + srcType.name() + " dstType: " + dstType.name());
+			return str;
+		}
+		return converter.convert(str);		
 	}
 
 	public String getDocContentsForScriptType(ScriptType dstType){
