@@ -21,6 +21,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import org.apache.lucene.document.Document;
+import org.jaya.scriptconverter.SCUtils;
 import org.jaya.scriptconverter.ScriptConverter;
 import org.jaya.scriptconverter.ScriptConverterFactory;
 import org.jaya.scriptconverter.ScriptType;
@@ -84,9 +85,10 @@ public class SearchableActivity extends ListActivity {
 
                     try {
                         mSearcher = JayaApp.getSearcher();
-                        mSearchResult = mSearcher.searchITRANSString(query);
+                        String itransQuery = SCUtils.convertStringToScript(query, ScriptType.ITRANS);
+                        mSearchResult = mSearcher.searchITRANSString(itransQuery);
 
-                        mCurrentQuery = mITransToDevnagari.convert(query);
+                        mCurrentQuery = mITransToDevnagari.convert(itransQuery);
                     }catch (Exception ex){
                         Log.e(JayaApp.APP_NAME, "Exception: "+ Log.getStackTraceString(ex));
                     }
