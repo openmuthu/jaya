@@ -34,7 +34,7 @@ public class IndexerTest {
 	
 	public static void main(String[] args){
 		//System.out.println( Utils.getTagsBasedOnFilePath("/mahAbhArata/02-sabhA-parva.txt"));
-		//createMultipleIndexes("", "");
+		createMultipleIndexes("", "");
 		createIndexZipFiles("", "");
 		//mergeIndexes();
 		//deleteIndexFiles();

@@ -16,13 +16,17 @@ public class ITRANSFileToDevanagariFileConverter {
 
 	public static void main(String[] args){
 		//deleteGeneratedFiles(Constatants.FILES_TO_INDEX_DIRECTORY);
+
 		try{
-		List<File> files = Utils.getListOfFiles(new File(PathUtils.get(Constatants.FILES_TO_INDEX_DIRECTORY, "dAsasAhitya", "vijayadAsaru")));
+			File file1 = new File(PathUtils.get(Constatants.FILES_TO_INDEX_DIRECTORY, "stOtra", "mantrastOtrasaMgraha.txt"));
+			convertFile(file1.getCanonicalPath());
+			
+		List<File> files = Utils.getListOfFiles(new File(PathUtils.get(Constatants.FILES_TO_INDEX_DIRECTORY, "stOtra")));
 			for(File file:files){
 				String filePath = file.getCanonicalPath();
-				if( filePath.endsWith("txt_i") ){				
-					convertFile(file.getCanonicalPath());
-				}
+				//if( filePath.endsWith("txt_i") ){				
+					//convertFile(file.getCanonicalPath());
+				//}
 			}
 		}catch(IOException ex){
 			ex.printStackTrace();
@@ -46,7 +50,7 @@ public class ITRANSFileToDevanagariFileConverter {
 
 	public static void convertFile(String path){
 		try{
-			ScriptConverter itransToDevanagariConverter = ScriptConverterFactory.getScriptConverter(ScriptType.ITRANS, ScriptType.DEVANAGARI);
+			ScriptConverter itransToDevanagariConverter = ScriptConverterFactory.getScriptConverter(ScriptType.TELUGU, ScriptType.DEVANAGARI);
 			String itrans = FileUtils.readFileToString(new File(path), "utf8");
 			String devanagari = itransToDevanagariConverter.convert(itrans);
 			String outPath = path + "_d";

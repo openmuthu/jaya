@@ -111,7 +111,7 @@ public class KannadaToITRANSConverter implements ScriptConverter {
 	
 	private boolean isDependentVowel(char ch){
 		int numVal = (int)ch;
-		return numVal >= 0x0CBE && numVal <= 0x0CE3;		
+		return numVal >= 0x0CBE && numVal <= 0x0CE3 && numVal != 0x0CE0 && numVal != 0x0CE1;		
 	}
 	
 	private boolean isDependentVowelOrHalanth(char ch){

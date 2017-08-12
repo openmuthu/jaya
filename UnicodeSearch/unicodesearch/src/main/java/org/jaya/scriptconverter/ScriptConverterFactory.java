@@ -16,6 +16,8 @@ public class ScriptConverterFactory {
 		ScriptConverterFactory.registerScriptConverter(new KannadaToDevanagariConverter());
 		ScriptConverterFactory.registerScriptConverter(new KannadaToITRANSConverter());
 		ScriptConverterFactory.registerScriptConverter(new DevanagariToTeluguConverter());
+		ScriptConverterFactory.registerScriptConverter(new TeluguToITRANSConverter());
+		ScriptConverterFactory.registerScriptConverter(new TeluguToDevanagariConverter());
 	}
 	
 	private static List<ScriptConverter> m_scriptConverterList;

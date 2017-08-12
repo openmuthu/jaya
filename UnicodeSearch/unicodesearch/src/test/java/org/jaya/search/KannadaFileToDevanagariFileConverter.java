@@ -17,7 +17,7 @@ import org.jaya.util.Utils;
 
 public class KannadaFileToDevanagariFileConverter {
 	public static void main(String[] args){
-		String filePath = Constatants.FILES_TO_INDEX_DIRECTORY + File.separator + "stOtra/narasiMhastuti.txt";		
+		String filePath = Constatants.FILES_TO_INDEX_DIRECTORY + File.separator + "stOtra/chaturviMshatimUrti-stuti.txt_k";		
 		convertFile(filePath);
 	}
 
