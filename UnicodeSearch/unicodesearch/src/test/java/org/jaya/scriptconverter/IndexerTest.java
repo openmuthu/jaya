@@ -176,7 +176,10 @@ public class IndexerTest {
 		if( rootDirPath == null || rootDirPath.isEmpty() )
 			rootDirPath = Constatants.INDEX_DIRECTORY;
 		if( zipOutputPath == null || zipOutputPath.isEmpty() )
-			zipOutputPath = Constatants.INDEX_ZIP_OUTPUT_DIRECTORY;		
+			zipOutputPath = Constatants.INDEX_ZIP_OUTPUT_DIRECTORY;	
+		
+		new File(zipOutputPath).mkdirs();
+		new File(rootDirPath).mkdirs();
 		
 		JSONObject indexCatalogue = new JSONObject();
 		JSONObject indexAdditionalInfo = new JSONObject();
