@@ -315,7 +315,7 @@ public class IndexerTest {
 			String lastModified = (String)zipItemMeta.getOrDefault("lastModified", TimestampUtils.nowAsString());
 			String zipItemHash = (String)zipItemMeta.getOrDefault("hash", "");
 			JSONObject zipItemContents = (JSONObject)zipItemMeta.getOrDefault("contents", new JSONObject());
-			String zipItemNewHash = getMd5HashForString(jmd.toString());
+			String zipItemNewHash = getMd5HashForString(jmd.toStringSortedList());
 			if( zipItemNewHash.compareTo(zipItemHash) != 0 ){
 				lastModified = TimestampUtils.nowAsString();
 				zipItemContents = new JSONObject();

@@ -8,6 +8,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -31,6 +32,14 @@ public class JayaIndexMetadata {
 			return "";
 		return StringUtils.join(MD_REC_DELEMITER, mIndexedFilePathSet.toArray(new String[mIndexedFilePathSet.size()]));
 	}
+	
+	public String toStringSortedList(){
+		if( mIndexedFilePathSet == null )
+			return "";
+		String[] paths = mIndexedFilePathSet.toArray(new String[mIndexedFilePathSet.size()]);
+		Arrays.sort(paths, 0, paths.length);
+		return StringUtils.join(MD_REC_DELEMITER, paths);
+	}	
 	
 	public void read(){
 		if( mIndexedFilePathSet != null )
