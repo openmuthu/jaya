@@ -1,1 +1,2 @@
-*.txt text eol=crlf
+*       text=auto
+*.txt   text eol=crlf
