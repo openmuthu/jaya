@@ -210,7 +210,7 @@ public class IndexerTest {
 				
 				JayaIndexMetadata jmd = new JayaIndexMetadata(path);				
 				String zipLastModified = lmd.getLastModified(zipName, jmd);
-				String md = jmd.toString();
+				String md = jmd.toStringSortedList();
 				JSONObject indexAdditionalInfoItem = new JSONObject();
 				JSONObject indexCatalogueItem = new JSONObject();
 				indexCatalogueItem.put("relPath", Utils.getFileName(zipPath));
