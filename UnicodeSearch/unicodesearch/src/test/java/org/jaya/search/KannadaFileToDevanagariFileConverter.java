@@ -33,7 +33,7 @@ public class KannadaFileToDevanagariFileConverter {
 			FileWriter fw = new FileWriter(new File(outPath));
 			String str;
 			while( (str=reader.readLine()) != null ){
-				fw.write(kannadaToDevanagariConverter.convert(str)+"\n");
+				fw.write(kannadaToDevanagariConverter.convert(str)+"\r\n");
 			}
 			fw.close();
 		}catch(IOException ex){
