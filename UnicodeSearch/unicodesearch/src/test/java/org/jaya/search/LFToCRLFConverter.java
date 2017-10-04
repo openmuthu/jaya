@@ -28,10 +28,22 @@ public class LFToCRLFConverter {
 					StringBuilder sb = new StringBuilder();
 					
 					BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(path), "UTF-8"));
-					String line = reader.readLine();
-					sb.append(line);
-					for(;(line=reader.readLine())!=null;){
-						sb.append("\r\n"+line);
+					//String line = reader.readLine();
+					//sb.append(line);
+					int ch;
+					boolean isPrevCR = false;
+					boolean isCurLF = false;
+					for(;(ch=reader.read())!=-1;){
+						isCurLF = ( ch == (int)'\n');
+						if( isPrevCR || isCurLF ){
+							if( !isCurLF )
+								sb.append((char)ch);
+							sb.append("\r\n");
+						}
+						isPrevCR = ( ch == (int)'\r' );
+						if( !isPrevCR && !isCurLF ){
+							sb.append((char)ch);
+						}
 					}
 					reader.close();
 					org.apache.commons.io.FileUtils.writeStringToFile(file, sb.toString(), "UTF-8");
