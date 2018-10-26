@@ -20,7 +20,7 @@ public class JayaQueryParser {
 	}
 	
 	static void test_convertToRegExQueryWithTags(){
-		String test1 = new JayaQueryParser("hari #amara #kOsha").getParsedQuery();
+		String test1 = new JayaQueryParser("hari krish ,amara,kOsha").getParsedQuery();
 		System.out.println("test1: " + test1);
 	}
 	
@@ -104,16 +104,28 @@ public class JayaQueryParser {
 	
 	protected void parseWordsAndTags(String originalQuery){
 		String[] tokensBySpace = originalQuery.split(" ");
-		for( String token: tokensBySpace ){
+		for( int i = 0 ; i < tokensBySpace.length; i++){
+			String token = tokensBySpace[i];
 			if(token.isEmpty())
 				continue;
+			String[] tags = token.split("[#,]");
+			if( tags.length > 1 )
+			{
+				token = tokensBySpace[i] = tags[0];
+				for( int j = 1; j < tags.length; j++ )
+				{
+					mSearchTags.add(tags[j]);
+				}
+				if(token.isEmpty())
+					continue;				
+			}
 			if( token.startsWith("#") || token.startsWith(",") ){
 				mSearchTags.add(token.substring(1));
 			}
 			else{
 				mSearchWords.add(token);
-			}
-		}		
+			}			
+		}	
 	}
 		
 	protected String convertToQueryWithTags(String originalQuery, String wordSuffix){		
