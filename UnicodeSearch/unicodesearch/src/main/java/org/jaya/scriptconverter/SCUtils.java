@@ -83,6 +83,11 @@ public class SCUtils {
 		return false;
 	}	
 	
+	public static boolean isKannadaHalanth(char ch)
+	{
+		return ch == '\u0CCD';
+	}
+	
 	public static boolean isTeluguDependentCharacter(char ch){
 		int c1 = (int)ch;
 		if( (c1 >= 0x0C02 && c1 <= 0x0C03 ) || (c1 >= 0x0C3A && c1 <= 0x0C4F)  )
