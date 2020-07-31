@@ -7,16 +7,19 @@ import java.util.List;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.jaya.util.Constatants;
+import org.jaya.util.PathUtils;
 
 public class NumericCharacterTransformer {
 	
 	public static void main(String[] args){
 		try{
-//			File file = new File(Constatants.FILES_TO_INDEX_DIRECTORY + File.separator + "vyAkaraNa/kAshikA-1.txt");
+//			File file = new File(PathUtils.get(Constatants.FILES_TO_INDEX_DIRECTORY,"purANa/narasiMhapurANa.txt"));
 //			String filePath = file.getCanonicalPath();
-//			String newFilePath = file.getParent() + File.separator + FilenameUtils.getBaseName(filePath) + "_fixed." + FilenameUtils.getExtension(filePath);		
+//			String newFilePath = file.getParent() + File.separator + FilenameUtils.getBaseName(filePath) + "_fixed." + FilenameUtils.getExtension(filePath);
+//			String newFilePath = PathUtils.get(Constatants.FILES_TO_INDEX_DIRECTORY,"purANa/narasiMhapurANa.txt");
+//
 //			convertNumericCharacters(file, newFilePath);
-			convertNumericCharactersInAllFiles(Constatants.FILES_TO_INDEX_DIRECTORY);
+			convertNumericCharactersInAllFiles(PathUtils.get(Constatants.FILES_TO_INDEX_DIRECTORY,"mAdhva/sarvamUla/sUtrabhAShya dIpikA"));
 		}catch(Exception ex){
 			ex.printStackTrace();
 		}
