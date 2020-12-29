@@ -164,7 +164,7 @@ public class MainActivity extends Activity {
                 });
         PermissionRequestor.requestPermissionIfRequired(this, Manifest.permission.INTERNET, null);
 
-        setupTestFairy();
+//        setupTestFairy();
 
         if( savedInstanceState == null ) { // If savedInstanceState is not null, onRestoreInstanceState() will take care of loading the doc
             Intent intent = getIntent();
