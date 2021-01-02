@@ -4,7 +4,7 @@
 
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.READ_LOGS" />
+    <!--<uses-permission android:name="android.permission.READ_LOGS" />-->
     <!--<uses-permission android:name="android.permission.BATTERY_STATS" />-->
     <!--<uses-permission android:name="android.permission.GET_ACCOUNTS" />-->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
@@ -66,7 +66,7 @@
             android:name=".AnnotationsActivity"
             android:label="@string/title_activity_bookmarks" />
         <activity android:name=".TableOfContentsActivity"
-            android:label="@string/title_activity_table_of_contents"></activity>
+            android:label="@string/title_activity_table_of_contents"/>
     </application>
 
 </manifest>

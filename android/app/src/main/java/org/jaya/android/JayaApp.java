@@ -68,7 +68,8 @@ public class JayaApp extends Application{
     }
 
     public static String getAppExtStorageFolder(){
-        return Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + APP_NAME;
+        return mContext.getExternalFilesDir(APP_NAME).getAbsolutePath();
+//        return Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + APP_NAME;
     }
 
     public static String getToBeIndexedFolder(){
