@@ -14,6 +14,7 @@ import org.json.simple.parser.JSONParser;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -64,7 +65,11 @@ public class IndexCatalogue {
 		mRemoteCatalogBaseURL = remoteCatalogBaseURL;
 		File catalogFile = getLocalCatalogFile();
 		if( !catalogFile.exists() ){
-			writeCatalogue();
+			try {
+				writeCatalogue();
+			} catch (Exception ex) {
+				return false;
+			}
 		}
 		mIsInitialized = true;
 		readCatalog(false);
@@ -293,7 +298,7 @@ public class IndexCatalogue {
 		}
 	}	
 	
-	private void writeCatalogue(){
+	private void writeCatalogue() throws IOException {
 		String catalogJSONStr = "{\"version\":\"1.0\", \"lastModified\": \"2010-05-06T15:37:58+0300\", \"items\":{}}";
 		if( mCatalogue != null ){
 			catalogJSONStr = mCatalogue.toJSONString();
@@ -305,7 +310,7 @@ public class IndexCatalogue {
 			catalogueFileWriter.write(catalogJSONStr);
 			catalogueFileWriter.flush();			
 		}catch(Exception ex){
-			
+			throw ex;
 		}
 		finally{
 			Utils.closeSilently(catalogueFileWriter);
@@ -353,7 +358,11 @@ public class IndexCatalogue {
 		}catch(Exception ex){
 			ex.printStackTrace();
 		}
-		writeCatalogue();
+		try {
+			writeCatalogue();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 		return retVal;
 	}
 	
@@ -522,7 +531,7 @@ public class IndexCatalogue {
 				writeCatalogue();
 					
 			}catch(Exception ex){
-				
+				ex.printStackTrace();
 			}
 		}		
 		

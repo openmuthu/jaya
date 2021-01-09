@@ -8,6 +8,7 @@ import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
+import org.apache.lucene.queryparser.flexible.core.util.StringUtils;
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.IndexSearcher;
@@ -119,7 +120,7 @@ public class LuceneUnicodeSearcher {
 		return bq;
 	}
 	
-	public List<ResultDocument> getAdjacentDocs(int docId, int nDocs, int dir) throws IOException{
+	public List<ResultDocument> getAdjacentDocs(int docId, int nDocs, int direction) throws IOException{
 		ArrayList<ResultDocument> retVal = new ArrayList<>();
 		createIndexSearcherIfRequired();
 		if( mReader == null )
@@ -127,14 +128,14 @@ public class LuceneUnicodeSearcher {
 		int i = 1;
 		int maxDoc = mReader.maxDoc();		
 		do{
-			int adjDocId =  docId+(dir*i);
+			int adjDocId =  docId+(direction*i);
 			if( adjDocId < 0 || adjDocId >= maxDoc )
 				break;
 			Document doc = mIndexSearcher.doc(adjDocId);
 			++i;			
 			if( doc == null )
 				continue;
-			if(dir < 0 )
+			if(direction < 0 )
 				retVal.add(0, new ResultDocument(adjDocId, doc));
 			else
 				retVal.add(new ResultDocument(adjDocId, doc));

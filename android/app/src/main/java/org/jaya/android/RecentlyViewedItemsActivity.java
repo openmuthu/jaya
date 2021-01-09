@@ -21,6 +21,7 @@ public class RecentlyViewedItemsActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_recently_viewed_items);
+        getActionBar().setIcon(android.R.color.transparent);
     }
 
     @Override

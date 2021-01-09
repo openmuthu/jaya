@@ -1,6 +1,7 @@
 package org.jaya.android;
 
 
+import android.Manifest;
 import android.annotation.TargetApi;
 import android.app.ActionBar;
 import android.app.AlertDialog;
@@ -17,12 +18,14 @@ import android.preference.PreferenceActivity;
 import android.preference.PreferenceFragment;
 import android.preference.PreferenceManager;
 import android.preference.RingtonePreference;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ListView;
+import android.widget.Toast;
 
 import org.jaya.indexsync.IndexCatalogue;
 import org.jaya.indexsync.IndexCatalogueItemInstaller;
@@ -128,6 +131,16 @@ public class SettingsActivity extends PreferenceActivity {
         super.onCreate(savedInstanceState);
         setupActionBar();
         getActionBar().setIcon(android.R.color.transparent);
+        PermissionRequestor.requestJayaAppPermissionsIfRequired(this, JayaApp.getAssetsManager());
+
+        if( JayaApp.getSearcher().numDocs() < 10 ){
+            Toast.makeText(this, R.string.download_content_message, Toast.LENGTH_LONG).show();
+        }
+    }
+
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
+                                           @NonNull int[] grantResults) {
+        PermissionRequestor.dispatchPermissionResult(requestCode, permissions, grantResults);
     }
 
     /**
@@ -261,6 +274,7 @@ public class SettingsActivity extends PreferenceActivity {
         public void onCreate(Bundle savedInstanceState) {
             super.onCreate(savedInstanceState);
             setHasOptionsMenu(true);
+            PermissionRequestor.requestJayaAppPermissionsIfRequired(this.getActivity(), JayaApp.getAssetsManager());
 
 //        @Override
 //        public boolean onOptionsItemSelected(MenuItem item) {
@@ -306,7 +320,8 @@ public class SettingsActivity extends PreferenceActivity {
             mBtnCheckUpdate.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                    IndexCatalogue indexCatalogue = IndexCatalogue.getInstance();
+                    PermissionRequestor.requestJayaAppPermissionsIfRequired(IndexCatalogueFragment.this.getActivity(), JayaApp.getAssetsManager());
+                    IndexCatalogue indexCatalogue = JayaApp.getIndexCatalog();
                     indexCatalogue.readCatalog(true);
                     showProgressBar();
                 }

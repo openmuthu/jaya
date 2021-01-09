@@ -11,6 +11,7 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jaya.search.LuceneUnicodeSearcher;
 import org.jaya.search.ResultDocument;
 import org.jaya.util.Constatants;
@@ -55,8 +56,10 @@ public class AnnotationManager {
 					String name = (String) obj.get("name");
 					Date date = TimestampUtils.getDateFromISO8601String(updated);
 					Annotation a = new Annotation(docPath, docLocalId, name, date);
-					mDocIdToAnnotationMap.put(a.getKey(), a);
-					mTimestampToAnnotationMap.put(updated, a);
+					if (StringUtils.isNotBlank(docPath) && StringUtils.isNoneBlank(docLocalId)) {
+						mDocIdToAnnotationMap.put(a.getKey(), a);
+						mTimestampToAnnotationMap.put(updated, a);
+					}
 				}
 			}
 			
@@ -79,12 +82,16 @@ public class AnnotationManager {
 			for(String ts:keys){
 				JSONObject obj = new JSONObject();
 				Annotation a = mTimestampToAnnotationMap.get(ts);
-				obj.put("docPath", a.getDocPath());
-				obj.put("docLocalId", a.getDocLocalId());
-				obj.put("updated", TimestampUtils.getISO8601StringForDate(a.getUpdatedDate()));
-				obj.put("name", a.getName());
-				obj.put("notes", a.getNotes());
-				items.add(obj);
+				String docPath = a.getDocPath();
+				String docLocalId = a.getDocLocalId();
+				if (StringUtils.isNotBlank(docPath) && StringUtils.isNoneBlank(docLocalId)) {
+					obj.put("docPath", docPath);
+					obj.put("docLocalId", docLocalId);
+					obj.put("updated", TimestampUtils.getISO8601StringForDate(a.getUpdatedDate()));
+					obj.put("name", a.getName());
+					obj.put("notes", a.getNotes());
+					items.add(obj);
+				}
 			}
 			annotationsJSONObject.put("items", items);
 			fw.write(annotationsJSONObject.toJSONString());

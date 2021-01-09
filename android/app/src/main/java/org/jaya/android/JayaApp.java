@@ -26,7 +26,7 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
  * Created by murthy on 12/03/17.
  */
 
-public class JayaApp extends Application{
+public class JayaApp extends Application {
     public static final String APP_NAME = "Jaya";
     public static final String INTENT_OPEN_DOCUMENT_ID = "org.jaya.INTENT_OPEN_DOCUMENT_ID";
 
@@ -45,11 +45,18 @@ public class JayaApp extends Application{
     private static AnnotationManager mAnnotationManager = null;
     private static Object mJayaAppSingletonMutex = new Object();
 
+    public static AssetsManager getAssetsManager() {
+        return assetsManager;
+    }
+
+    private static AssetsManager assetsManager;
+
     private static ScheduledThreadPoolExecutor mExecutor = new ScheduledThreadPoolExecutor(2);
 
     public void onCreate(){
         super.onCreate();
         JayaApp.mContext = getApplicationContext();
+        assetsManager = new AssetsManager(mContext);
         mJayaAppHandler = new Handler();
     }
 
@@ -97,8 +104,8 @@ public class JayaApp extends Application{
     public static IndexCatalogue getIndexCatalog(){
         if( mIndexCatalog == null ) {
             mIndexCatalog = IndexCatalogue.getInstance();
-            mIndexCatalog.initialize(JayaApp.getIndexMetadataFolder(), JayaApp.getIndexCatalogueBaseUrl(), JayaApp.getSearchIndexFolder());
         }
+        mIndexCatalog.initialize(JayaApp.getIndexMetadataFolder(), JayaApp.getIndexCatalogueBaseUrl(), JayaApp.getSearchIndexFolder());
         return mIndexCatalog;
     }
 

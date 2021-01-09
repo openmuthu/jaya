@@ -1,5 +1,6 @@
 package org.jaya.android;
 
+import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
@@ -8,6 +9,7 @@ import android.os.Build;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.TreeMap;
@@ -95,6 +97,27 @@ public class PermissionRequestor {
             }
             return true;
         }
+    }
+
+    public static void requestJayaAppPermissionsIfRequired(final Activity activity, final AssetsManager assetsManager)  {
+        PermissionRequestor.requestPermissionIfRequired(activity, Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                new PermissionRequestor.OnPermissionResultCallback() {
+                    @Override
+                    public void onPermissionResult(int requestId, String permission, boolean bGranted) {
+                        if (bGranted) {
+                            new File(JayaApp.getDocumentsFolder()).mkdirs();
+                            new File(JayaApp.getIndexMetadataFolder()).mkdirs();
+                            new File(JayaApp.getSearchIndexFolder()).mkdirs();
+                            new File(JayaApp.getAppDataFolder()).mkdirs();
+                            if (assetsManager == null)
+                                return;
+                            assetsManager.copyResourcesToCacheIfRequired(activity);
+                            JayaApp.getSearcher().createIndexSearcherIfRequired();
+                            JayaAppUtils.indexFiles(false);
+                        }
+                    }
+                });
+        PermissionRequestor.requestPermissionIfRequired(activity, Manifest.permission.INTERNET, null);
     }
 
     public static void dispatchPermissionResult(int requestId, String[] permissions, int[] grantResults){

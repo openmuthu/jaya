@@ -5,6 +5,7 @@ import android.net.NetworkInfo;
 
 import org.jaya.annotation.Annotation;
 import org.jaya.search.ResultDocument;
+import org.jaya.search.index.LuceneUnicodeFileIndexer;
 
 import java.io.IOException;
 
@@ -59,6 +60,55 @@ public class JayaAppUtils {
             ex.printStackTrace();
         }
         return doc;
+    }
+
+    public static void indexFiles(boolean bForceReIndexing)
+    {
+        LuceneUnicodeFileIndexer indexer = null;
+        try {
+            indexer = new LuceneUnicodeFileIndexer(JayaApp.getSearchIndexFolder());
+            indexer.addADummyDocumentIfIndexIsEmpty();
+        }catch(Exception ex){
+            ex.printStackTrace();
+        }
+        finally {
+            if( indexer != null )
+                indexer.close();
+        }
+        return;
+//        if( !JayaApp.isIndexingRequired() && !bForceReIndexing)
+//            return;
+//        if( mProgress != null )
+//        {
+//            // Indexing is already in progress.. just return
+//            return;
+//        }
+//        mProgress = new ProgressDialog(this);
+//        mProgress.setIndeterminate(true);
+//        mProgress.setMessage("Please wait while indexing is in progress... This may take a few minutes.");
+//        mProgress.show();
+//        Thread t =  new Thread(new Runnable() {
+//            public void run() {
+//                try {
+//                    LuceneUnicodeFileIndexer indexer = new LuceneUnicodeFileIndexer();
+//                    indexer.createIndex(JayaApp.getSearchIndexFolder(), JayaApp.getToBeIndexedFolder());
+//                }
+//                catch(IOException ex){
+//                    Log.d("Indexer", "IOException in indexFiles");
+//                }
+//                finally {
+//                    // Update the progress bar
+//                    mHandler.post(new Runnable() {
+//                        public void run() {
+//                            mProgress.dismiss();
+//                            mProgress = null;
+//                            showDocumentId(JayaApp.getSearcher().getRandomDoc());
+//                        }
+//                    });
+//                }
+//            }
+//        });
+//        t.start();
     }
 
 }

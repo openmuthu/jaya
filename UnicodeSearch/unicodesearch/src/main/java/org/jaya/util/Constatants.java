@@ -26,7 +26,7 @@ public class Constatants {
 	public static final String FIELD_DOC_LOCAL_ID = "docLocalId";
 	public static final String FIELD_CONTENTS = "contents";
 	public static final String FIELD_TAGS = "tags";
-	public static final int MAX_RESULTS = 100; 
+	public static final int MAX_RESULTS = 500;
 	public static final int MAX_INDEX_SIZE = 30 * 1024 * 1024;
 	
 	public static File getToBeIndexedDirectory(){

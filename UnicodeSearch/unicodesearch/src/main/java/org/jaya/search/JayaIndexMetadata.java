@@ -78,6 +78,9 @@ public class JayaIndexMetadata {
 	
 	@SuppressWarnings("unchecked")
 	public Set<String> getIndexedFilePathSet(){
+		if( mIndexedFilePathSet == null ){
+			mIndexedFilePathSet = new HashSet<>();
+		}
 		return (Set<String>) mIndexedFilePathSet.clone();
 	}
 	

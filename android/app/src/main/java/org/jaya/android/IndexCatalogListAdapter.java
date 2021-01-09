@@ -19,6 +19,7 @@ import org.jaya.indexsync.IndexCatalogueItemInstaller;
 import org.jaya.scriptconverter.SCUtils;
 import org.jaya.scriptconverter.ScriptType;
 import org.jaya.search.JayaIndexMetadata;
+import org.jaya.search.SearchResult;
 import org.jaya.util.FileDownloader;
 import org.jaya.util.StringUtils;
 import org.jaya.util.Utils;
@@ -296,18 +297,19 @@ public class IndexCatalogListAdapter extends BaseAdapter {
                                 break;
                             }
                         }
-                        Intent intent = new Intent(mContext, SearchableActivity.class);
-                        intent.setAction(Intent.ACTION_SEARCH);
-                        intent.putExtra(SearchManager.QUERY, ","+name);
-                        mContext.startActivity(intent);
-//                        SearchResult sr =  JayaApp.getSearcher().searchITRANSString(","+name);
-//                        if( sr.getResultDocs().size() > 0 ){
-//                            int docId = sr.getResultDocs().get(0).getId();
-//                            Intent intent = new Intent(mContext, MainActivity.class);
-//                            intent.setAction(JayaApp.INTENT_OPEN_DOCUMENT_ID);
-//                            intent.putExtra("documentId", docId);
-//                            mContext.startActivity(intent);
-//                        }
+//                        Intent intent = new Intent(mContext, SearchableActivity.class);
+//                        intent.setAction(Intent.ACTION_SEARCH);
+//                        intent.putExtra(SearchManager.QUERY, ","+name);
+//                        mContext.startActivity(intent);
+
+                        SearchResult sr =  JayaApp.getSearcher().searchITRANSString(","+name);
+                        if( sr.getResultDocs().size() > 0 ){
+                            int docId = sr.getResultDocs().get(0).getId();
+                            Intent intent = new Intent(mContext, MainActivity.class);
+                            intent.setAction(JayaApp.INTENT_OPEN_DOCUMENT_ID);
+                            intent.putExtra("documentId", docId);
+                            mContext.startActivity(intent);
+                        }
                     }catch (Exception ex){
                         ex.printStackTrace();
                     }

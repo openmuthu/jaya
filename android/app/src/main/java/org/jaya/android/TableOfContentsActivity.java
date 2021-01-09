@@ -44,6 +44,7 @@ public class TableOfContentsActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_table_of_contents);
+        getActionBar().setIcon(android.R.color.transparent);
     }
 
     @Override

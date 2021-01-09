@@ -3,14 +3,16 @@
     <!-- These settings headers are only used on tablets. -->
 
     <header
-        android:fragment="org.jaya.android.SettingsActivity$GeneralPreferenceFragment"
-        android:icon="@drawable/ic_info_black_24dp"
-        android:title="@string/pref_header_general" />
-
-    <header
         android:fragment="org.jaya.android.SettingsActivity$IndexCatalogueFragment"
         android:icon="@drawable/ic_info_black_24dp"
-        android:title="@string/pref_header_index_catalogue" />
+        android:title="@string/pref_header_index_catalogue"
+        android:summary="@string/pref_header_index_catalogue_summary"/>
+
+    <header
+        android:fragment="org.jaya.android.SettingsActivity$GeneralPreferenceFragment"
+        android:icon="@drawable/ic_info_black_24dp"
+        android:title="@string/pref_header_general"
+        android:summary="@string/pref_header_general_summary"/>
 
     <!--<header-->
         <!--android:fragment="org.jaya.android.SettingsActivity$NotificationPreferenceFragment"-->

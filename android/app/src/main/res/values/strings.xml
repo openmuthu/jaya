@@ -3,14 +3,14 @@
     <string name="search_label">Search</string>
     <string name="search_hint">Search</string>
     <string name="search_results">Search results</string>
-    <string name="title_activity_settings">Settings</string>
+    <string name="title_activity_settings">आगमान्वेषिणी - Settings</string>
     <string name="title_activity_help">Help</string>
     <string name="title_activity_recent_items">Recently viewed</string>
     <string name="title_activity_bookmarks">Bookmarks</string>
     <string name="title_activity_table_of_contents">Table of contents</string>
     <string name="action_random_doc">Random quote</string>
     <string name="accurate_substring_search">Accurate Search(slower)</string>
-    <string name="download_content_message">Please download granthas by tapping App icon(top left) > Settings > Download/Update Content</string>
+    <string name="download_content_message">You don\'t have any granthas downloaded.\nPlease download granthas by tapping\n\"Download or Update Granthas (Texts)\"\noption in the Settings page</string>
     <string name="permission_denied">No permission</string>
     <string name="no_results_found">No results found</string>
     <string name="action_bookmark">Add bookmark</string>
@@ -22,18 +22,19 @@
     <!-- Strings related to Settings -->
 
     <!-- Example General settings -->
-    <string name="pref_header_general">General</string>
+    <string name="pref_header_general">General Settings</string>
+    <string name="pref_header_general_summary">General settings include changing text script to ITRANS, देवनागरी, ಕನ್ನಡ or తెలుగు etc</string>
 
-    <string name="pref_title_preferred_output_script">Preferred output script</string>
+    <string name="pref_title_preferred_output_script">Change text script to ITRANS, देवनागरी, ಕನ್ನಡ or తెలుగు etc</string>
     <string name="pref_description_preferred_output_script">You can change the script to ITrans, deva nagari, or kannada
     </string>
     <string name="remove_unused_from_index">Remove unused files from index</string>
 
     <string-array name="pref_preferred_output_script_list_titles">
-        <item>ITrans</item>
-        <item>Deva nagari</item>
-        <item>Kannada</item>
-        <item>Telugu</item>
+        <item>ITRANS</item>
+        <item>देवनागरी</item>
+        <item>ಕನ್ನಡ</item>
+        <item>తెలుగు</item>
     </string-array>
     <string-array name="pref_preferred_output_script_list_values">
         <item>ITRANS</item>
@@ -43,7 +44,7 @@
     </string-array>
 
     <string-array name="drawer_options_array">
-        <item>Settings</item>
+        <item>Settings/Downloads</item>
         <item>Help</item>
         <item>Recently viewed</item>
         <item>Bookmarks</item>
@@ -54,7 +55,8 @@
     <string name="drawer_open">Open navigation drawer</string>
     <string name="drawer_close">Close navigation drawer</string>
 
-    <string name="pref_header_index_catalogue">Download/Update Content</string>
+    <string name="pref_header_index_catalogue">Download or Update Granthas (Texts)</string>
+    <string name="pref_header_index_catalogue_summary">Tap on this option to download the latest Granthas (Texts) such as Vedas, Puranas etc</string>
 
     <string name="download">Download</string>
     <string name="open">Open</string>
