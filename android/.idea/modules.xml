@@ -3,8 +3,8 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/android.iml" filepath="$PROJECT_DIR$/android.iml" />
-      <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
-      <module fileurl="file://$PROJECT_DIR$/../UnicodeSearch/unicodesearch/unicodesearch.iml" filepath="$PROJECT_DIR$/../UnicodeSearch/unicodesearch/unicodesearch.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/app/android.app.iml" filepath="$PROJECT_DIR$/.idea/modules/app/android.app.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/-1077155173/android.unicodesearch.iml" filepath="$PROJECT_DIR$/.idea/modules/-1077155173/android.unicodesearch.iml" />
     </modules>
   </component>
 </project>
