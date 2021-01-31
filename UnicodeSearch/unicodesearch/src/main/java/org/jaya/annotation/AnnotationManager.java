@@ -1,16 +1,5 @@
 package org.jaya.annotation;
 
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.lang.ref.WeakReference;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Set;
-import java.util.SortedMap;
-import java.util.TreeMap;
-
 import org.apache.commons.lang3.StringUtils;
 import org.jaya.search.LuceneUnicodeSearcher;
 import org.jaya.search.ResultDocument;
@@ -20,6 +9,16 @@ import org.jaya.util.Utils;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
+
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.lang.ref.WeakReference;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Set;
+import java.util.TreeMap;
 
 public class AnnotationManager {
 

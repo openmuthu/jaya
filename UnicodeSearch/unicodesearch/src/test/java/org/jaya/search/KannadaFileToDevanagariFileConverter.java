@@ -17,13 +17,13 @@ import org.jaya.util.Utils;
 
 public class KannadaFileToDevanagariFileConverter {
 	public static void main(String[] args){
-		String filePath = Constatants.FILES_TO_INDEX_DIRECTORY + File.separator + "sarvamUla/tatvaprakAshikA/tatvaprakAshikA.txt_k.txt";
+		String filePath = Constatants.FILES_TO_INDEX_DIRECTORY + File.separator + "dAsasAhitya/jagannAthadAsaru/tatvasuvvAli.txt_i";
 		convertFile(filePath);
 	}
 
 	public static void convertFile(String path){
 		try{
-			ScriptConverter kannadaToDevanagariConverter = ScriptConverterFactory.getScriptConverter(ScriptType.KANNADA, ScriptType.DEVANAGARI);
+			ScriptConverter kannadaToDevanagariConverter = ScriptConverterFactory.getScriptConverter(ScriptType.ITRANS, ScriptType.DEVANAGARI);
 //			ScriptConverter kannadaToDevanagariConverter = ScriptConverterFactory.getScriptConverter(ScriptType.DEVANAGARI, ScriptType.KANNADA);
 //			String itrans = FileUtils.readFileToString(new File(path), "UTF16-LE");
 //			String devanagari = itransToDevanagariConverter.convert(itrans);
