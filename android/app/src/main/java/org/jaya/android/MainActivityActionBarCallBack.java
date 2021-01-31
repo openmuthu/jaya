@@ -16,6 +16,7 @@ import org.jaya.util.TimestampUtils;
 
 import java.lang.ref.WeakReference;
 import java.util.Date;
+import java.util.List;
 
 class MainActivityActionBarCallBack implements ActionMode.Callback {
 
@@ -49,7 +50,12 @@ class MainActivityActionBarCallBack implements ActionMode.Callback {
                         ClipboardManager clipboard = (ClipboardManager) JayaApp.getAppContext().getSystemService(Context.CLIPBOARD_SERVICE);
                         StringBuffer buf = new StringBuffer();
                         ScriptType dstType = PreferencesManager.getPreferredOutputScriptType();
+                        int numDocsToCopy = PreferencesManager.getNumberOfAdjacentDocsToCopy();
+                        List<ResultDocument> adjacentDocs = JayaApp.getSearcher().getAdjacentDocs(doc.getId(), numDocsToCopy, 1);
                         buf.append(doc.getDocContentsForScriptType(dstType));
+                        for(ResultDocument document:adjacentDocs) {
+                            buf.append(document.getDocContentsForScriptType(dstType));
+                        }
                         buf.append(System.getProperty("line.separator")).append("@@@[");
                         buf.append(doc.getPathSansExtensionForScriptType(dstType));
                         buf.append("]");

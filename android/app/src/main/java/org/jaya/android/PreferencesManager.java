@@ -17,9 +17,11 @@ public class PreferencesManager {
     public static final String PREF_FONT_SIZE = "com.org.jaya.PREF_FONT_SIZE";
     public static final String PREF_LAST_VIEWED_DOC_ID = "com.org.jaya.PREF_LAST_VIEWED_DOC_ID";
     public static final String PREF_ACCURATE_SUBSTRING_SEARCH_ENABLED = "com.org.jaya.PREF_ACCURATE_SUBSTRING_SEARCH_ENABLED";
+    public static final String PREF_NUM_OF_ADJACENT_DOCS_TO_COPY = "com.org.jaya.PREF_NUM_OF_ADJACENT_DOCS_TO_COPY";
 
     public static final float MIN_FONT_SIZE = 12.f;
     public static final float MAX_FONT_SIZE = 72.f;
+    public static final int DFAULT_NUM_OF_ADJACENT_DOCS_TO_COPY = 10;
 
     public static boolean isIndexingRequired() {
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(JayaApp.getAppContext());
@@ -40,6 +42,7 @@ public class PreferencesManager {
             String scrTypeStr = preferences.getString(PREF_OUTPUT_SCRIPT_TYPE, defaultScript.name());
             return ScriptType.valueOf(scrTypeStr);
         }catch (Exception ex){
+            ex.printStackTrace();
             setPreferredOutputScriptType(defaultScript);
         }
         return defaultScript;
@@ -93,5 +96,22 @@ public class PreferencesManager {
         JayaQueryParser.setAccurateSubstringSearchEnabled(bEnabled);
     }
 
+    public static int getNumberOfAdjacentDocsToCopy() {
+        int defaultValue = DFAULT_NUM_OF_ADJACENT_DOCS_TO_COPY;
+        try {
+            SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(JayaApp.getAppContext());
+            return Integer.parseInt(preferences.getString(PREF_NUM_OF_ADJACENT_DOCS_TO_COPY, String.valueOf(defaultValue)));
+        } catch(Exception ex) {
+            ex.printStackTrace();
+            setNumberOfAdjacentDocsToCopy(defaultValue);
+        }
+        return defaultValue;
+    }
 
+    public static void setNumberOfAdjacentDocsToCopy(int numberOfAdjacentDocsToCopy){
+        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(JayaApp.getAppContext());
+        SharedPreferences.Editor editor = preferences.edit();
+        editor.putString(PREF_NUM_OF_ADJACENT_DOCS_TO_COPY, String.valueOf(numberOfAdjacentDocsToCopy));
+        editor.apply();
+    }
 }

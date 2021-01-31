@@ -29,6 +29,7 @@
     <string name="pref_description_preferred_output_script">You can change the script to ITrans, deva nagari, or kannada
     </string>
     <string name="remove_unused_from_index">Remove unused files from index</string>
+    <string name="pref_num_of_adjacent_docs_to_copy">Number of items to copy when using the "Copy" option</string>
 
     <string-array name="pref_preferred_output_script_list_titles">
         <item>ITRANS</item>

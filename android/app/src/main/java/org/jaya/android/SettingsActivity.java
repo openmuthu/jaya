@@ -222,6 +222,7 @@ public class SettingsActivity extends PreferenceActivity {
             //bindPreferenceSummaryToValue(findPreference("example_text"));
             //bindPreferenceSummaryToValue(findPreference("example_list"));
             bindPreferenceSummaryToValue(findPreference(PreferencesManager.PREF_OUTPUT_SCRIPT_TYPE));
+            bindPreferenceSummaryToValue(findPreference(PreferencesManager.PREF_NUM_OF_ADJACENT_DOCS_TO_COPY));
 
             Preference button = (Preference)getPreferenceManager().findPreference("org.jaya.REMOVE_UNUSED_FILES_FROM_INDEX");
             if (button != null) {

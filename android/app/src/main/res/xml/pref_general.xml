@@ -31,5 +31,14 @@
         android:title="@string/pref_title_preferred_output_script" />
 
     <Preference android:title="@string/remove_unused_from_index" android:key="org.jaya.REMOVE_UNUSED_FILES_FROM_INDEX"/>
+    <EditTextPreference
+        android:defaultValue="10"
+        android:key="com.org.jaya.PREF_NUM_OF_ADJACENT_DOCS_TO_COPY"
+        android:selectAllOnFocus="true"
+        android:singleLine="true"
+        android:digits="0123456789"
+        android:inputType="numberDecimal"
+        android:maxLength="3"
+        android:title="@string/pref_num_of_adjacent_docs_to_copy" />
 
 </PreferenceScreen>
