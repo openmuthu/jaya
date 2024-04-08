@@ -1,24 +1,11 @@
 package org.jaya.android;
 
 import android.app.Activity;
-import android.text.Html;
-import android.text.Spanned;
 import android.view.ScaleGestureDetector;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.TextView;
-
-import org.apache.lucene.document.Document;
-import org.jaya.annotation.Annotation;
-import org.jaya.scriptconverter.ScriptType;
-import org.jaya.search.ResultDocument;
-import org.jaya.search.SearchResult;
-import org.jaya.util.Constatants;
-import org.jaya.util.TimestampUtils;
-
-import java.io.IOException;
-import java.util.List;
 
 /**
  * Created by murthy on 08/04/17.

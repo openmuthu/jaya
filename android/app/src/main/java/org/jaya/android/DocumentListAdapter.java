@@ -13,7 +13,6 @@ import org.apache.lucene.document.Document;
 import org.jaya.scriptconverter.ScriptType;
 import org.jaya.search.ResultDocument;
 import org.jaya.search.SearchResult;
-import org.jaya.util.Constatants;
 
 import java.util.List;
 
