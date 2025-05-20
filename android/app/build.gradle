@@ -1,6 +1,7 @@
 apply plugin: 'com.android.application'
 
 android {
+    namespace "org.jaya"
     signingConfigs {
 //    debug {
 //        storeFile file('heavy/p/jaya/jaya.p12')
@@ -9,13 +10,14 @@ android {
 //        keyPassword keyPassword
 //    }
     }
-    compileSdkVersion 33
+    compileSdkVersion 35
+    compileSdk 35
     defaultConfig {
         applicationId "org.jaya"
         minSdkVersion 14
-        targetSdkVersion 33
-        versionCode 7
-        versionName "7.0"
+        targetSdkVersion 35
+        versionCode 10
+        versionName "10.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
         multiDexEnabled true
@@ -35,6 +37,7 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+    namespace 'org.jaya.android'
 //    compileOptions {
 //        sourceCompatibility JavaVersion.VERSION_1_8
 //        targetCompatibility JavaVersion.VERSION_1_8

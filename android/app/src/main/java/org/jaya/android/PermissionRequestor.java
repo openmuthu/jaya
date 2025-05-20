@@ -6,6 +6,7 @@ import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.os.Build;
+import android.os.FileUtils;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 
@@ -104,7 +105,9 @@ public class PermissionRequestor {
                 new PermissionRequestor.OnPermissionResultCallback() {
                     @Override
                     public void onPermissionResult(int requestId, String permission, boolean bGranted) {
-                        if (bGranted) {
+                        // Disabling permission grant validation as WRITE_EXTERNAL_STORAGE is no more granted in Android versions >= 13
+//                        if (bGranted) {
+                        try {
                             new File(JayaApp.getDocumentsFolder()).mkdirs();
                             new File(JayaApp.getIndexMetadataFolder()).mkdirs();
                             new File(JayaApp.getSearchIndexFolder()).mkdirs();
@@ -114,7 +117,10 @@ public class PermissionRequestor {
                             assetsManager.copyResourcesToCacheIfRequired(activity);
                             JayaApp.getSearcher().createIndexSearcherIfRequired();
                             JayaAppUtils.indexFiles(false);
+                        } catch (Exception ex) {
+                            ex.printStackTrace();
                         }
+//                        }
                     }
                 });
         PermissionRequestor.requestPermissionIfRequired(activity, Manifest.permission.INTERNET, null);

@@ -1,3 +1,5 @@
 /bin/
 /certs
 .idea/
+.DS_Store
+android/app/release/app-release.aab

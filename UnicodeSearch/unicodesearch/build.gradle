@@ -1,7 +1,7 @@
 apply plugin: 'com.android.library'
 
 android {
-//    namespace "org.jaya.unicodesearch"
+    namespace "org.jaya.unicodesearch"
     compileSdkVersion 33
 //    buildToolsVersion '30.0.3'
 

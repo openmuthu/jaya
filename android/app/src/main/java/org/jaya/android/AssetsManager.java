@@ -57,9 +57,13 @@ public class AssetsManager {
     }
 
     public void copyResourcesToCacheIfRequired(Activity activity){
-        if( ContextCompat.checkSelfPermission(activity, Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                != PackageManager.PERMISSION_GRANTED )
-            return;
+//        if( ContextCompat.checkSelfPermission(activity, Manifest.permission.WRITE_EXTERNAL_STORAGE)
+//                != PackageManager.PERMISSION_GRANTED )
+//            return;
+        // Android 13 and above stopped granting this permission.
+        // So, just trying it to keep it compatible but not validating if it is granted or not.
+        // Just go ahead and write the files in the app private storage.
+        ContextCompat.checkSelfPermission(activity, Manifest.permission.WRITE_EXTERNAL_STORAGE);
         String sigFilePath = JayaApp.getSearchIndexFolder() + "/segments.gen";
         File sigFile = new File(sigFilePath);
 
@@ -94,6 +98,9 @@ public class AssetsManager {
                     output = null;
                 }
             }catch (IOException ex){
+                ex.printStackTrace();
+            }
+            catch (Exception ex) {
                 ex.printStackTrace();
             }
         }
