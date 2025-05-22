@@ -1,7 +1,6 @@
 package org.jaya.android;
 
 
-import android.Manifest;
 import android.annotation.TargetApi;
 import android.app.ActionBar;
 import android.app.AlertDialog;
@@ -20,6 +19,7 @@ import android.preference.PreferenceManager;
 import android.preference.RingtonePreference;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -131,11 +131,40 @@ public class SettingsActivity extends PreferenceActivity {
         super.onCreate(savedInstanceState);
         setupActionBar();
         getActionBar().setIcon(android.R.color.transparent);
+        View rootView = findViewById(android.R.id.content);
+
+        // To prevent the preference headers hiding behind the action bar
+        int actionBarHeight = getActionBarHeight();
+        int statusBarHeight = getStatusBarHeight();
+        rootView.setPadding(0, actionBarHeight+statusBarHeight, 0, 0);
+
         PermissionRequestor.requestJayaAppPermissionsIfRequired(this, JayaApp.getAssetsManager());
 
         if( JayaApp.getSearcher().numDocs() < 10 ){
             Toast.makeText(this, R.string.download_content_message, Toast.LENGTH_LONG).show();
         }
+    }
+
+    private int getStatusBarHeight() {
+        int result = 0;
+        int resourceId = getResources().getIdentifier("status_bar_height", "dimen", "android");
+        if (resourceId > 0) {
+            result = getResources().getDimensionPixelSize(resourceId);
+        }
+        return result;
+    }
+
+    private int getActionBarHeight() {
+        int actionBarHeight = 0;
+        TypedValue tv = new TypedValue();
+        if (getTheme().resolveAttribute(android.R.attr.actionBarSize, tv, true)) {
+            actionBarHeight = TypedValue.complexToDimensionPixelSize(tv.data, getResources().getDisplayMetrics());
+        }
+
+        if (getTheme().resolveAttribute(android.R.attr.top, tv, true)) {
+            actionBarHeight = TypedValue.complexToDimensionPixelSize(tv.data, getResources().getDisplayMetrics());
+        }
+        return actionBarHeight;
     }
 
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
@@ -294,6 +323,7 @@ public class SettingsActivity extends PreferenceActivity {
         public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
             gIndexCatalogue = JayaApp.getIndexCatalog();
             gIndexCatalogue.addEventListener(this);
+            container.setFitsSystemWindows(true);
             return inflater.inflate(R.layout.index_catalogue_fragment, container, false);
         }
 
