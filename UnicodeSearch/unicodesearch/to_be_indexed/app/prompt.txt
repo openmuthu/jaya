@@ -1,0 +1,16 @@
+Create a web app to view, navigate and search the contents of the texts present in the parent folder of this file.
+Have a sidebar with the tree structure showing all the files. I should be able to quickly search for a grantha/file by its name and navigage to it. Clicking on the leaft node should show the contents in the right main pane. Add appropriate formatting and alternating colouring for paragraphs/verses to enable easier reading.
+The contents of the app/pages should be viewable in itrans, devanagari, kannada, telugu scripts.
+Search:
+There should be a way to search the overall content using ITRANS, devanagari, kannada or telugu scripts. There should be a way to limit the search to only certain folders/files.
+I should be able to search with voice as well. Provide a record button which captures the voice, converts it to devanagari text and searches the content.
+Allow fuzzy searching, and regex based searching.
+The search results should come as a overlay with clickable link to navigate the actual content.
+If the search results are too many, the overlay page should have a link to take to a dedicated search page to get all the search results.
+Create the app code and everything in this folder itself.
+
+Can you compare the texts in this project with the ones in the following link and generate a report of what is missing here and generate a plan to get them into this project in the format this project already has.
+https://sa.wikisource.org/wiki/%E0%A4%AE%E0%A5%81%E0%A4%96%E0%A5%8D%E0%A4%AF%E0%A4%AA%E0%A5%83%E0%A4%B7%E0%A5%8D%E0%A4%A0%E0%A4%AE%E0%A5%8D
+
+Some of the text files are too huge and take longer to render in the browser. Can you make them load progressively while the user is scrolling. As part of initial page load, just load a couple of pages relevant to the current viewing context so that user doesn't see page load latency. In the background or as and when the user tries to scroll, load the remaining parts of the page.
+Make sure the links on VERSE NAVIGATOR continue to work even with progressive loading.

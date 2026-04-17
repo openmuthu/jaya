@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="sa">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Search Results — Jaya Grantha Viewer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;600&family=Noto+Sans+Kannada:wght@400;600&family=Noto+Sans+Telugu:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="static/style.css">
+  <style>
+    html, body { overflow: auto; height: auto; }
+    #search-page { max-width: 860px; margin: 0 auto; padding: 24px 20px 60px; }
+
+    #search-header { margin-bottom: 20px; }
+    #search-header h1 { font-size: 1.3rem; color: var(--accent); margin-bottom: 12px; }
+
+    #search-form-row {
+      display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
+    }
+    #page-search-input {
+      flex: 1; min-width: 200px;
+      padding: 9px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: 7px;
+      font-size: 1rem;
+      background: var(--surface);
+      color: var(--text);
+      outline: none;
+    }
+    #page-search-input:focus { border-color: var(--accent-light); }
+
+    .btn-primary {
+      padding: 9px 20px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 7px;
+      cursor: pointer;
+      font-size: .95rem;
+      font-weight: 600;
+    }
+    .btn-primary:hover { background: #503a1f; }
+
+    #filters-row {
+      display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
+      margin-top: 10px; font-size: .85rem;
+    }
+
+    #results-info {
+      margin-bottom: 14px;
+      font-size: .9rem;
+      color: var(--text-muted);
+    }
+
+    .full-result-item {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px 18px;
+      margin-bottom: 10px;
+      cursor: pointer;
+      transition: border-color .12s, box-shadow .12s;
+    }
+    .full-result-item:hover {
+      border-color: var(--accent-light);
+      box-shadow: 0 2px 10px rgba(0,0,0,.08);
+    }
+    .result-path {
+      font-size: .78rem;
+      color: var(--text-muted);
+      margin-bottom: 5px;
+    }
+    .result-line-text {
+      font-family: var(--font-sanskrit);
+      font-size: 1rem;
+      line-height: 1.7;
+    }
+    .result-context {
+      font-family: var(--font-sanskrit);
+      font-size: .88rem;
+      color: var(--text-muted);
+      margin-top: 5px;
+      white-space: pre-wrap;
+    }
+
+    #pagination {
+      display: flex; gap: 8px; justify-content: center;
+      margin-top: 28px; flex-wrap: wrap;
+    }
+    .page-btn {
+      padding: 6px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: 6px;
+      background: var(--surface);
+      cursor: pointer;
+      font-size: .9rem;
+    }
+    .page-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .page-btn:hover:not(.active) { background: var(--bg-alt); }
+
+    #loading-indicator {
+      text-align: center; padding: 40px;
+      color: var(--text-muted);
+    }
+
+    a.back-link {
+      display: inline-flex; align-items: center; gap: 6px;
+      color: var(--accent); text-decoration: none; font-size: .9rem; margin-bottom: 16px;
+    }
+    a.back-link:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+<div id="search-page">
+
+  <a class="back-link" href="/">← Back to Reader</a>
+
+  <div id="search-header">
+    <h1>Search Results</h1>
+    <div id="search-form-row">
+      <input id="page-search-input" type="search" placeholder="Enter search query…" spellcheck="false" autocomplete="off">
+      <button class="btn-primary" id="page-search-btn">Search</button>
+      <button class="icon-btn" id="page-voice-btn" title="Voice search" style="color:var(--accent);border:1.5px solid var(--border);border-radius:7px;padding:8px 10px;font-size:1rem;">🎙</button>
+    </div>
+
+    <div id="filters-row">
+      <span style="font-weight:600">Script:</span>
+      <button class="toggle-btn on" data-search-script="devanagari">Devanagari</button>
+      <button class="toggle-btn" data-search-script="itrans">ITRANS</button>
+      <button class="toggle-btn" data-search-script="kannada">Kannada</button>
+      <button class="toggle-btn" data-search-script="telugu">Telugu</button>
+
+      <span style="margin-left:10px;font-weight:600">Mode:</span>
+      <button class="toggle-btn" id="page-fuzzy-toggle">Fuzzy</button>
+      <button class="toggle-btn" id="page-regex-toggle">Regex</button>
+
+      <span style="margin-left:10px;font-weight:600">Display:</span>
+      <button class="toggle-btn on" data-display-script="devanagari">Devanagari</button>
+      <button class="toggle-btn" data-display-script="itrans">ITRANS</button>
+      <button class="toggle-btn" data-display-script="kannada">Kannada</button>
+      <button class="toggle-btn" data-display-script="telugu">Telugu</button>
+    </div>
+  </div>
+
+  <div id="results-info"></div>
+  <div id="results-container">
+    <div id="loading-indicator" style="display:none">
+      <div class="spinner" style="display:inline-block;width:28px;height:28px"></div>
+      <p>Searching…</p>
+    </div>
+  </div>
+  <div id="pagination"></div>
+
+</div>
+
+<div id="toast"></div>
+
+<script type="module">
+import { convertScript } from './static/script-converter.js';
+
+const PAGE_SIZE = 20;
+let currentPage = 0;
+let totalResults = 0;
+let currentQuery = '';
+let searchScript = 'devanagari';
+let displayScript = 'devanagari';
+let fuzzyMode = false;
+let regexMode = false;
+let lastDevaQuery = '';
+
+const searchInput    = document.getElementById('page-search-input');
+const resultsContainer = document.getElementById('results-container');
+const resultsInfo    = document.getElementById('results-info');
+const pagination     = document.getElementById('pagination');
+const loadingInd     = document.getElementById('loading-indicator');
+
+// ── Init from URL params ───────────────────────────────────────────────────
+const urlParams = new URLSearchParams(location.search);
+currentQuery = urlParams.get('q') || '';
+searchScript = urlParams.get('script') || 'devanagari';
+fuzzyMode    = urlParams.get('fuzzy') === 'true';
+regexMode    = urlParams.get('regex') === 'true';
+
+if (currentQuery) searchInput.value = currentQuery;
+
+// Sync script buttons
+document.querySelectorAll('[data-search-script]').forEach(btn => {
+  btn.classList.toggle('on', btn.dataset.searchScript === searchScript);
+});
+if (fuzzyMode) document.getElementById('page-fuzzy-toggle').classList.add('on');
+if (regexMode) document.getElementById('page-regex-toggle').classList.add('on');
+
+// ── Script toggles ──────────────────────────────────────────────────────────
+document.querySelectorAll('[data-search-script]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('[data-search-script]').forEach(b => b.classList.remove('on'));
+    btn.classList.add('on');
+    searchScript = btn.dataset.searchScript;
+  });
+});
+
+document.querySelectorAll('[data-display-script]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('[data-display-script]').forEach(b => b.classList.remove('on'));
+    btn.classList.add('on');
+    displayScript = btn.dataset.displayScript;
+    // Re-render existing results with new script
+    doSearch(0);
+  });
+});
+
+document.getElementById('page-fuzzy-toggle').addEventListener('click', () => {
+  if (regexMode) { regexMode = false; document.getElementById('page-regex-toggle').classList.remove('on'); }
+  fuzzyMode = !fuzzyMode;
+  document.getElementById('page-fuzzy-toggle').classList.toggle('on', fuzzyMode);
+});
+
+document.getElementById('page-regex-toggle').addEventListener('click', () => {
+  if (fuzzyMode) { fuzzyMode = false; document.getElementById('page-fuzzy-toggle').classList.remove('on'); }
+  regexMode = !regexMode;
+  document.getElementById('page-regex-toggle').classList.toggle('on', regexMode);
+});
+
+// ── Search ──────────────────────────────────────────────────────────────────
+document.getElementById('page-search-btn').addEventListener('click', () => doSearch(0));
+searchInput.addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(0); });
+
+async function doSearch(page) {
+  const q = searchInput.value.trim();
+  if (!q) return;
+  currentQuery = q;
+  currentPage = page;
+
+  loadingInd.style.display = 'block';
+  resultsContainer.innerHTML = '';
+  resultsContainer.appendChild(loadingInd);
+  pagination.innerHTML = '';
+  resultsInfo.textContent = '';
+
+  const params = new URLSearchParams({
+    q, script: searchScript,
+    fuzzy: fuzzyMode ? 'true' : 'false',
+    regex: regexMode ? 'true' : 'false',
+    limit: String(PAGE_SIZE),
+    offset: String(page * PAGE_SIZE)
+  });
+
+  try {
+    const res = await fetch(`/api/search?${params}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    lastDevaQuery = data.devaQuery || q;
+    totalResults = data.total;
+    renderResults(data.results);
+    renderPagination();
+  } catch (e) {
+    loadingInd.style.display = 'none';
+    resultsContainer.innerHTML = `<p style="color:red;padding:20px">Error: ${e.message}</p>`;
+  }
+}
+
+function renderResults(results) {
+  loadingInd.style.display = 'none';
+  resultsContainer.innerHTML = '';
+
+  if (!results.length) {
+    resultsInfo.textContent = 'No results found.';
+    return;
+  }
+
+  const start = currentPage * PAGE_SIZE + 1;
+  const end   = start + results.length - 1;
+  resultsInfo.textContent = `Showing ${start}–${end} of ${totalResults.toLocaleString()} results`;
+
+  for (const item of results) {
+    const el = document.createElement('div');
+    el.className = 'full-result-item';
+
+    const lineText = displayScript === 'devanagari' ? item.lineText : convertScript(item.lineText, displayScript);
+    const highlighted = highlightText(escHtml(lineText), lastDevaQuery);
+
+    el.innerHTML = `
+      <div class="result-path">📄 ${escHtml(item.file)} — line ${item.lineNumber}</div>
+      <div class="result-line-text">${highlighted}</div>`;
+
+    el.addEventListener('click', () => {
+      const params = new URLSearchParams({ file: item.file, line: item.lineNumber });
+      window.location.href = `/?${params}`;
+    });
+
+    resultsContainer.appendChild(el);
+  }
+}
+
+function renderPagination() {
+  pagination.innerHTML = '';
+  const totalPages = Math.ceil(totalResults / PAGE_SIZE);
+  if (totalPages <= 1) return;
+
+  const makeBtn = (label, page, active) => {
+    const btn = document.createElement('button');
+    btn.className = 'page-btn' + (active ? ' active' : '');
+    btn.textContent = label;
+    if (!active) btn.addEventListener('click', () => doSearch(page));
+    return btn;
+  };
+
+  if (currentPage > 0) pagination.appendChild(makeBtn('← Prev', currentPage - 1, false));
+
+  const start = Math.max(0, currentPage - 2);
+  const end   = Math.min(totalPages - 1, currentPage + 2);
+
+  for (let p = start; p <= end; p++) {
+    pagination.appendChild(makeBtn(p + 1, p, p === currentPage));
+  }
+
+  if (currentPage < totalPages - 1) pagination.appendChild(makeBtn('Next →', currentPage + 1, false));
+}
+
+function highlightText(html, query) {
+  if (!query) return html;
+  try {
+    const esc = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return html.replace(new RegExp(esc, 'gi'), m => `<mark>${m}</mark>`);
+  } catch { return html; }
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── Voice ────────────────────────────────────────────────────────────────────
+document.getElementById('page-voice-btn').addEventListener('click', () => {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) { alert('Voice search not supported in this browser.'); return; }
+  const rec = new SR();
+  rec.lang = 'hi-IN';
+  rec.onresult = e => {
+    const t = e.results[0][0].transcript.trim();
+    if (t) { searchInput.value = t; doSearch(0); }
+  };
+  rec.start();
+});
+
+// ── Auto search on load if query param present ───────────────────────────────
+if (currentQuery) doSearch(0);
+
+// ── Handle navigation from search results (file + line params) ───────────────
+// (handled server-side redirect in index.html JS)
+</script>
+</body>
+</html>

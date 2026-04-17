@@ -1,0 +1,14 @@
+{
+  "name": "jaya-grantha-viewer",
+  "version": "1.0.0",
+  "description": "Web app to browse and search Sanskrit texts",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "iconv-lite": "^0.6.3"
+  }
+}

@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="sa">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>जय ग्रन्थ दर्शकम् — Jaya Grantha Viewer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;600&family=Noto+Sans+Kannada:wght@400;600&family=Noto+Sans+Telugu:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="static/style.css">
+</head>
+<body>
+<div id="app">
+
+  <!-- ── Top bar ─────────────────────────────────────────────────────────── -->
+  <header id="topbar">
+    <button class="icon-btn" id="sidebar-toggle" title="Toggle sidebar">☰</button>
+    <h1>जय ग्रन्थ दर्शकम्</h1>
+
+    <div id="global-search-wrap">
+      <input id="global-search" type="search" placeholder="Search texts… (Ctrl+K)" autocomplete="off" spellcheck="false">
+      <button class="icon-btn" id="voice-btn" title="Voice search">🎙</button>
+      <button class="icon-btn" id="search-open-btn" title="Open search">🔍</button>
+    </div>
+
+    <div id="script-switcher">
+      <button class="script-btn active" data-script="devanagari" title="Devanagari">देव</button>
+      <button class="script-btn" data-script="itrans"     title="ITRANS">ITRANS</button>
+      <button class="script-btn" data-script="kannada"    title="Kannada">ಕನ್ನ</button>
+      <button class="script-btn" data-script="telugu"     title="Telugu">తెలు</button>
+    </div>
+  </header>
+
+  <!-- ── Body ────────────────────────────────────────────────────────────── -->
+  <div id="body">
+
+    <!-- Sidebar -->
+    <nav id="sidebar">
+      <div id="sidebar-search-wrap">
+        <input id="sidebar-search" type="search" placeholder="Find a grantha…" autocomplete="off" spellcheck="false">
+      </div>
+      <div id="tree-container">
+        <div style="padding:20px;text-align:center;color:#999;font-size:.85rem;">Loading…</div>
+      </div>
+    </nav>
+
+    <!-- Resize handle -->
+    <div id="resize-handle"></div>
+
+    <!-- Content -->
+    <main id="content-pane">
+      <div id="content-title-bar">
+        <span id="content-title">Select a text to begin</span>
+        <button class="icon-btn" id="outline-toggle-btn" title="Toggle verse navigator"
+                style="color:var(--text-muted);margin-left:auto;display:none">§</button>
+      </div>
+      <div id="content-body"></div>
+    </main>
+
+    <!-- Outline / verse-nav panel -->
+    <div id="outline-panel" style="display:none">
+      <div id="outline-header">
+        <span>Verse Navigator</span>
+        <button class="icon-btn" id="outline-close-btn" title="Close">✕</button>
+      </div>
+      <div id="outline-tree"></div>
+    </div>
+
+  </div><!-- #body -->
+
+</div><!-- #app -->
+
+<!-- ── Search overlay ──────────────────────────────────────────────────── -->
+<div id="search-overlay" role="dialog" aria-modal="true" aria-label="Search">
+  <div id="search-backdrop"></div>
+  <div id="search-panel">
+
+    <div id="search-panel-header">
+      <h2>Search</h2>
+      <button class="icon-btn" id="search-close-btn" style="color:var(--text)">✕</button>
+    </div>
+
+    <div id="search-options">
+      <span style="font-weight:600;color:var(--text)">Script:</span>
+      <button class="toggle-btn on" data-search-script="devanagari">Devanagari</button>
+      <button class="toggle-btn" data-search-script="itrans">ITRANS</button>
+      <button class="toggle-btn" data-search-script="kannada">Kannada</button>
+      <button class="toggle-btn" data-search-script="telugu">Telugu</button>
+
+      <span style="margin-left:8px;font-weight:600;color:var(--text)">Mode:</span>
+      <button class="toggle-btn" id="fuzzy-toggle">Fuzzy</button>
+      <button class="toggle-btn" id="regex-toggle">Regex</button>
+
+      <button class="icon-btn" id="scope-toggle-btn" title="Limit to folder/file"
+              style="color:var(--text);border:1px solid var(--border);border-radius:5px;padding:3px 8px;font-size:.8rem;">
+        📂 Scope
+      </button>
+    </div>
+
+    <!-- Scope selector (hidden by default) -->
+    <div id="scope-wrap" style="display:none;padding:8px 20px;border-bottom:1px solid var(--border);background:var(--bg-alt);">
+      <div style="font-size:.8rem;font-weight:600;margin-bottom:4px;">Limit search to:</div>
+      <div id="scope-selector"></div>
+    </div>
+
+    <div id="search-results-list">
+      <div class="no-results" style="display:none" id="no-results-msg">No results found.</div>
+    </div>
+
+    <div id="search-panel-footer">
+      <span id="result-count"></span>
+      <button id="view-all-btn" style="display:none">View all results →</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── Toast ────────────────────────────────────────────────────────────── -->
+<div id="toast"></div>
+
+<script type="module" src="static/app.js"></script>
+</body>
+</html>
