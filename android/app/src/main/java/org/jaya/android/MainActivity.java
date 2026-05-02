@@ -25,9 +25,13 @@ import android.widget.TextView;
 
 import org.jaya.annotation.Annotation;
 import org.jaya.annotation.AnnotationManager;
+import org.jaya.scriptconverter.SCUtils;
 import org.jaya.search.JayaQueryParser;
 import org.jaya.search.ResultDocument;
+import org.jaya.search.VerseIndex;
+import org.jaya.util.Constatants;
 import org.jaya.util.TimestampUtils;
+import org.jaya.util.Utils;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -55,6 +59,9 @@ public class MainActivity extends Activity {
 
     private Annotation mLastAnnotation = null;
 
+    private VerseIndex mVerseIndex = null;
+    private String mCurrentFilePath = null;
+
     @Override
     protected void onNewIntent(Intent intent) {
         setIntent(intent);
@@ -79,15 +86,42 @@ public class MainActivity extends Activity {
                 return;
             mDocumentList.clear();
             List<ResultDocument> nextDocs = JayaApp.getSearcher().getAdjacentDocs(docId, NUM_ITEMS_TO_LOAD_MORE, 1);
-            //List<ResultDocument> prevDocs = JayaApp.getSearcher().getAdjacentDocs(docId, NUM_ITEMS_TO_LOAD_MORE, -1);
-            //mDocumentList.addAll(prevDocs);
             mDocumentList.add(resDoc);
             mDocumentList.addAll(nextDocs);
             setListAdapter();
 
+            // Kick off verse index build whenever the file changes.
+            String filePath = resDoc.getDoc() != null
+                    ? resDoc.getDoc().get(Constatants.FIELD_PATH) : null;
+            if (filePath != null && !filePath.equals(mCurrentFilePath)) {
+                mCurrentFilePath = filePath;
+                mVerseIndex = null;
+                invalidateOptionsMenu();
+                buildVerseIndexAsync(filePath);
+            }
         }catch (IOException ex){
             ex.printStackTrace();
         }
+    }
+
+    private void buildVerseIndexAsync(final String filePath) {
+        JayaApp.runOnWorkerThread(new Runnable() {
+            @Override
+            public void run() {
+                final VerseIndex index =
+                        VerseIndex.build(filePath, JayaApp.getSearcher());
+                JayaApp.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        // Discard result if user has navigated away to a different file.
+                        if (filePath.equals(mCurrentFilePath)) {
+                            mVerseIndex = index;
+                            invalidateOptionsMenu();
+                        }
+                    }
+                });
+            }
+        });
     }
 
 //    private void setTestFairyUserId(){
@@ -320,8 +354,11 @@ public class MainActivity extends Activity {
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
         menu.findItem(R.id.action_random_doc).setVisible(true);
+        MenuItem verseNavItem = menu.findItem(R.id.action_verse_nav);
+        if (verseNavItem != null) {
+            verseNavItem.setVisible(mVerseIndex != null && mVerseIndex.hasVerses());
+        }
         return super.onPrepareOptionsMenu(menu);
-
     }
 
     @Override
@@ -347,8 +384,11 @@ public class MainActivity extends Activity {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        //int id = item.getItemId();
         if (mDrawerToggle.onOptionsItemSelected(item)) {
+            return true;
+        }
+        if (item.getItemId() == R.id.action_verse_nav) {
+            showVerseNavSheet();
             return true;
         }
         else if( item.getItemId() == R.id.action_random_doc ){
@@ -356,6 +396,22 @@ public class MainActivity extends Activity {
         }
         CommonMenuItemsHandler.onOptionsItemSelected(item);
         return super.onOptionsItemSelected(item);
+    }
+
+    private void showVerseNavSheet() {
+        if (mVerseIndex == null || !mVerseIndex.hasVerses()) return;
+        String baseName = mCurrentFilePath != null
+                ? SCUtils.convertStringToScript(Utils.getBaseName(mCurrentFilePath),
+                        PreferencesManager.getPreferredOutputScriptType())
+                : "";
+        String title = getString(R.string.verse_nav_title, baseName);
+        new VerseNavSheet(this, mVerseIndex, title,
+                new VerseNavSheet.OnVerseSelectedListener() {
+                    @Override
+                    public void onVerseSelected(int docId) {
+                        showDocumentId(docId);
+                    }
+                }).show();
     }
 
     public void setupNavigationDrawerItems(){

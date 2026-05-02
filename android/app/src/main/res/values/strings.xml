@@ -19,6 +19,8 @@
     <string name="action_copy">Copy</string>
     <string name="search_in_this_folder">Search in this folder</string>
     <string name="search_in_folder_subtitle">In: %s</string>
+    <string name="action_verse_nav">Go to verse</string>
+    <string name="verse_nav_title">Go to verse — %s</string>
 
 
     <!-- Strings related to Settings -->

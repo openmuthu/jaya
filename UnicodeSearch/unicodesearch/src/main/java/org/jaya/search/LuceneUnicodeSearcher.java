@@ -28,6 +28,8 @@ import org.jaya.util.Constatants;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 public class LuceneUnicodeSearcher {
@@ -189,6 +191,40 @@ public class LuceneUnicodeSearcher {
 		return bq;
 	}
 	
+	/**
+	 * Returns all Lucene documents for the given file path, ordered by
+	 * {@code FIELD_DOC_LOCAL_ID} (i.e. in the order the file was indexed).
+	 * Used by {@link org.jaya.search.VerseIndex} to scan a whole file for verse numbers.
+	 */
+	public List<ResultDocument> getDocsForPath(String filePath) {
+		createIndexSearcherIfRequired();
+		List<ResultDocument> result = new ArrayList<>();
+		if (mIndexSearcher == null || mReader == null) return result;
+		try {
+			TermQuery pathQuery = new TermQuery(new Term(Constatants.FIELD_PATH, filePath));
+			TopDocs topDocs = mIndexSearcher.search(pathQuery, mReader.maxDoc());
+			for (ScoreDoc sd : topDocs.scoreDocs) {
+				Document doc = mIndexSearcher.doc(sd.doc);
+				result.add(new ResultDocument(sd.doc, doc));
+			}
+			Collections.sort(result, new Comparator<ResultDocument>() {
+				@Override
+				public int compare(ResultDocument a, ResultDocument b) {
+					return parseLocalId(a.getDoc().get(Constatants.FIELD_DOC_LOCAL_ID))
+							- parseLocalId(b.getDoc().get(Constatants.FIELD_DOC_LOCAL_ID));
+				}
+			});
+		} catch (IOException ex) {
+			ex.printStackTrace();
+		}
+		return result;
+	}
+
+	private static int parseLocalId(String s) {
+		if (s == null) return 0;
+		try { return Integer.parseInt(s); } catch (NumberFormatException e) { return 0; }
+	}
+
 	public List<ResultDocument> getAdjacentDocs(int docId, int nDocs, int direction) throws IOException{
 		ArrayList<ResultDocument> retVal = new ArrayList<>();
 		createIndexSearcherIfRequired();
