@@ -3,8 +3,6 @@ package org.jaya.android;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
-import android.view.View;
-import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.Toast;
 
@@ -14,81 +12,104 @@ import org.jaya.search.JayaIndexMetadata;
 import org.jaya.search.ResultDocument;
 import org.jaya.util.Utils;
 
-import java.util.Arrays;
-import java.util.Comparator;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Set;
 
 public class TableOfContentsActivity extends Activity {
 
-    class TOCItem{
-        private String mITRANSPath; // Path value in ITRANS
-        private String mPath; // Path value in the current script type
-        TOCItem(String itransPath, String path){
-            mITRANSPath = itransPath;
-            mPath = path;
+    static class TreeNode {
+        final String itransSegment;  // raw ITRANS path segment (used for folder dedup)
+        final String displayLabel;   // label in the current display script
+        final String itransPath;     // null for folders; full ITRANS path for leaf documents
+        final int depth;
+        boolean expanded;
+        final List<TreeNode> children = new ArrayList<TreeNode>();
+
+        TreeNode(String itransSegment, String displayLabel, String itransPath, int depth) {
+            this.itransSegment = itransSegment;
+            this.displayLabel = displayLabel;
+            this.itransPath = itransPath;
+            this.depth = depth;
+            this.expanded = false;
         }
 
-        String getITRANSPath(){
-            return mITRANSPath;
-        }
-
-        String getPath(){
-            return mPath;
+        boolean isLeaf() {
+            return itransPath != null;
         }
     }
 
-    TOCItem[] mTOCItems = new TOCItem[0];
+    private TreeNode mRoot;
+    private final List<TreeNode> mVisibleNodes = new ArrayList<TreeNode>();
+    private TableOfContentsListAdapter mAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_table_of_contents);
         getActionBar().setIcon(android.R.color.transparent);
+        setupListView();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        setListAdapter();
+        buildAndShowTree();
     }
 
-    private void setListAdapter() {
+    private void setupListView() {
+        ListView listView = (ListView) findViewById(R.id.toc_list_view);
+        mAdapter = new TableOfContentsListAdapter(this, mVisibleNodes,
+                new TableOfContentsListAdapter.OnNodeClickListener() {
+                    @Override
+                    public void onNodeClick(TreeNode node) {
+                        handleNodeClick(node);
+                    }
+                });
+        listView.setAdapter(mAdapter);
+    }
+
+    private void buildAndShowTree() {
         JayaIndexMetadata mt = new JayaIndexMetadata(JayaApp.getSearchIndexFolder());
         Set<String> pathSet = mt.getIndexedFilePathSet();
-        mTOCItems = new TOCItem[pathSet.size()];
-        int index = 0;
-        for(String path:pathSet){
-            String pathInCurScriptType = Utils.removeExtension(SCUtils.convertStringToScript(path, PreferencesManager.getPreferredOutputScriptType()));
-            mTOCItems[index] = new TOCItem(path, pathInCurScriptType);
-            index++;
-        }
-        if (mTOCItems == null || mTOCItems.length == 0) {
+        if (pathSet == null || pathSet.isEmpty()) {
             Toast.makeText(this, R.string.no_results_found, Toast.LENGTH_SHORT).show();
             return;
         }
-        Arrays.sort(mTOCItems, new Comparator<TOCItem>() {
+        TOCTreeBuilder.LabelConverter converter = new TOCTreeBuilder.LabelConverter() {
             @Override
-            public int compare(TOCItem tocItem, TOCItem t1) {
-                return tocItem.getPath().compareTo(t1.getPath());
+            public String toDisplayLabel(String itransSegment) {
+                return SCUtils.convertStringToScript(
+                        itransSegment, PreferencesManager.getPreferredOutputScriptType());
             }
-        });
+        };
+        mRoot = TOCTreeBuilder.buildTree(pathSet, converter);
+        TOCTreeBuilder.sortTree(mRoot);
+        refreshVisibleNodes();
+    }
 
-        ListView listView = (ListView)findViewById(R.id.toc_list_view);
+    private void refreshVisibleNodes() {
+        mVisibleNodes.clear();
+        if (mRoot != null) {
+            mVisibleNodes.addAll(TOCTreeBuilder.flattenVisible(mRoot));
+        }
+        if (mAdapter != null) {
+            mAdapter.notifyDataSetChanged();
+        }
+    }
 
-        listView.setAdapter(new TableOfContentsListAdapter(this, mTOCItems));
-
-        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-                if( mTOCItems == null || mTOCItems.length == 0)
-                    return;
-                ResultDocument resDoc = JayaAppUtils.getDoc(new Annotation(mTOCItems[i].getITRANSPath(), "0", "", new Date()));
-                Intent intent = new Intent(TableOfContentsActivity.this, MainActivity.class);
-                intent.setAction(JayaApp.INTENT_OPEN_DOCUMENT_ID);
-                intent.putExtra("documentId", resDoc.getId());
-                startActivity(intent);
-            }
-        });
+    private void handleNodeClick(TreeNode node) {
+        if (node.isLeaf()) {
+            ResultDocument resDoc = JayaAppUtils.getDoc(
+                    new Annotation(node.itransPath, "0", "", new Date()));
+            Intent intent = new Intent(TableOfContentsActivity.this, MainActivity.class);
+            intent.setAction(JayaApp.INTENT_OPEN_DOCUMENT_ID);
+            intent.putExtra("documentId", resDoc.getId());
+            startActivity(intent);
+        } else {
+            node.expanded = !node.expanded;
+            refreshVisibleNodes();
+        }
     }
 }

@@ -1,32 +1,65 @@
 package org.jaya.android;
 
 import android.app.Activity;
+import android.util.TypedValue;
 import android.view.ScaleGestureDetector;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.TextView;
 
-/**
- * Created by murthy on 08/04/17.
- */
+import java.util.List;
 
 class TableOfContentsListAdapter extends BaseAdapter implements JayaDocListView.IListAdapterWithScaleFactor {
 
-    //private ListViewRowClickListener mRowClickListener;
-    private float mScaleFactor = 1.0f;
-    private TableOfContentsActivity.TOCItem[] mTOCItems;
-    //private SearchResult mSearchResult = null;
-    private Activity mActivity;
-
-    public TableOfContentsListAdapter(Activity activity, TableOfContentsActivity.TOCItem[] tocItems) {
-        mTOCItems = tocItems;
-        mActivity = activity;
+    interface OnNodeClickListener {
+        void onNodeClick(TableOfContentsActivity.TreeNode node);
     }
 
-    public void setAnnotationListAndUpdateView(TableOfContentsActivity.TOCItem[] tocItems){
-        mTOCItems = tocItems;
-        notifyDataSetChanged();
+    private static final int INDENT_DP = 20;
+
+    private float mScaleFactor = 1.0f;
+    private final List<TableOfContentsActivity.TreeNode> mNodes;
+    private final Activity mActivity;
+    private final OnNodeClickListener mClickListener;
+
+    TableOfContentsListAdapter(Activity activity,
+                               List<TableOfContentsActivity.TreeNode> nodes,
+                               OnNodeClickListener clickListener) {
+        mActivity = activity;
+        mNodes = nodes;
+        mClickListener = clickListener;
+    }
+
+    @Override
+    public int getCount() {
+        return mNodes.size();
+    }
+
+    @Override
+    public Object getItem(int position) {
+        return mNodes.get(position);
+    }
+
+    @Override
+    public long getItemId(int position) {
+        return position;
+    }
+
+    @Override
+    public View getView(int position, View convertView, ViewGroup parent) {
+        View itemView;
+        ViewHolder holder;
+        if (convertView == null) {
+            itemView = View.inflate(mActivity, R.layout.toc_tree_item, null);
+            holder = new ViewHolder(itemView);
+            itemView.setTag(holder);
+        } else {
+            itemView = convertView;
+            holder = (ViewHolder) itemView.getTag();
+        }
+        holder.bind(mNodes.get(position), mScaleFactor);
+        return itemView;
     }
 
     @Override
@@ -35,99 +68,65 @@ class TableOfContentsListAdapter extends BaseAdapter implements JayaDocListView.
     }
 
     @Override
-    public void setScaleFactor(float scaleFactor){
+    public void setScaleFactor(float scaleFactor) {
         mScaleFactor = scaleFactor;
     }
 
     @Override
-    public void onScaleEnd(float scaleFactor){
+    public void onScaleEnd(float scaleFactor) {
         mScaleFactor = 1.0f;
         float currentSize = PreferencesManager.getFontSize();
-        PreferencesManager.setFontSize( getClampedFontSize(currentSize * scaleFactor) );
+        PreferencesManager.setFontSize(clampedFontSize(currentSize * scaleFactor));
     }
 
-    float getClampedFontSize(float fontSize){
-        return Math.max(PreferencesManager.MIN_FONT_SIZE, Math.min(fontSize, PreferencesManager.MAX_FONT_SIZE));
+    private float clampedFontSize(float size) {
+        return Math.max(PreferencesManager.MIN_FONT_SIZE,
+                Math.min(size, PreferencesManager.MAX_FONT_SIZE));
     }
 
-    @Override
-    public int getCount() {
-        return mTOCItems.length;
-    }
-
-    @Override
-    public Object getItem(int position) {
-        try {
-            return mTOCItems[position];
-        }catch (ArrayIndexOutOfBoundsException ex){
-            ex.printStackTrace();
-        }
-        return null;
-    }
-
-    @Override
-    public long getItemId(int position) {
-        return position;
-    }
-
-
-    @Override
-    public View getView(int position, View convertView, ViewGroup parent) {
-        View thisView;
-        ViewHolder viewHolder;
-
-        if (convertView == null) {
-            thisView = View.inflate(mActivity, R.layout.toc_list_item, null);
-            viewHolder = new ViewHolder(mTOCItems[position], thisView);
-
-            //thisView.setOnLongClickListener(mRowClickListener);
-            //thisView.setOnClickListener(mRowClickListener);
-            thisView.setTag(viewHolder);
-        } else {
-            thisView = convertView;
-            viewHolder = (ViewHolder) convertView.getTag();
-        }
-
-        viewHolder.setItem(mTOCItems[position]);
-        return thisView;
-    }
-
-    /**
-     * ViewHolder pattern
-     * 1. Don't inflate a view when convertView passed in
-     * 2. Hold subviews to avoid "findViewById" lookup cost
-     */
     class ViewHolder {
-        private TableOfContentsActivity.TOCItem mTOCItem;
-        private View mItemView;
-        private TextView mDocPathTextView;
+        private final View itemView;
+        private final TextView arrowView;
+        private final TextView labelView;
+        private TableOfContentsActivity.TreeNode mNode;
 
-        public ViewHolder(TableOfContentsActivity.TOCItem tocItem, View itemView) {
-
-            mDocPathTextView = (TextView) itemView.findViewById(R.id.list_item_path);
-            mTOCItem = tocItem;
-            int bgColor = JayaAppUtils.getRandomColor();
-            mDocPathTextView.setBackgroundColor(bgColor);
-            itemView.setBackgroundColor(bgColor);
-            mItemView = itemView;
-            refresh();
+        ViewHolder(View view) {
+            itemView = view;
+            arrowView = (TextView) view.findViewById(R.id.toc_arrow);
+            labelView = (TextView) view.findViewById(R.id.toc_label);
+            itemView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    if (mNode != null) {
+                        mClickListener.onNodeClick(mNode);
+                    }
+                }
+            });
         }
 
-        private void refresh() {
-            mDocPathTextView.setText(mTOCItem.getPath());
-            int bgColor = JayaAppUtils.getRandomColor();
-            mDocPathTextView.setTextSize(getClampedFontSize(PreferencesManager.getFontSize()*mScaleFactor));
-            mDocPathTextView.setBackgroundColor(bgColor);
-            mItemView.setBackgroundColor(bgColor);
-        }
+        void bind(TableOfContentsActivity.TreeNode node, float scaleFactor) {
+            mNode = node;
 
-        public void setItem(TableOfContentsActivity.TOCItem item) {
-            mTOCItem = item;
-            refresh();
-        }
+            // Left padding for indentation (depth 0 = top-level folders, no extra indent)
+            int indentPx = (int) TypedValue.applyDimension(
+                    TypedValue.COMPLEX_UNIT_DIP,
+                    INDENT_DP * node.depth,
+                    itemView.getResources().getDisplayMetrics());
+            itemView.setPadding(indentPx, 4, 8, 4);
 
-        public TableOfContentsActivity.TOCItem getItem() {
-            return mTOCItem;
+            // Arrow: ▶ collapsed folder, ▼ expanded folder, blank for leaves
+            if (node.isLeaf()) {
+                arrowView.setText("  ");
+            } else if (node.expanded) {
+                arrowView.setText("\u25BC"); // ▼
+            } else {
+                arrowView.setText("\u25B6"); // ▶
+            }
+
+            labelView.setText(node.displayLabel);
+            labelView.setTextSize(
+                    TypedValue.COMPLEX_UNIT_SP,
+                    clampedFontSize(PreferencesManager.getFontSize() * scaleFactor));
         }
     }
 }

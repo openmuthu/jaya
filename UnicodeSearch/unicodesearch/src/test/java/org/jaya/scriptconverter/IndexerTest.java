@@ -12,9 +12,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 
 import org.apache.commons.codec.digest.DigestUtils;
@@ -39,6 +42,8 @@ import org.json.simple.parser.JSONParser;
 import org.junit.Test;
 
 import static org.apache.lucene.util.Version.LUCENE_47;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class IndexerTest {
 	
@@ -48,7 +53,78 @@ public class IndexerTest {
 	public void runIndexer() {
 		main(new String[0]);
 	}
-	
+
+	/**
+	 * Re-packages existing Lucene indexes into ZIPs without re-indexing source
+	 * texts.  Use this when only the ZIP contents changed (e.g. after the fix
+	 * that adds {@code .jaya-index-md.txt} to each ZIP) and {@code index_output/}
+	 * is already up-to-date.  Much faster than {@link #runIndexer()}.
+	 */
+	@Test
+	public void repackageZips() {
+		createIndexZipFiles("", "");
+	}
+
+	/**
+	 * Verifies that {@link #zipFolder} includes {@code .jaya-index-md.txt} in the
+	 * output ZIP even though the name starts with {@code '.'} (which would normally
+	 * be excluded by {@link #isExcluded}).  Also confirms that other dot-files and
+	 * the "app" folder are still excluded.
+	 *
+	 * <p>Backward-compatibility note: deployed builds have always contained the
+	 * {@code mergeIndexes()} call that reads this file from the unzipped folder.
+	 * Previously the file was absent from the ZIP so an empty set was merged.
+	 * Old APKs will automatically benefit from regenerated ZIPs because
+	 * {@code mergeIndexes()} has been present since the first release — no app
+	 * update is required, only a re-download of the category.
+	 */
+	@Test
+	public void zipFolder_metadataFileIncluded_otherDotFilesExcluded() throws Exception {
+		Path sourceDir = Files.createTempDirectory("ziptest_src_");
+		Path zipPath   = Files.createTempFile("ziptest_out_", ".zip");
+		Files.delete(zipPath); // zipFolder recreates it
+		try {
+			// Files that must end up IN the ZIP
+			Files.write(sourceDir.resolve(JayaIndexMetadata.MD_FILE_NAME),
+					"AgamAH/file.txt\r\n".getBytes(StandardCharsets.UTF_8));
+			Files.write(sourceDir.resolve("normal.txt"),
+					"content".getBytes(StandardCharsets.UTF_8));
+
+			// Files that must be EXCLUDED
+			Files.write(sourceDir.resolve(".hidden"),
+					"secret".getBytes(StandardCharsets.UTF_8));
+			Path appDir = Files.createDirectory(sourceDir.resolve("app"));
+			Files.write(appDir.resolve("data.txt"),
+					"app data".getBytes(StandardCharsets.UTF_8));
+
+			zipFolder(sourceDir.toString(), zipPath.toString());
+
+			Set<String> entries = new HashSet<String>();
+			ZipFile zf = new ZipFile(zipPath.toFile());
+			try {
+				Enumeration<? extends ZipEntry> e = zf.entries();
+				while (e.hasMoreElements()) {
+					entries.add(e.nextElement().getName());
+				}
+			} finally {
+				zf.close();
+			}
+
+			assertTrue("Metadata file must be present in ZIP",
+					entries.contains(JayaIndexMetadata.MD_FILE_NAME));
+			assertTrue("Normal files must be included",
+					entries.contains("normal.txt"));
+			assertFalse("Other dot-files must remain excluded",
+					entries.contains(".hidden"));
+			assertFalse("'app' folder contents must remain excluded",
+					entries.contains("app" + File.separator + "data.txt")
+					|| entries.contains("app/data.txt"));
+		} finally {
+			Files.deleteIfExists(zipPath);
+			FileUtils.deleteDirectory(sourceDir.toFile());
+		}
+	}
+
 	public static void main(String[] args){
 		//System.out.println( Utils.getTagsBasedOnFilePath("/mahAbhArata/02-sabhA-parva.txt"));
 		createMultipleIndexes("", "");
@@ -177,6 +253,11 @@ public class IndexerTest {
 					}
 					if( fileIndexer == null ){
 						indexName = (suffix.isEmpty())?indexDir:indexDir + "_" + suffix;
+						// Delete the existing index directory so CREATE_OR_APPEND
+						// starts with a clean slate.  Without this, repeated runs
+						// of createMultipleIndexes() accumulate duplicate Lucene
+						// segments, bloating each ZIP by one full copy per run.
+						FileUtils.deleteDirectory(new File(indexName));
 						fileIndexer = new LuceneUnicodeFileIndexer(indexName);
 					}
 					System.out.println("Adding file: " + file.getCanonicalPath() + " to index: " + indexName);
@@ -285,9 +366,13 @@ public class IndexerTest {
 	        Files.walk(pp)
 	          .filter(path -> !Files.isDirectory(path))
 	          .filter(path -> {
-	              // Check every part of the relative path for exclusions
+	              // Check every part of the relative path for exclusions.
+	              // Exception: always include the metadata file so that
+	              // mergeIndexes() on the device can update its path set.
 	              for (Path part : pp.relativize(path)) {
-	                  if (isExcluded(part.getFileName().toString())) return false;
+	                  String partName = part.getFileName().toString();
+	                  if (partName.equals(JayaIndexMetadata.MD_FILE_NAME)) continue;
+	                  if (isExcluded(partName)) return false;
 	              }
 	              return true;
 	          })
