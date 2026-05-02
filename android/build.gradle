@@ -3,16 +3,14 @@
 buildscript {
     repositories {
         mavenCentral()
+        google()
         jcenter()
-        maven {
-            url 'https://maven.google.com'
-        }
     }
     dependencies {
         // Don't use 2.3.2. Its has a bug where mcafee prevents the classes.dex from being created
         // http://stackoverflow.com/questions/43065324/failed-to-capture-snapshot-of-output-files-for-task
         // https://issuetracker.google.com/issues/37129469
-        classpath 'com.android.tools.build:gradle:8.2.2'
+        classpath 'com.android.tools.build:gradle:8.5.2'
 
         // NOTE: Do not place your application dependencies here; they belong
         // in the individual module build.gradle files
@@ -21,9 +19,8 @@ buildscript {
 
 allprojects {
     repositories {
-        maven {
-            url 'https://maven.google.com'
-        }
+        google()
+        mavenCentral()
         jcenter()
     }
 }

@@ -1,13 +1,14 @@
 package org.jaya.util;
 
 import java.io.File;
+import java.net.URL;
 
 public class Constatants {
 
 //	public static final String FILES_TO_INDEX_DIRECTORY = "C:\\Users\\hjuturi\\Downloads\\Sarvamoola";
 //	public static final String INDEX_DIRECTORY = "C:\\Users\\hjuturi\\Downloads\\lucenIndex";
 //	public static final String JAYA_COMMON_HOME = "C:\\Users\\vjutur\\Documents\\GitHub";
-	public static final String JAYA_COMMON_HOME = "/Users/varahamurthyjutur/Documents/github";
+	public static final String JAYA_COMMON_HOME = deriveJayaCommonHome();
 	public static final String JAYA_HOME = PathUtils.get(JAYA_COMMON_HOME, "jaya");
 	public static final String JAYA_INDEX_FILES_HOME = PathUtils.get(JAYA_COMMON_HOME, "jaya-index-files");
 	public static final String JAYA_INDEX_FILES_V1_FOLDER = PathUtils.get(JAYA_INDEX_FILES_HOME, "v1");
@@ -35,6 +36,29 @@ public class Constatants {
 	
 	public static String getIndexCatalogBaseUrl(){
 		return INDEX_CATALOGUE_BASE_URL;
+	}
+
+	private static String deriveJayaCommonHome() {
+		try {
+			// Location: .../github/jaya/UnicodeSearch/unicodesearch/build/classes/java/main/org/jaya/util/Constatants.class
+			URL url = Constatants.class.getResource("Constatants.class");
+			if (url != null) {
+				File f = new File(url.toURI());
+				return f.getParentFile() // util
+						.getParentFile() // jaya (package)
+						.getParentFile() // org
+						.getParentFile() // main
+						.getParentFile() // java
+						.getParentFile() // classes
+						.getParentFile() // build
+						.getParentFile() // unicodesearch
+						.getParentFile() // UnicodeSearch
+						.getParentFile() // jaya (root repo)
+						.getParentFile() // github (common home)
+						.getAbsolutePath();
+			}
+		} catch (Exception ignored) { }
+		return System.getProperty("user.home");
 	}
 
 }

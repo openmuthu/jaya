@@ -7,7 +7,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -17,6 +17,7 @@ import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
@@ -35,12 +36,18 @@ import org.jaya.util.Utils;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
+import org.junit.Test;
 
 import static org.apache.lucene.util.Version.LUCENE_47;
 
 public class IndexerTest {
 	
 	private static final String FINAL_INDEX_NAME = "final_index_all";
+
+	@Test
+	public void runIndexer() {
+		main(new String[0]);
+	}
 	
 	public static void main(String[] args){
 		//System.out.println( Utils.getTagsBasedOnFilePath("/mahAbhArata/02-sabhA-parva.txt"));
@@ -48,6 +55,13 @@ public class IndexerTest {
 		createIndexZipFiles("", "");
 		//mergeIndexes();
 		//deleteIndexFiles();
+	}
+
+	/**
+	 * Centralized exclusion logic for files and folders.
+	 */
+	private static boolean isExcluded(String name) {
+		return name.startsWith(".") || name.equals("app") || name.endsWith(".py");
 	}
 
 	public static void deleteIndexFiles(){
@@ -78,7 +92,7 @@ public class IndexerTest {
 						continue;
 					indexPaths.add(str);
 				}
-				if( indexPaths.size() > 0 ){
+				if( !indexPaths.isEmpty() ){
 					System.out.println("Merging paths: " + indexPaths);
 					indexer.mergeIndexes(indexPaths);
 				}
@@ -87,7 +101,7 @@ public class IndexerTest {
 			ex.printStackTrace();
 		}
 	}
-	
+
 	public static void mergeIndexes1(){
 		try{
 			String finalIndexDir = Constatants.FILES_TO_INDEX_DIRECTORY + "/final_index";
@@ -95,26 +109,25 @@ public class IndexerTest {
 			IndexWriterConfig config = new IndexWriterConfig(LUCENE_47, analyzer);
 			config.setOpenMode(IndexWriterConfig.OpenMode.CREATE_OR_APPEND);
 			IndexWriter indexWriter = new IndexWriter(FSDirectory.open(new File(finalIndexDir)), config);
-			
+
 			List<File> firstLevelDirs = Utils.getFirstLevelDirs(new File(Constatants.FILES_TO_INDEX_DIRECTORY));
-			List<File> indexFileList = new ArrayList<File>();
-			for(File dir:firstLevelDirs){			
+			List<File> indexFileList = new ArrayList<>();
+			for(File dir:firstLevelDirs){
 				String dirPath = dir.getCanonicalPath();
 				if( dirPath.endsWith("_index") && !dirPath.contains("final_index") ){
 					indexFileList.add(dir);
 				}
 			}
-			Directory[] indexList = new Directory[indexFileList.size()]; 
+			Directory[] indexList = new Directory[indexFileList.size()];
 			for(int i=0;i < indexFileList.size();i++){
 				indexList[i] = FSDirectory.open(indexFileList.get(i));
 			}
-			
+
 			indexWriter.addIndexes(indexList);
 			indexWriter.close();
 		}catch(Exception ex){
 			ex.printStackTrace();
 		}
-		
 	}
 	
 	public static void createMultipleIndexes(String rootDirPath, String prevPrefix){
@@ -124,12 +137,14 @@ public class IndexerTest {
 				rootDirPath = Constatants.FILES_TO_INDEX_DIRECTORY;
 			else
 				prefix = Utils.getBaseName(rootDirPath);
+			
 			List<File> alreadyIndexedFilesInThisDir = new ArrayList<>();
 			File rootDir = new File(rootDirPath);
 			
 			if( rootDir.isDirectory() && FileUtils.sizeOfDirectory(rootDir) > Constatants.MAX_INDEX_SIZE ){
 				List<File> firstLevelDirs = Utils.getFirstLevelDirs(rootDir);
 				for(File dir:firstLevelDirs){
+					if (isExcluded(dir.getName())) continue;
 					alreadyIndexedFilesInThisDir.add(dir);
 					createMultipleIndexes(dir.getCanonicalPath(), prefix);
 				}
@@ -137,33 +152,37 @@ public class IndexerTest {
 			
 			String indexDir = Constatants.INDEX_DIRECTORY + File.separator + prevPrefix + ((prevPrefix.isEmpty())?"":"_") + prefix;			
 			LuceneUnicodeFileIndexer fileIndexer = null;			
-			int totalSizeSoFar = 0;
+			long totalSizeSoFar = 0;
 			int currentIndex = 0;
 			String suffix = "";
 			String indexName = "";
 			File[] filesInThisDir = rootDir.listFiles();
-			for(File file:filesInThisDir){
-				if( alreadyIndexedFilesInThisDir.contains(file) ){
-					System.out.println("Skipping file as it is indexed seperately: " + file.getCanonicalPath());
-					continue;
+			if (filesInThisDir != null) {
+				for(File file:filesInThisDir){
+					if (isExcluded(file.getName())) continue;
+					
+					if( alreadyIndexedFilesInThisDir.contains(file) ){
+						System.out.println("Skipping file as it is indexed seperately: " + file.getCanonicalPath());
+						continue;
+					}
+					if( !file.isDirectory() && !LuceneUnicodeFileIndexer.hasIndexableExtension(file.getCanonicalPath()) )
+						continue;
+					if( totalSizeSoFar + FileUtils.sizeOf(file) > Constatants.MAX_INDEX_SIZE ){
+						currentIndex++;
+						suffix = String.format("%d", currentIndex);
+						if( fileIndexer != null )
+							fileIndexer.close();
+						fileIndexer = null;
+						totalSizeSoFar = 0;
+					}
+					if( fileIndexer == null ){
+						indexName = (suffix.isEmpty())?indexDir:indexDir + "_" + suffix;
+						fileIndexer = new LuceneUnicodeFileIndexer(indexName);
+					}
+					System.out.println("Adding file: " + file.getCanonicalPath() + " to index: " + indexName);
+					fileIndexer.addFilesToIndex(file.getCanonicalPath());
+					totalSizeSoFar += FileUtils.sizeOf(file);
 				}
-				if( !file.isDirectory() && !LuceneUnicodeFileIndexer.hasIndexableExtension(file.getCanonicalPath()) )
-					continue;
-				if( totalSizeSoFar + FileUtils.sizeOf(file) > Constatants.MAX_INDEX_SIZE ){
-					currentIndex++;
-					suffix = String.format("%d", currentIndex);
-					if( fileIndexer != null )
-						fileIndexer.close();
-					fileIndexer = null;
-					totalSizeSoFar = 0;
-				}
-				if( fileIndexer == null ){
-					indexName = (suffix.isEmpty())?indexDir:indexDir + "_" + suffix;
-					fileIndexer = new LuceneUnicodeFileIndexer(indexName);
-				}
-				System.out.println("Adding file: " + file.getCanonicalPath() + " to index: " + indexName);
-				fileIndexer.addFilesToIndex(file.getCanonicalPath());
-				totalSizeSoFar += FileUtils.sizeOf(file);
 			}
 			if( fileIndexer != null )
 				fileIndexer.close();			
@@ -172,6 +191,7 @@ public class IndexerTest {
 		}
 	}
 	
+	@SuppressWarnings("unchecked")
 	public static void createIndexZipFiles(String rootDirPath, String zipOutputPath){
 		if( rootDirPath == null || rootDirPath.isEmpty() )
 			rootDirPath = Constatants.INDEX_DIRECTORY;
@@ -198,6 +218,7 @@ public class IndexerTest {
 		File rootDir = new File(rootDirPath);
 		List<File> firstLevelDirs = Utils.getFirstLevelDirs(rootDir);
 		for(File dir:firstLevelDirs){
+			if (isExcluded(dir.getName())) continue;
 			try{
 				String path = dir.getCanonicalPath();
 				if( Utils.getBaseName(path).endsWith(FINAL_INDEX_NAME))
@@ -244,8 +265,8 @@ public class IndexerTest {
 				FileUtils.copyFileToDirectory(new File(PathUtils.get(zipOutputPath, zipName)), new File(Constatants.JAYA_INDEX_FILES_V1_FOLDER));
 			}
 			
-			FileUtils.write(new File(PathUtils.get(Constatants.JAYA_INDEX_FILES_V1_FOLDER, IndexCatalogue.INDEX_CATALOG_FILE_NAME)), indexCatalogJSON, Charset.forName("UTF-8"));
-			FileUtils.write(new File(PathUtils.get(Constatants.JAYA_INDEX_FILES_V1_FOLDER, IndexCatalogue.INDEX_CATALOG_DETAILS_FILE_NAME)), indexAdditionalInfoJSON, Charset.forName("UTF-8"));
+			FileUtils.write(new File(PathUtils.get(Constatants.JAYA_INDEX_FILES_V1_FOLDER, IndexCatalogue.INDEX_CATALOG_FILE_NAME)), indexCatalogJSON, StandardCharsets.UTF_8);
+			FileUtils.write(new File(PathUtils.get(Constatants.JAYA_INDEX_FILES_V1_FOLDER, IndexCatalogue.INDEX_CATALOG_DETAILS_FILE_NAME)), indexAdditionalInfoJSON, StandardCharsets.UTF_8);
 			
 		}catch(IOException ex){
 			ex.printStackTrace();
@@ -263,6 +284,13 @@ public class IndexerTest {
 	        Path pp = Paths.get(sourceDirPath);
 	        Files.walk(pp)
 	          .filter(path -> !Files.isDirectory(path))
+	          .filter(path -> {
+	              // Check every part of the relative path for exclusions
+	              for (Path part : pp.relativize(path)) {
+	                  if (isExcluded(part.getFileName().toString())) return false;
+	              }
+	              return true;
+	          })
 	          .forEach(path -> {
 	              ZipEntry zipEntry = new ZipEntry(pp.relativize(path).toString());
 	              try {
@@ -277,9 +305,8 @@ public class IndexerTest {
 	}
 	
 	public static String getMd5HashForFile(String filePath){
-		try(FileInputStream fis = new FileInputStream(new File(filePath))){
-			String md5 = org.apache.commons.codec.digest.DigestUtils.md5Hex(fis);
-			return md5;
+		try(FileInputStream fis = new FileInputStream(filePath)){
+			return DigestUtils.md5Hex(fis);
 		}catch(Exception e){
 			e.printStackTrace();
 		}
@@ -287,9 +314,8 @@ public class IndexerTest {
 	}
 	
 	public static String getMd5HashForString(String src){
-		try(InputStream is = new ByteArrayInputStream( src.getBytes( "UTF-8" ))){
-			String md5 = org.apache.commons.codec.digest.DigestUtils.md5Hex(is);
-			return md5;
+		try(InputStream is = new ByteArrayInputStream( src.getBytes( StandardCharsets.UTF_8 ))){
+			return DigestUtils.md5Hex(is);
 		}catch(Exception e){
 			e.printStackTrace();
 		}
@@ -308,6 +334,7 @@ public class IndexerTest {
 			mLastIndexMeta.put("zipsUpdated", new JSONArray());
 		}
 		
+		@SuppressWarnings("unchecked")
 		public String getLastModified(String zipName, JayaIndexMetadata jmd){
 			boolean bZipHasNewContent = false;
 			JSONObject zipItemMeta = (JSONObject)mLastIndexMeta.getOrDefault(zipName, new JSONObject());
@@ -327,7 +354,7 @@ public class IndexerTest {
 				String zipContentItemNewHash = getMd5HashForFile(absPath);
 				JSONObject zipItemContentItem = (JSONObject)zipItemContents.getOrDefault(path, new JSONObject());
 				String zipContentItemOldHash = (String)zipItemContentItem.getOrDefault("hash", zipContentItemNewHash);
-				if( !zipContentItemOldHash.equals(zipContentItemNewHash) ){
+				if( zipContentItemOldHash != null && !zipContentItemOldHash.equals(zipContentItemNewHash) ){
 					lastModified = TimestampUtils.nowAsString();
 					bZipHasNewContent = true;
 				}
@@ -339,7 +366,7 @@ public class IndexerTest {
 			zipItemMeta.put("contents", zipItemContents);
 			mLastIndexMeta.put(zipName, zipItemMeta);
 			
-			if( bZipHasNewContent ){
+			if( bZipHasNewContent && zipsUpdated != null ){
 				zipsUpdated.add(zipName);
 			}
 			mLastIndexMeta.put("zipsUpdated", zipsUpdated);
@@ -349,8 +376,10 @@ public class IndexerTest {
 		public ArrayList<String> getUpdatedZipNames(){
 			ArrayList<String> retVal = new ArrayList<>();
 			JSONArray updatedZips = (JSONArray)mLastIndexMeta.getOrDefault("zipsUpdated", new JSONArray());
-			for(int i=0;i<updatedZips.size();i++){
-				retVal.add((String)updatedZips.get(i));
+			if (updatedZips != null) {
+				for(int i=0;i<updatedZips.size();i++){
+					retVal.add((String)updatedZips.get(i));
+				}
 			}
 			return retVal;
 		}
@@ -370,5 +399,4 @@ public class IndexerTest {
 			}			
 		}
 	}
-	
 }
