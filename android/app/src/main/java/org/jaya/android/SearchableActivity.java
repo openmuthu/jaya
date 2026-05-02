@@ -39,10 +39,19 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 
 public class SearchableActivity extends ListActivity {
 
+    /** Intent extra: slash-terminated folder path to scope search (e.g. {@code "/mAdhva/"}). */
+    public static final String EXTRA_FOLDER_PATH = "folderPath";
+    /** Intent extra: display name of the folder shown in the action bar subtitle. */
+    public static final String EXTRA_FOLDER_DISPLAY_NAME = "folderDisplayName";
+
+    /** Returns the active folder-scope path, or {@code null} for a global search. */
+    public String getFolderPath() { return mFolderPath; }
+
     ProgressDialog mProgressDialog = null;
     SearchResult mSearchResult;
     LuceneUnicodeSearcher mSearcher = null;
     String mCurrentQuery;
+    String mFolderPath = null;
     ScriptConverter mITransToDevnagari = ScriptConverterFactory.getScriptConverter(ScriptType.ITRANS,
             ScriptType.DEVANAGARI);
 
@@ -53,11 +62,29 @@ public class SearchableActivity extends ListActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.container_list);
         getActionBar().setIcon(android.R.color.transparent);
+        mFolderPath = getIntent().getStringExtra(EXTRA_FOLDER_PATH);
+        String folderDisplayName = getIntent().getStringExtra(EXTRA_FOLDER_DISPLAY_NAME);
+        if (folderDisplayName != null && !folderDisplayName.isEmpty()) {
+            getActionBar().setSubtitle(
+                    getString(R.string.search_in_folder_subtitle, folderDisplayName));
+        }
         handleIntent(getIntent());
     }
 
     @Override
     protected void onNewIntent(Intent intent) {
+        // If the new intent carries an explicit folder scope, update to it.
+        // Otherwise keep the folder scope that was set in onCreate so that
+        // subsequent queries from the search box stay scoped to the same folder.
+        String newFolderPath = intent.getStringExtra(EXTRA_FOLDER_PATH);
+        if (newFolderPath != null) {
+            mFolderPath = newFolderPath;
+            String folderDisplayName = intent.getStringExtra(EXTRA_FOLDER_DISPLAY_NAME);
+            if (folderDisplayName != null && !folderDisplayName.isEmpty()) {
+                getActionBar().setSubtitle(
+                        getString(R.string.search_in_folder_subtitle, folderDisplayName));
+            }
+        }
         setIntent(intent);
         handleIntent(intent);
     }
@@ -65,13 +92,15 @@ public class SearchableActivity extends ListActivity {
     private void handleIntent(Intent intent) {
         if (Intent.ACTION_SEARCH.equals(intent.getAction())) {
             String query = intent.getStringExtra(SearchManager.QUERY);
-            doMySearch(query);
+            if (query != null && !query.isEmpty()) {
+                doMySearch(query);
+            }
         }
     }
 
     private void doMySearch(final String query) {
         try {
-            Log.d(JayaApp.APP_NAME, "doMySearch");
+            Log.d(JayaApp.APP_NAME, "doMySearch: query=" + query + " folderPath=" + mFolderPath);
             if( mProgressDialog == null )
                 mProgressDialog = new ProgressDialog(this);
             if( mProgressDialog != null ) {
@@ -86,7 +115,14 @@ public class SearchableActivity extends ListActivity {
                     try {
                         mSearcher = JayaApp.getSearcher();
                         String itransQuery = SCUtils.convertStringToScript(query, ScriptType.ITRANS);
-                        mSearchResult = mSearcher.searchITRANSString(itransQuery);
+                        Log.d(JayaApp.APP_NAME, "doMySearch: itransQuery=" + itransQuery + " folderPath=" + mFolderPath + " scoped=" + (mFolderPath != null && !mFolderPath.isEmpty()));
+                        if (mFolderPath != null && !mFolderPath.isEmpty()) {
+                            mSearchResult = mSearcher.searchITRANSStringInPath(itransQuery, mFolderPath);
+                        } else {
+                            mSearchResult = mSearcher.searchITRANSString(itransQuery);
+                        }
+                        int resultCount = (mSearchResult != null) ? mSearchResult.getResultDocs().size() : -1;
+                        Log.d(JayaApp.APP_NAME, "doMySearch: resultCount=" + resultCount);
 
                         mCurrentQuery = mITransToDevnagari.convert(itransQuery);
                     }catch (Exception ex){

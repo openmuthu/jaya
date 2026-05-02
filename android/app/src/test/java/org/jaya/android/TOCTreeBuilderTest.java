@@ -10,6 +10,7 @@ import java.util.Set;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -282,6 +283,58 @@ public class TOCTreeBuilderTest {
         assertEquals("z_sub", subFolders.get(1).displayLabel);
     }
 
+    // ─── UC-T14a: sortTree — case-insensitive folder order ───────────────────
+    //
+    // Regression test for String.compareTo (case-sensitive) being used instead
+    // of compareToIgnoreCase.  In ASCII, 'A'(65) < 'a'(97), so case-sensitive
+    // sort placed every uppercase-initial segment above every lowercase-initial
+    // one.  For example "AgamAH" sorted before "advaitam" even though 'd' < 'g'.
+    //
+    // Real category names from the app index:
+    //   "AgamAH"   — uppercase A  (long 'aa' in ITRANS)
+    //   "advaitam" — lowercase a  (short 'a' in ITRANS)
+    //   "mAdhva"   — lowercase m
+    //
+    // Case-insensitive expected order: advaitam < AgamAH < mAdhva
+    //   because ignore-case: "advaitam"[1]='d' < "agamah"[1]='g' < "madhva"[0]='m'
+
+    @Test
+    public void sortTree_mixedCaseFolders_sortsCaseInsensitively() {
+        TableOfContentsActivity.TreeNode root = TOCTreeBuilder.buildTree(
+                paths("AgamAH/x.txt", "advaitam/x.txt", "mAdhva/x.txt"), ID);
+        TOCTreeBuilder.sortTree(root);
+
+        assertEquals("advaitam should come first (ignore-case: ad < ag)",
+                "advaitam", root.children.get(0).displayLabel);
+        assertEquals("AgamAH should come second (ignore-case: ag < ma)",
+                "AgamAH",   root.children.get(1).displayLabel);
+        assertEquals("mAdhva should come last",
+                "mAdhva",   root.children.get(2).displayLabel);
+    }
+
+    // ─── UC-T14b: sortTree — case-insensitive leaf order within a folder ──────
+
+    @Test
+    public void sortTree_mixedCaseLeaves_sortsCaseInsensitively() {
+        // "prakAshasaMhitA" starts with lowercase 'p'
+        // "Hayagriva"       starts with uppercase 'H'
+        // "zrutaprakAshikA" starts with lowercase 'z'
+        // Case-sensitive wrong order: H < p < z  (uppercase first)
+        // Case-insensitive correct order: H < p < z  — same here because H < p < z
+        // Use a clearer example: "Brahma", "agnipurANa", "Vishnu"
+        // Case-sensitive: B(66) < V(86) < a(97) → Brahma, Vishnu, agnipurANa
+        // Case-insensitive: a < b < v           → agnipurANa, Brahma, Vishnu
+        TableOfContentsActivity.TreeNode root = TOCTreeBuilder.buildTree(
+                paths("purANa/Brahma.txt", "purANa/agnipurANa.txt", "purANa/Vishnu.txt"), ID);
+        TOCTreeBuilder.sortTree(root);
+
+        List<TableOfContentsActivity.TreeNode> leaves = root.children.get(0).children;
+        assertEquals("agnipurANa should be first (ignore-case: a < b < v)",
+                "agnipurANa", leaves.get(0).displayLabel);
+        assertEquals("Brahma", leaves.get(1).displayLabel);
+        assertEquals("Vishnu", leaves.get(2).displayLabel);
+    }
+
     // ─── UC-T14: flattenVisible — all collapsed ───────────────────────────────
 
     @Test
@@ -374,5 +427,64 @@ public class TOCTreeBuilderTest {
         assertEquals("archive.tar", TOCTreeBuilder.removeExtension("archive.tar.gz"));
         assertEquals("noext", TOCTreeBuilder.removeExtension("noext"));
         assertEquals("", TOCTreeBuilder.removeExtension(".hidden"));
+    }
+
+    // ─── UC-T19: folderPath computation ──────────────────────────────────────
+    //
+    // folderPath is the slash-terminated Lucene path prefix for a folder node,
+    // used to scope "search within a category".  Root gets "/", top-level folders
+    // get "/<seg>/", deeper folders extend the parent's folderPath.
+    // Leaf nodes have folderPath == null.
+
+    @Test
+    public void buildTree_topLevelFolder_hasFolderPathSlashSegSlash() {
+        TableOfContentsActivity.TreeNode root =
+                TOCTreeBuilder.buildTree(paths("AgamAH/file.txt"), ID);
+
+        TableOfContentsActivity.TreeNode folder = root.children.get(0);
+        assertFalse("Must be a folder", folder.isLeaf());
+        assertEquals("/AgamAH/", folder.folderPath);
+    }
+
+    @Test
+    public void buildTree_nestedFolder_hasFolderPathWithFullAncestors() {
+        TableOfContentsActivity.TreeNode root =
+                TOCTreeBuilder.buildTree(paths("mAdhva/sarvamUla/file.txt"), ID);
+
+        TableOfContentsActivity.TreeNode topFolder = root.children.get(0);
+        TableOfContentsActivity.TreeNode nestedFolder = topFolder.children.get(0);
+        assertFalse(nestedFolder.isLeaf());
+        assertEquals("/mAdhva/sarvamUla/", nestedFolder.folderPath);
+    }
+
+    @Test
+    public void buildTree_leafNode_hasFolderPathNull() {
+        TableOfContentsActivity.TreeNode root =
+                TOCTreeBuilder.buildTree(paths("AgamAH/file.txt"), ID);
+
+        TableOfContentsActivity.TreeNode leafNode =
+                root.children.get(0).children.get(0);
+        assertTrue("Must be a leaf", leafNode.isLeaf());
+        assertNull("Leaf folderPath must be null", leafNode.folderPath);
+    }
+
+    @Test
+    public void buildTree_leadingSlashPaths_folderPathStartsWithSlash() {
+        // Paths stored on device have a leading slash: "/AgamAH/file.txt"
+        TableOfContentsActivity.TreeNode root =
+                TOCTreeBuilder.buildTree(paths("/AgamAH/file.txt"), ID);
+
+        TableOfContentsActivity.TreeNode folder = root.children.get(0);
+        assertEquals("Folder path must start with '/'", "/AgamAH/", folder.folderPath);
+    }
+
+    @Test
+    public void buildTree_multipleFoldersShareNoFolderPath() {
+        TableOfContentsActivity.TreeNode root = TOCTreeBuilder.buildTree(
+                paths("A/x.txt", "B/y.txt"), ID);
+        TOCTreeBuilder.sortTree(root);
+
+        assertEquals("/A/", root.children.get(0).folderPath);
+        assertEquals("/B/", root.children.get(1).folderPath);
     }
 }

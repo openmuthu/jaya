@@ -1,5 +1,7 @@
 package org.jaya;
 
+import android.app.Instrumentation;
+import android.support.test.InstrumentationRegistry;
 import android.support.test.espresso.matcher.BoundedMatcher;
 import android.support.test.rule.ActivityTestRule;
 import android.support.test.runner.AndroidJUnit4;
@@ -27,9 +29,12 @@ import java.util.Set;
 import static android.support.test.espresso.Espresso.onData;
 import static android.support.test.espresso.Espresso.onView;
 import static android.support.test.espresso.action.ViewActions.click;
+import static android.support.test.espresso.action.ViewActions.longClick;
+import static android.support.test.espresso.assertion.ViewAssertions.doesNotExist;
 import static android.support.test.espresso.assertion.ViewAssertions.matches;
 import static android.support.test.espresso.matcher.ViewMatchers.isDisplayed;
 import static android.support.test.espresso.matcher.ViewMatchers.withId;
+import static android.support.test.espresso.matcher.ViewMatchers.withText;
 import static org.hamcrest.Matchers.anything;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.Assert.assertEquals;
@@ -52,6 +57,8 @@ import static org.junit.Assert.assertEquals;
  * UC-A4  Collapse folder   → tapping an expanded folder restores original size
  * UC-A5  Two folders       → both folder nodes visible; expanding one shows its
  *                            children without affecting the other folder node
+ * UC-A6  Back navigation   → expansion state is preserved when onResume() fires
+ *                            after returning from a child activity
  *
  * Note: UC-A-NAV (leaf tap → navigate to MainActivity) requires espresso-intents
  * and a pre-built Lucene index; it is described in the test plan but not
@@ -228,6 +235,116 @@ public class TableOfContentsActivityTest {
         Thread.sleep(UI_SETTLE_MS);
 
         onView(withId(R.id.toc_list_view)).check(matches(withAdapterCount(5)));
+    }
+
+    // ─── UC-A6: back navigation preserves expansion state ─────────────────────
+
+    /**
+     * Regression test for the bug where {@code onResume()} called
+     * {@code buildAndShowTree()} unconditionally, resetting all
+     * {@link TableOfContentsActivity.TreeNode#expanded} flags every time the
+     * user returned from a child activity.
+     *
+     * <p>The fix: {@code onResume()} only builds the tree when {@code mRoot} is
+     * {@code null}.  On subsequent resumes it calls {@code refreshVisibleNodes()}
+     * so the list re-renders without discarding expansion state.
+     *
+     * <p>Simulation: {@link Instrumentation#callActivityOnPause} +
+     * {@link Instrumentation#callActivityOnResume} mimics the lifecycle sequence
+     * that occurs when the user taps a leaf, lands in {@code MainActivity}, and
+     * presses back — without requiring a real second activity to be launched.
+     */
+    @Test
+    public void backNavigation_preservesExpansionState() throws Exception {
+        seedMetadata(TEST_PATHS);
+        mActivityRule.launchActivity(null);
+
+        // Expand folder_alpha (position 0 after sort)
+        onData(anything())
+                .inAdapterView(withId(R.id.toc_list_view))
+                .atPosition(0)
+                .perform(click());
+        Thread.sleep(UI_SETTLE_MS);
+
+        // Confirm expanded: folder_alpha + doc_one + doc_two + folder_beta = 4
+        onView(withId(R.id.toc_list_view)).check(matches(withAdapterCount(4)));
+
+        // Simulate the activity lifecycle triggered by back-navigation:
+        //   TOC paused  (user tapped a leaf and MainActivity launched)
+        //   TOC resumed (user pressed back in MainActivity)
+        Instrumentation instrumentation = InstrumentationRegistry.getInstrumentation();
+        instrumentation.callActivityOnPause(mActivityRule.getActivity());
+        instrumentation.callActivityOnResume(mActivityRule.getActivity());
+        Thread.sleep(UI_SETTLE_MS);
+
+        // Expansion state must be intact — still 4 items, not reset to 2
+        onView(withId(R.id.toc_list_view))
+                .check(matches(withAdapterCount(4)));
+    }
+
+    // ─── UC-A7: long-press folder node shows context menu ────────────────────
+
+    /**
+     * Long-pressing a folder node must display an AlertDialog containing the
+     * "Search in this folder" option.  This verifies the long-click listener
+     * is wired up and the dialog renders the correct menu item.
+     *
+     * <p>The test does NOT tap the dialog item (that would launch
+     * {@code SearchableActivity} which requires a live Lucene index).
+     * Pressing the back button dismisses the dialog.
+     */
+    @Test
+    public void longPressFolder_showsSearchInThisFolderDialog() throws Exception {
+        seedMetadata(TEST_PATHS);
+        mActivityRule.launchActivity(null);
+
+        // folder_alpha is at position 0 after alphabetical sort
+        onData(anything())
+                .inAdapterView(withId(R.id.toc_list_view))
+                .atPosition(0)
+                .perform(longClick());
+
+        Thread.sleep(UI_SETTLE_MS);
+
+        // The dialog must show the "Search in this folder" option
+        onView(withText(R.string.search_in_this_folder))
+                .check(matches(isDisplayed()));
+
+        // Dismiss the dialog
+        android.support.test.espresso.Espresso.pressBack();
+    }
+
+    /**
+     * Long-pressing a leaf node must NOT show the context menu dialog
+     * (only folders can be searched within).
+     *
+     * <p>Expand folder_alpha so its leaf children become visible at positions
+     * 1 and 2, then long-press one of the leaves and verify the dialog does
+     * not appear.
+     */
+    @Test
+    public void longPressLeaf_doesNotShowContextMenu() throws Exception {
+        seedMetadata(TEST_PATHS);
+        mActivityRule.launchActivity(null);
+
+        // Expand folder_alpha to expose its leaf children
+        onData(anything())
+                .inAdapterView(withId(R.id.toc_list_view))
+                .atPosition(0)
+                .perform(click());
+        Thread.sleep(UI_SETTLE_MS);
+
+        // Long-press a leaf (position 1 = first child of folder_alpha)
+        onData(anything())
+                .inAdapterView(withId(R.id.toc_list_view))
+                .atPosition(1)
+                .perform(longClick());
+
+        Thread.sleep(UI_SETTLE_MS);
+
+        // The "Search in this folder" dialog must NOT be on screen
+        onView(withText(R.string.search_in_this_folder))
+                .check(doesNotExist());
     }
 
     // ─── helpers ─────────────────────────────────────────────────────────────

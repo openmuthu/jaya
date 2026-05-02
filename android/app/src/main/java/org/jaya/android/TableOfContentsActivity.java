@@ -1,6 +1,8 @@
 package org.jaya.android;
 
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.widget.ListView;
@@ -23,6 +25,7 @@ public class TableOfContentsActivity extends Activity {
         final String itransSegment;  // raw ITRANS path segment (used for folder dedup)
         final String displayLabel;   // label in the current display script
         final String itransPath;     // null for folders; full ITRANS path for leaf documents
+        String folderPath;           // slash-terminated prefix for folders (e.g. "/mAdhva/"); null for leaves
         final int depth;
         boolean expanded;
         final List<TreeNode> children = new ArrayList<TreeNode>();
@@ -55,7 +58,15 @@ public class TableOfContentsActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
-        buildAndShowTree();
+        if (mRoot == null) {
+            // First launch: build the tree from index metadata.
+            buildAndShowTree();
+        } else {
+            // Returning from a child activity (e.g. back from MainActivity):
+            // the tree is already built and TreeNode.expanded flags are intact —
+            // just re-render the visible list without losing expansion state.
+            refreshVisibleNodes();
+        }
     }
 
     private void setupListView() {
@@ -65,6 +76,20 @@ public class TableOfContentsActivity extends Activity {
                     @Override
                     public void onNodeClick(TreeNode node) {
                         handleNodeClick(node);
+                    }
+                });
+        mAdapter.setOnNodeLongClickListener(
+                new TableOfContentsListAdapter.OnNodeLongClickListener() {
+                    @Override
+                    public void onNodeLongClick(TreeNode node) {
+                        handleNodeLongClick(node);
+                    }
+                });
+        mAdapter.setOnNodeSearchClickListener(
+                new TableOfContentsListAdapter.OnNodeSearchClickListener() {
+                    @Override
+                    public void onNodeSearchClick(TreeNode node) {
+                        launchScopedSearch(node);
                     }
                 });
         listView.setAdapter(mAdapter);
@@ -111,5 +136,41 @@ public class TableOfContentsActivity extends Activity {
             node.expanded = !node.expanded;
             refreshVisibleNodes();
         }
+    }
+
+    private void launchScopedSearch(TreeNode node) {
+        String scopePath;
+        if (node.isLeaf()) {
+            // Scope to the individual text file (itransPath is the full stored path).
+            scopePath = node.itransPath;
+        } else {
+            if (node.folderPath == null) return;
+            scopePath = node.folderPath;
+        }
+        Intent intent = new Intent(this, SearchableActivity.class);
+        intent.putExtra(SearchableActivity.EXTRA_FOLDER_PATH, scopePath);
+        intent.putExtra(SearchableActivity.EXTRA_FOLDER_DISPLAY_NAME, node.displayLabel);
+        startActivity(intent);
+    }
+
+    private void handleNodeLongClick(final TreeNode node) {
+        if (node.isLeaf() || node.folderPath == null) return;
+
+        new AlertDialog.Builder(this)
+                .setTitle(node.displayLabel)
+                .setItems(new CharSequence[]{
+                        getString(R.string.search_in_this_folder)
+                }, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        Intent intent = new Intent(TableOfContentsActivity.this,
+                                SearchableActivity.class);
+                        intent.putExtra(SearchableActivity.EXTRA_FOLDER_PATH, node.folderPath);
+                        intent.putExtra(SearchableActivity.EXTRA_FOLDER_DISPLAY_NAME,
+                                node.displayLabel);
+                        startActivity(intent);
+                    }
+                })
+                .show();
     }
 }

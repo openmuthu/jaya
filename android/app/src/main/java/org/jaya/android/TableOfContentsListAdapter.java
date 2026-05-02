@@ -6,6 +6,7 @@ import android.view.ScaleGestureDetector;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
+import android.widget.ImageButton;
 import android.widget.TextView;
 
 import java.util.List;
@@ -16,12 +17,22 @@ class TableOfContentsListAdapter extends BaseAdapter implements JayaDocListView.
         void onNodeClick(TableOfContentsActivity.TreeNode node);
     }
 
+    interface OnNodeLongClickListener {
+        void onNodeLongClick(TableOfContentsActivity.TreeNode node);
+    }
+
+    interface OnNodeSearchClickListener {
+        void onNodeSearchClick(TableOfContentsActivity.TreeNode node);
+    }
+
     private static final int INDENT_DP = 20;
 
     private float mScaleFactor = 1.0f;
     private final List<TableOfContentsActivity.TreeNode> mNodes;
     private final Activity mActivity;
     private final OnNodeClickListener mClickListener;
+    private OnNodeLongClickListener mLongClickListener;
+    private OnNodeSearchClickListener mSearchClickListener;
 
     TableOfContentsListAdapter(Activity activity,
                                List<TableOfContentsActivity.TreeNode> nodes,
@@ -29,6 +40,14 @@ class TableOfContentsListAdapter extends BaseAdapter implements JayaDocListView.
         mActivity = activity;
         mNodes = nodes;
         mClickListener = clickListener;
+    }
+
+    void setOnNodeLongClickListener(OnNodeLongClickListener listener) {
+        mLongClickListener = listener;
+    }
+
+    void setOnNodeSearchClickListener(OnNodeSearchClickListener listener) {
+        mSearchClickListener = listener;
     }
 
     @Override
@@ -88,17 +107,37 @@ class TableOfContentsListAdapter extends BaseAdapter implements JayaDocListView.
         private final View itemView;
         private final TextView arrowView;
         private final TextView labelView;
+        private final ImageButton searchIcon;
         private TableOfContentsActivity.TreeNode mNode;
 
         ViewHolder(View view) {
             itemView = view;
             arrowView = (TextView) view.findViewById(R.id.toc_arrow);
             labelView = (TextView) view.findViewById(R.id.toc_label);
+            searchIcon = (ImageButton) view.findViewById(R.id.toc_search_icon);
             itemView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
                     if (mNode != null) {
                         mClickListener.onNodeClick(mNode);
+                    }
+                }
+            });
+            itemView.setOnLongClickListener(new View.OnLongClickListener() {
+                @Override
+                public boolean onLongClick(View v) {
+                    if (mNode != null && mLongClickListener != null) {
+                        mLongClickListener.onNodeLongClick(mNode);
+                        return true;
+                    }
+                    return false;
+                }
+            });
+            searchIcon.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    if (mNode != null && mSearchClickListener != null) {
+                        mSearchClickListener.onNodeSearchClick(mNode);
                     }
                 }
             });

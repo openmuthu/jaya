@@ -28,4 +28,15 @@
         android:textAppearance="@android:style/TextAppearance.DeviceDefault"
         android:textAllCaps="false"/>
 
+    <ImageButton
+        android:id="@+id/toc_search_icon"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:src="@drawable/ic_search"
+        android:scaleType="fitCenter"
+        android:background="?android:attr/selectableItemBackground"
+        android:padding="6dp"
+        android:focusable="false"
+        android:contentDescription="@string/search_in_this_folder"/>
+
 </LinearLayout>

@@ -47,6 +47,7 @@ class TOCTreeBuilder {
 
         TableOfContentsActivity.TreeNode root =
                 new TableOfContentsActivity.TreeNode("", "", null, -1);
+        root.folderPath = "/";
 
         for (String path : pathSet) {
             // Paths in the index metadata are stored with a leading slash
@@ -64,12 +65,14 @@ class TOCTreeBuilder {
                     current.children.add(
                             new TableOfContentsActivity.TreeNode(
                                     seg, label, path, current.depth + 1));
+                    // leaf nodes: folderPath stays null
                 } else {
                     TableOfContentsActivity.TreeNode folder = findFolder(current, seg);
                     if (folder == null) {
                         String label = converter.toDisplayLabel(seg);
                         folder = new TableOfContentsActivity.TreeNode(
                                 seg, label, null, current.depth + 1);
+                        folder.folderPath = current.folderPath + seg + "/";
                         current.children.add(folder);
                     }
                     current = folder;
@@ -91,7 +94,7 @@ class TOCTreeBuilder {
                 if (a.isLeaf() != b.isLeaf()) {
                     return a.isLeaf() ? 1 : -1;
                 }
-                return a.displayLabel.compareTo(b.displayLabel);
+                return a.displayLabel.compareToIgnoreCase(b.displayLabel);
             }
         });
         for (TableOfContentsActivity.TreeNode child : node.children) {

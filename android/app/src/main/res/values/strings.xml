@@ -17,6 +17,8 @@
     <string name="action_bookmark_add">Add bookmark</string>
     <string name="action_bookmark_delete">Delete bookmark</string>
     <string name="action_copy">Copy</string>
+    <string name="search_in_this_folder">Search in this folder</string>
+    <string name="search_in_folder_subtitle">In: %s</string>
 
 
     <!-- Strings related to Settings -->

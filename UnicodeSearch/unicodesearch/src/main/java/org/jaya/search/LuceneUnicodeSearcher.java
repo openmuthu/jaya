@@ -13,6 +13,7 @@ import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
+import org.apache.lucene.search.PrefixQuery;
 import org.apache.lucene.search.RegexpQuery;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TermQuery;
@@ -83,6 +84,74 @@ public class LuceneUnicodeSearcher {
 				ScriptType.DEVANAGARI);
 		String searchStringDev = it2dev.convert(searchString);
 		return searchIndex(searchStringDev);
+	}
+
+	/**
+	 * Like {@link #searchITRANSString(String)} but restricts results to documents
+	 * under {@code folderPath} using a Lucene {@link PrefixQuery} on the stored
+	 * {@code path} field, combined with the content query in a {@link BooleanQuery}.
+	 *
+	 * <p>This filters at Lucene query time so the {@code MAX_RESULTS} cap applies
+	 * to the already-scoped set, not the global result set.  It works for any
+	 * folder regardless of whether a {@code tags.kw} file exists for it.
+	 *
+	 * @param searchString ITRANS query string
+	 * @param folderPath   slash-terminated prefix, e.g. {@code "/mAdhva/sarvamUla/"}
+	 */
+	public SearchResult searchITRANSStringInPath(String searchString, String folderPath)
+			throws IOException, ParseException {
+		createIndexSearcherIfRequired();
+		ScriptConverter it2dev = ScriptConverterFactory.getScriptConverter(ScriptType.ITRANS,
+				ScriptType.DEVANAGARI);
+		String searchStringDev = it2dev.convert(searchString);
+
+		JayaQueryParser jqp = new JayaQueryParser(searchStringDev);
+		ArrayList<ResultDocument> resultList = new ArrayList<>();
+		SearchResult retVal = new SearchResult(jqp, resultList);
+		if (mIndexSearcher == null) return retVal;
+
+		Query contentQuery = buildContentQuery(jqp);
+		if (contentQuery == null) return retVal;
+
+		BooleanQuery scopedQuery = new BooleanQuery();
+		scopedQuery.add(contentQuery, Occur.MUST);
+		scopedQuery.add(new PrefixQuery(new Term(Constatants.FIELD_PATH, folderPath)), Occur.MUST);
+
+		TopDocs topDocs = mIndexSearcher.search(scopedQuery, Constatants.MAX_RESULTS);
+		for (ScoreDoc sd : topDocs.scoreDocs) {
+			Document doc = mIndexSearcher.doc(sd.doc);
+			resultList.add(new ResultDocument(sd.doc, doc));
+		}
+		return retVal;
+	}
+
+	/**
+	 * Builds a Lucene {@link Query} from the already-parsed {@link JayaQueryParser},
+	 * mirroring the same branching logic used in {@link #searchIndex(String)}.
+	 */
+	private Query buildContentQuery(JayaQueryParser jqp) throws ParseException {
+		if (jqp.isRegExPrefixQuery()) {
+			return getPrefixRegExpQuery(jqp);
+		}
+		return mQueryParser.parse(jqp.getParsedQuery());
+	}
+
+	SearchResult filterResultsByPath(SearchResult result, String folderPath) {
+		if (folderPath == null || folderPath.isEmpty()) return result;
+		System.out.println("filterResultsByPath: folderPath=" + folderPath
+				+ " totalDocs=" + result.getResultDocs().size());
+		List<ResultDocument> filtered = new ArrayList<>();
+		for (ResultDocument rd : result.getResultDocs()) {
+			if (rd.getDoc() == null) {
+				System.out.println("filterResultsByPath: skipping ResultDocument with null Document");
+				continue;
+			}
+			String path = rd.getDoc().get(Constatants.FIELD_PATH);
+			System.out.println("filterResultsByPath: checking path=" + path);
+			if (path != null && path.startsWith(folderPath)) filtered.add(rd);
+		}
+		System.out.println("filterResultsByPath: filteredCount=" + filtered.size());
+		return new SearchResult(result.getQueryParser(), filtered);
 	}
 
 	public void search(String searchString, List<ResultDocument> retVal) throws IOException, ParseException {
