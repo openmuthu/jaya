@@ -3,3 +3,8 @@
 .idea/
 .DS_Store
 android/app/release/app-release.aab
+
+# Beads / Dolt files (added by bd init)
+.dolt/
+*.db
+.beads-credential-key
