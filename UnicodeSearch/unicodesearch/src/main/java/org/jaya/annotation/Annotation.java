@@ -49,6 +49,10 @@ public class Annotation {
 		return mDocLocalId;
 	}
 
+	public void setDocLocalId(String docLocalId){
+		mDocLocalId = docLocalId;
+	}
+
 	public String getName(){
 		return mName;
 	}
@@ -106,5 +110,35 @@ public class Annotation {
 
 	public boolean isInGroup(String groupId) {
 		return mGroupIds.contains(groupId);
+	}
+
+	/**
+	 * Content fingerprint: the first {@link #FINGERPRINT_LENGTH} characters of
+	 * the bookmarked chunk's text, with whitespace normalised.
+	 *
+	 * Used to recover the correct Lucene document after an index rebuild where
+	 * the chunk's {@code docLocalId} has shifted.  Empty string means no
+	 * fingerprint has been recorded (legacy annotation).
+	 */
+	public static final int FINGERPRINT_LENGTH = 120;
+
+	private String mContentFingerprint = "";
+
+	public String getContentFingerprint() {
+		return mContentFingerprint;
+	}
+
+	public void setContentFingerprint(String fingerprint) {
+		mContentFingerprint = (fingerprint == null) ? "" : fingerprint;
+	}
+
+	/**
+	 * Build a fingerprint from raw content: trim, collapse internal whitespace,
+	 * and take the first {@link #FINGERPRINT_LENGTH} chars.
+	 */
+	public static String buildFingerprint(String rawContent) {
+		if (rawContent == null) return "";
+		String normalised = rawContent.trim().replaceAll("\\s+", " ");
+		return normalised.substring(0, Math.min(FINGERPRINT_LENGTH, normalised.length()));
 	}
 }

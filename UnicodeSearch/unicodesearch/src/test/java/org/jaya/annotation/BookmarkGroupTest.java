@@ -505,4 +505,136 @@ public class BookmarkGroupTest {
         // a2 is newer so it should come first
         assertEquals(a2.getKey(), members.get(0).getKey());
     }
+
+    // ===========================================================================
+    // Content fingerprint tests
+    // ===========================================================================
+
+    @Test
+    public void fp01_buildFingerprintTrimsAndNormalisesWhitespace() {
+        String raw = "  hello   world\n  foo  ";
+        String fp  = Annotation.buildFingerprint(raw);
+        assertEquals("hello world foo", fp);
+    }
+
+    @Test
+    public void fp02_buildFingerprintTruncatesToMaxLength() {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < 300; i++) sb.append('x');
+        String fp = Annotation.buildFingerprint(sb.toString());
+        assertEquals(Annotation.FINGERPRINT_LENGTH, fp.length());
+    }
+
+    @Test
+    public void fp03_buildFingerprintForNullReturnsEmpty() {
+        assertEquals("", Annotation.buildFingerprint(null));
+    }
+
+    @Test
+    public void fp04_buildFingerprintForEmptyStringReturnsEmpty() {
+        assertEquals("", Annotation.buildFingerprint("   "));
+    }
+
+    @Test
+    public void fp05_newAnnotationHasEmptyFingerprint() {
+        Annotation a = addBookmark("/p/d.txt", "id1", "bk");
+        assertEquals("", a.getContentFingerprint());
+    }
+
+    @Test
+    public void fp06_setFingerprintPersistsAcrossReload() throws Exception {
+        Annotation a = addBookmark("/p/d.txt", "id1", "bk");
+        a.setContentFingerprint("shrI rAma jaya rAma");
+        mgr.saveIfDirty();
+
+        AnnotationManager mgr2 = newManager();
+        assertEquals("shrI rAma jaya rAma", mgr2.getAnnotations().get(0).getContentFingerprint());
+    }
+
+    @Test
+    public void fp07_healAnnotationLocalIdUpdatesKeyInMap() {
+        Annotation a = addBookmark("/p/d.txt", "old-id", "bk");
+        String oldKey = a.getKey();   // "/p/d.txtold-id"
+        mgr.healAnnotationLocalId(oldKey, "new-id");
+        // Old key should be gone; new key should exist
+        List<Annotation> all = mgr.getAnnotations();
+        assertEquals(1, all.size());
+        assertEquals("new-id", all.get(0).getDocLocalId());
+    }
+
+    @Test
+    public void fp08_healAnnotationLocalIdIsNoopWhenIdUnchanged() {
+        Annotation a = addBookmark("/p/d.txt", "same-id", "bk");
+        String keyBefore = a.getKey();
+        mgr.healAnnotationLocalId(keyBefore, "same-id");
+        assertEquals(keyBefore, mgr.getAnnotations().get(0).getKey());
+    }
+
+    @Test
+    public void fp09_healAnnotationLocalIdIsNoopForUnknownKey() {
+        addBookmark("/p/d.txt", "id1", "bk");
+        // Should not throw
+        mgr.healAnnotationLocalId("no-such-key", "new-id");
+        assertEquals(1, mgr.getNumAnnotations());
+    }
+
+    @Test
+    public void fp10_fingerprintSetterNullSafetyStoresEmptyString() {
+        Annotation a = addBookmark("/p/d.txt", "id1", "bk");
+        a.setContentFingerprint(null);
+        assertEquals("", a.getContentFingerprint());
+    }
+
+    @Test
+    public void fp12_legacyAnnotationFromV1HasEmptyFingerprint() throws Exception {
+        // Simulate loading a v1.0 file that has no fingerprint field
+        try (FileWriter fw = new FileWriter(dataFile)) {
+            fw.write("{\"version\":\"1.0\",\"items\":[" +
+                    "{\"docPath\":\"/p/d.txt\",\"docLocalId\":\"0\"," +
+                    "\"updated\":\"2024-01-01T00:00:00.000Z\",\"name\":\"legacy\"}" +
+                    "]}");
+        }
+        AnnotationManager legacyMgr = newManager();
+        Annotation a = legacyMgr.getAnnotations().get(0);
+        assertEquals("", a.getContentFingerprint());
+    }
+
+    @Test
+    public void fp13_markDirtyIsHonouredBySaveIfDirty() throws Exception {
+        // Write an annotation, do NOT save, mark dirty manually, then save
+        Annotation a = addBookmark("/p/d.txt", "id1", "bk");
+        a.setContentFingerprint("some fingerprint");
+        mgr.markDirty();
+        mgr.saveIfDirty();
+
+        AnnotationManager mgr2 = newManager();
+        assertEquals("some fingerprint",
+                mgr2.getAnnotations().get(0).getContentFingerprint());
+    }
+
+    @Test
+    public void fp14_backfillFingerprintsWithNullSearcherIsNoop() {
+        addBookmark("/p/d.txt", "id1", "bk");
+        int count = mgr.backfillFingerprints(null);
+        assertEquals(0, count);
+    }
+
+    @Test
+    public void fp15_backfillFingerprintsSkipsAlreadyFingerprintedAnnotations() {
+        Annotation a = addBookmark("/p/d.txt", "id1", "bk");
+        a.setContentFingerprint("already set");
+        int count = mgr.backfillFingerprints(null);
+        assertEquals(0, count);
+        assertEquals("already set", a.getContentFingerprint());
+    }
+
+    @Test
+    public void fp11_healPreservesGroupMembership() {
+        BookmarkGroup g = mgr.addGroup("Fav");
+        Annotation a = addBookmark("/p/d.txt", "old-id", "bk");
+        mgr.assignAnnotationToGroup(a.getKey(), g.getId());
+        mgr.healAnnotationLocalId(a.getKey(), "new-id");
+        Annotation healed = mgr.getAnnotations().get(0);
+        assertTrue(healed.isInGroup(g.getId()));
+    }
 }

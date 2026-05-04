@@ -275,6 +275,26 @@ public class LuceneUnicodeSearcher {
 		return new ResultDocument(docId, mIndexSearcher.doc(docId));
 	}
 	
+	/**
+	 * Fallback lookup: scan all chunks for {@code docPath} and return the one
+	 * whose content fingerprint matches {@code fingerprint}.
+	 *
+	 * Comparison is done after the same normalisation applied when building the
+	 * fingerprint (trim + collapse whitespace).  Returns {@code null} if no
+	 * match is found.
+	 */
+	public ResultDocument getDocByPathAndFingerprint(String docPath, String fingerprint) {
+		if (docPath == null || fingerprint == null || fingerprint.isEmpty()) return null;
+		List<ResultDocument> chunks = getDocsForPath(docPath);
+		for (ResultDocument rd : chunks) {
+			if (rd.getDoc() == null) continue;
+			String raw = rd.getDoc().get(Constatants.FIELD_CONTENTS);
+			String fp  = org.jaya.annotation.Annotation.buildFingerprint(raw);
+			if (fingerprint.equals(fp)) return rd;
+		}
+		return null;
+	}
+
 	public ResultDocument getDoc(int docId) throws IOException{
 		createIndexSearcherIfRequired();
 		if( mReader == null )

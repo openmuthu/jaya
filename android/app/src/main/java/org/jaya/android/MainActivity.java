@@ -191,6 +191,10 @@ public class MainActivity extends Activity {
 
 //        setupTestFairy();
 
+        // Eagerly backfill fingerprints for legacy bookmarks so they survive
+        // any future index rebuild without the user needing to open Bookmarks first.
+        JayaApp.backfillBookmarkFingerprintsAsync();
+
         if( savedInstanceState == null ) { // If savedInstanceState is not null, onRestoreInstanceState() will take care of loading the doc
             Intent intent = getIntent();
             if (intent != null)

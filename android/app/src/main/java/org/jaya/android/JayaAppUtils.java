@@ -56,7 +56,29 @@ public class JayaAppUtils {
         ResultDocument doc = null;
         try {
             doc = JayaApp.getSearcher().getDoc(item.getDocPath(), item.getDocLocalId());
-        }catch (IOException ex){
+            if (doc != null) {
+                // Fast-path succeeded.  If this is a legacy bookmark with no fingerprint
+                // (upgraded from v1.0), backfill it now so future index rebuilds can
+                // recover this bookmark via the fingerprint fallback.
+                if (item.getContentFingerprint().isEmpty()) {
+                    String raw = doc.getDoc().get(org.jaya.util.Constatants.FIELD_CONTENTS);
+                    item.setContentFingerprint(org.jaya.annotation.Annotation.buildFingerprint(raw));
+                    JayaApp.getAnnotationManager().markDirty();
+                }
+            } else {
+                // Primary lookup failed — the index was probably rebuilt and
+                // docLocalId has shifted.  Try recovering via the content fingerprint.
+                doc = JayaApp.getSearcher()
+                        .getDocByPathAndFingerprint(item.getDocPath(), item.getContentFingerprint());
+                if (doc != null) {
+                    // Heal: update the stored docLocalId to match the current index so
+                    // future lookups are fast again.
+                    String newLocalId = doc.getDoc().get(org.jaya.util.Constatants.FIELD_DOC_LOCAL_ID);
+                    JayaApp.getAnnotationManager().healAnnotationLocalId(
+                            item.getKey(), newLocalId);
+                }
+            }
+        } catch (IOException ex){
             ex.printStackTrace();
         }
         return doc;

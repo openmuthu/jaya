@@ -230,6 +230,28 @@ public class JayaApp extends Application {
         return mAnnotationManager;
     }
 
+    /**
+     * For any bookmark that lacks a content fingerprint (i.e. was created before
+     * this feature was introduced), look it up in the current index and record the
+     * fingerprint so it can survive a future index rebuild.
+     *
+     * Runs entirely on a worker thread; safe to call from onCreate().
+     * No-op if the index is not yet present.
+     */
+    public static void backfillBookmarkFingerprintsAsync() {
+        if (isIndexingRequired()) return;   // index not present yet — skip
+        if (!getAnnotationManager().needsFingerprintBackfill()) return;  // nothing to do — skip thread
+        runOnWorkerThread(new Runnable() {
+            @Override
+            public void run() {
+                int updated = getAnnotationManager().backfillFingerprints(getSearcher());
+                if (updated > 0) {
+                    saveMRUAndAnnotationsIfDirty();
+                }
+            }
+        });
+    }
+
     public static void saveMRUAndAnnotationsIfDirty(){
         if( mMRUDocsManager != null ){
             mMRUDocsManager.saveIfDirty();

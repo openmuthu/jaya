@@ -72,6 +72,7 @@ public class AnnotationManager {
 			Date date = TimestampUtils.getDateFromISO8601String(updated);
 			Annotation a = new Annotation(docPath, docLocalId, name, date);
 			if (notes != null) a.setNotes(notes);
+			// No fingerprint in v1 — will trigger fallback if docLocalId is stale
 			if (StringUtils.isNotBlank(docPath) && StringUtils.isNotBlank(docLocalId)) {
 				mDocIdToAnnotationMap.put(a.getKey(), a);
 				mTimestampToAnnotationMap.put(updated, a);
@@ -102,9 +103,11 @@ public class AnnotationManager {
 			String updated    = (String) obj.get("updated");
 			String name       = (String) obj.get("name");
 			String notes      = (String) obj.get("notes");
+			String fingerprint = (String) obj.get("fingerprint");
 			Date date = TimestampUtils.getDateFromISO8601String(updated);
 			Annotation a = new Annotation(docPath, docLocalId, name, date);
 			if (notes != null) a.setNotes(notes);
+			if (fingerprint != null) a.setContentFingerprint(fingerprint);
 			JSONArray groupIds = (JSONArray) obj.get("groups");
 			if (groupIds != null) {
 				for (int j = 0; j < groupIds.size(); j++) {
@@ -151,7 +154,8 @@ public class AnnotationManager {
 					obj.put("docLocalId", docLocalId);
 					obj.put("updated",    TimestampUtils.getISO8601StringForDate(a.getUpdatedDate()));
 					obj.put("name",       a.getName());
-					obj.put("notes",      a.getNotes());
+					obj.put("notes",       a.getNotes());
+					obj.put("fingerprint", a.getContentFingerprint());
 					JSONArray gids = new JSONArray();
 					for (String gid : a.getGroupIds()) {
 						gids.add(gid);
@@ -175,6 +179,8 @@ public class AnnotationManager {
 			return null;
 		String docPath    = resDoc.getDoc().get(Constatants.FIELD_PATH);
 		String docLocalId = resDoc.getDoc().get(Constatants.FIELD_DOC_LOCAL_ID);
+		String fingerprint = Annotation.buildFingerprint(
+				resDoc.getDoc().get(Constatants.FIELD_CONTENTS));
 		String key = docPath + docLocalId;
 		Annotation annotation;
 		if( mDocIdToAnnotationMap.containsKey(key) ){
@@ -182,10 +188,12 @@ public class AnnotationManager {
 			String oldTimeStamp = TimestampUtils.getISO8601StringForDate(annotation.getUpdatedDate());
 			annotation.setUpdatedDate(new Date());
 			annotation.setName(name);
+			annotation.setContentFingerprint(fingerprint);
 			mTimestampToAnnotationMap.remove(oldTimeStamp);
 		}
 		else{
 			annotation = new Annotation(docPath, docLocalId, name, new Date());
+			annotation.setContentFingerprint(fingerprint);
 			mDocIdToAnnotationMap.put(key, annotation);
 		}
 
@@ -286,6 +294,74 @@ public class AnnotationManager {
 			}
 		}
 		return retVal;
+	}
+
+	/**
+	 * Called by the presentation layer after a successful fingerprint-based
+	 * recovery.  Updates the annotation's {@code docLocalId} to the new value
+	 * so subsequent lookups use the fast path.
+	 *
+	 * The annotation is re-keyed in {@code mDocIdToAnnotationMap} because the
+	 * key embeds the old docLocalId.
+	 *
+	 * @param oldKey      the old key (docPath + old docLocalId)
+	 * @param newLocalId  the docLocalId found in the current index
+	 */
+	public synchronized void healAnnotationLocalId(String oldKey, String newLocalId) {
+		Annotation a = mDocIdToAnnotationMap.get(oldKey);
+		if (a == null || newLocalId == null) return;
+		if (newLocalId.equals(a.getDocLocalId())) return;  // nothing to heal
+		mDocIdToAnnotationMap.remove(oldKey);
+		a.setDocLocalId(newLocalId);
+		mDocIdToAnnotationMap.put(a.getKey(), a);
+		mbIsDirty = true;
+	}
+
+	/** Mark the store as dirty so the next saveIfDirty() call persists the changes. */
+	public synchronized void markDirty() {
+		mbIsDirty = true;
+	}
+
+	/**
+	 * Returns true if any annotation is missing a content fingerprint.
+	 * Pure in-memory check — no I/O.  Used to avoid spawning a worker thread
+	 * on app launch when all fingerprints are already populated.
+	 */
+	public boolean needsFingerprintBackfill() {
+		for (Annotation a : mDocIdToAnnotationMap.values()) {
+			if (a.getContentFingerprint().isEmpty()) return true;
+		}
+		return false;
+	}
+
+	/**
+	 * Backfill content fingerprints for any annotations that don't have one yet
+	 * (e.g. bookmarks created before fingerprinting was introduced).
+	 *
+	 * <p>Must be called from a background thread — it performs Lucene I/O for
+	 * each un-fingerprinted annotation.  Returns the number of annotations that
+	 * were updated.
+	 */
+	public synchronized int backfillFingerprints(LuceneUnicodeSearcher searcher) {
+		if (searcher == null) return 0;
+		int count = 0;
+		for (Annotation a : mDocIdToAnnotationMap.values()) {
+			if (!a.getContentFingerprint().isEmpty()) continue;
+			try {
+				ResultDocument rd = searcher.getDoc(a.getDocPath(), a.getDocLocalId());
+				if (rd == null || rd.getDoc() == null) continue;
+				String raw = rd.getDoc().get(Constatants.FIELD_CONTENTS);
+				String fp  = Annotation.buildFingerprint(raw);
+				if (!fp.isEmpty()) {
+					a.setContentFingerprint(fp);
+					mbIsDirty = true;
+					count++;
+				}
+			} catch (Exception ex) {
+				ex.printStackTrace();
+			}
+		}
+		return count;
 	}
 
 	/** Rename a bookmark by its key. Returns false if not found. */
