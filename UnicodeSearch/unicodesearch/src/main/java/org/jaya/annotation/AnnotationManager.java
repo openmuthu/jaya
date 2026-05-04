@@ -16,6 +16,7 @@ import java.io.FileWriter;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeMap;
@@ -26,104 +27,170 @@ public class AnnotationManager {
 	private String mAnnotationsFilePath;
 	private TreeMap<String, Annotation> mDocIdToAnnotationMap = new TreeMap<>();
 	private TreeMap<String, Annotation> mTimestampToAnnotationMap = new TreeMap<>();
+	/** Groups stored in insertion order (LinkedHashMap preserves order). */
+	private LinkedHashMap<String, BookmarkGroup> mGroupMap = new LinkedHashMap<>();
 	private boolean mbIsDirty = false;
 	private int mMaxItems = Integer.MAX_VALUE;
-	
+
 	public AnnotationManager(LuceneUnicodeSearcher searcher, String AnnotationsFilePath){
 		init(searcher, AnnotationsFilePath, Integer.MAX_VALUE);
 	}
-	
+
 	public AnnotationManager(LuceneUnicodeSearcher searcher, String AnnotationsFilePath, int maxItems){
 		init(searcher, AnnotationsFilePath, maxItems);
-	}	
-	
+	}
+
 	private void init(LuceneUnicodeSearcher searcher, String annotationsFilePath, int maxItems) {
 		mSearcher = new WeakReference<LuceneUnicodeSearcher>(searcher);
 		mAnnotationsFilePath = annotationsFilePath;
 		mMaxItems = maxItems;
 		JSONParser parser = new JSONParser();
 		try{
-			JSONObject annotationsJSONObject = (JSONObject) parser.parse(new FileReader(new File(annotationsFilePath)));
-			String version = (String)annotationsJSONObject.get("version");
-			if( version.equals("1.0")){
-				JSONArray items = (JSONArray)annotationsJSONObject.get("items");
-				for(int i=0;i<items.size();i++){
-					JSONObject obj = (JSONObject)items.get(i);
-					String docPath = (String) obj.get("docPath");
-					String docLocalId = (String) obj.get("docLocalId");
-					String updated = (String) obj.get("updated");
-					String name = (String) obj.get("name");
-					Date date = TimestampUtils.getDateFromISO8601String(updated);
-					Annotation a = new Annotation(docPath, docLocalId, name, date);
-					if (StringUtils.isNotBlank(docPath) && StringUtils.isNoneBlank(docLocalId)) {
-						mDocIdToAnnotationMap.put(a.getKey(), a);
-						mTimestampToAnnotationMap.put(updated, a);
-					}
-				}
+			JSONObject root = (JSONObject) parser.parse(new FileReader(new File(annotationsFilePath)));
+			String version = (String) root.get("version");
+			if ("1.0".equals(version)) {
+				loadV1Items((JSONArray) root.get("items"));
+			} else if ("2.0".equals(version)) {
+				loadV2Groups((JSONArray) root.get("groups"));
+				loadV2Items((JSONArray) root.get("items"));
 			}
-			
 		}
 		catch(Exception ex){
 			ex.printStackTrace();
-		}		
+		}
 	}
-	
+
+	private void loadV1Items(JSONArray items) {
+		if (items == null) return;
+		for (int i = 0; i < items.size(); i++) {
+			JSONObject obj = (JSONObject) items.get(i);
+			String docPath    = (String) obj.get("docPath");
+			String docLocalId = (String) obj.get("docLocalId");
+			String updated    = (String) obj.get("updated");
+			String name       = (String) obj.get("name");
+			String notes      = (String) obj.get("notes");
+			Date date = TimestampUtils.getDateFromISO8601String(updated);
+			Annotation a = new Annotation(docPath, docLocalId, name, date);
+			if (notes != null) a.setNotes(notes);
+			if (StringUtils.isNotBlank(docPath) && StringUtils.isNotBlank(docLocalId)) {
+				mDocIdToAnnotationMap.put(a.getKey(), a);
+				mTimestampToAnnotationMap.put(updated, a);
+			}
+		}
+	}
+
+	private void loadV2Groups(JSONArray groups) {
+		if (groups == null) return;
+		for (int i = 0; i < groups.size(); i++) {
+			JSONObject obj  = (JSONObject) groups.get(i);
+			String id       = (String) obj.get("id");
+			String name     = (String) obj.get("name");
+			String created  = (String) obj.get("createdDate");
+			if (id != null && name != null) {
+				Date createdDate = TimestampUtils.getDateFromISO8601String(created);
+				mGroupMap.put(id, new BookmarkGroup(id, name, createdDate));
+			}
+		}
+	}
+
+	private void loadV2Items(JSONArray items) {
+		if (items == null) return;
+		for (int i = 0; i < items.size(); i++) {
+			JSONObject obj  = (JSONObject) items.get(i);
+			String docPath    = (String) obj.get("docPath");
+			String docLocalId = (String) obj.get("docLocalId");
+			String updated    = (String) obj.get("updated");
+			String name       = (String) obj.get("name");
+			String notes      = (String) obj.get("notes");
+			Date date = TimestampUtils.getDateFromISO8601String(updated);
+			Annotation a = new Annotation(docPath, docLocalId, name, date);
+			if (notes != null) a.setNotes(notes);
+			JSONArray groupIds = (JSONArray) obj.get("groups");
+			if (groupIds != null) {
+				for (int j = 0; j < groupIds.size(); j++) {
+					a.addGroupId((String) groupIds.get(j));
+				}
+			}
+			if (StringUtils.isNotBlank(docPath) && StringUtils.isNotBlank(docLocalId)) {
+				mDocIdToAnnotationMap.put(a.getKey(), a);
+				mTimestampToAnnotationMap.put(updated, a);
+			}
+		}
+	}
+
 	public synchronized void saveIfDirty(){
 		if(!mbIsDirty)
 			return;
 		FileWriter fw = null;
 		try{
 			fw = new FileWriter(new File(mAnnotationsFilePath));
-			JSONObject annotationsJSONObject = new JSONObject();
+			JSONObject root = new JSONObject();
+			root.put("version", "2.0");
+
+			// --- groups ---
+			JSONArray groupsArray = new JSONArray();
+			for (BookmarkGroup g : mGroupMap.values()) {
+				JSONObject go = new JSONObject();
+				go.put("id", g.getId());
+				go.put("name", g.getName());
+				go.put("createdDate", TimestampUtils.getISO8601StringForDate(g.getCreatedDate()));
+				groupsArray.add(go);
+			}
+			root.put("groups", groupsArray);
+
+			// --- items ---
 			JSONArray items = new JSONArray();
-			annotationsJSONObject.put("version", "1.0");
 			Set<String> keys = mTimestampToAnnotationMap.descendingKeySet();
-			for(String ts:keys){
-				JSONObject obj = new JSONObject();
+			for (String ts : keys) {
 				Annotation a = mTimestampToAnnotationMap.get(ts);
-				String docPath = a.getDocPath();
+				String docPath    = a.getDocPath();
 				String docLocalId = a.getDocLocalId();
-				if (StringUtils.isNotBlank(docPath) && StringUtils.isNoneBlank(docLocalId)) {
-					obj.put("docPath", docPath);
+				if (StringUtils.isNotBlank(docPath) && StringUtils.isNotBlank(docLocalId)) {
+					JSONObject obj = new JSONObject();
+					obj.put("docPath",    docPath);
 					obj.put("docLocalId", docLocalId);
-					obj.put("updated", TimestampUtils.getISO8601StringForDate(a.getUpdatedDate()));
-					obj.put("name", a.getName());
-					obj.put("notes", a.getNotes());
+					obj.put("updated",    TimestampUtils.getISO8601StringForDate(a.getUpdatedDate()));
+					obj.put("name",       a.getName());
+					obj.put("notes",      a.getNotes());
+					JSONArray gids = new JSONArray();
+					for (String gid : a.getGroupIds()) {
+						gids.add(gid);
+					}
+					obj.put("groups", gids);
 					items.add(obj);
 				}
 			}
-			annotationsJSONObject.put("items", items);
-			fw.write(annotationsJSONObject.toJSONString());
+			root.put("items", items);
+			fw.write(root.toJSONString());
 			mbIsDirty = false;
-		}catch(Exception ex){
+		} catch(Exception ex){
 			ex.printStackTrace();
-		}
-		finally {
+		} finally {
 			Utils.closeSilently(fw);
 		}
 	}
-	
+
 	public synchronized Annotation addAnnotation(ResultDocument resDoc, String name){
 		if( resDoc == null || name == null || name.isEmpty() )
 			return null;
-		String docPath = resDoc.getDoc().get(Constatants.FIELD_PATH);
+		String docPath    = resDoc.getDoc().get(Constatants.FIELD_PATH);
 		String docLocalId = resDoc.getDoc().get(Constatants.FIELD_DOC_LOCAL_ID);
 		String key = docPath + docLocalId;
 		Annotation annotation;
 		if( mDocIdToAnnotationMap.containsKey(key) ){
 			annotation = mDocIdToAnnotationMap.get(key);
-			String oldTimeStamp = TimestampUtils.getISO8601StringForDate(annotation.getUpdatedDate());			
+			String oldTimeStamp = TimestampUtils.getISO8601StringForDate(annotation.getUpdatedDate());
 			annotation.setUpdatedDate(new Date());
-			annotation.setName(name);		
+			annotation.setName(name);
 			mTimestampToAnnotationMap.remove(oldTimeStamp);
 		}
 		else{
 			annotation = new Annotation(docPath, docLocalId, name, new Date());
 			mDocIdToAnnotationMap.put(key, annotation);
 		}
-		
-		String timeStamp = TimestampUtils.getISO8601StringForDate(annotation.getUpdatedDate());	
-		mTimestampToAnnotationMap.put(timeStamp, annotation);	
+
+		String timeStamp = uniqueTimestamp(annotation);
+		mTimestampToAnnotationMap.put(timeStamp, annotation);
 		while( mTimestampToAnnotationMap.size() > mMaxItems ){
 			String updated = mTimestampToAnnotationMap.firstKey();
 			Annotation a = mTimestampToAnnotationMap.get(updated);
@@ -133,11 +200,49 @@ public class AnnotationManager {
 		mbIsDirty = true;
 		return annotation;
 	}
-	
+
+	/**
+	 * Add an annotation directly from its components (for tests that cannot easily
+	 * construct a ResultDocument).  Package-private intentionally.
+	 */
+	synchronized Annotation addAnnotationDirect(String docPath, String docLocalId, String name) {
+		String key = docPath + docLocalId;
+		Annotation annotation;
+		if (mDocIdToAnnotationMap.containsKey(key)) {
+			annotation = mDocIdToAnnotationMap.get(key);
+			mTimestampToAnnotationMap.remove(
+					TimestampUtils.getISO8601StringForDate(annotation.getUpdatedDate()));
+			annotation.setUpdatedDate(new Date());
+			annotation.setName(name);
+		} else {
+			annotation = new Annotation(docPath, docLocalId, name, new Date());
+			mDocIdToAnnotationMap.put(key, annotation);
+		}
+		String ts = uniqueTimestamp(annotation);
+		mTimestampToAnnotationMap.put(ts, annotation);
+		mbIsDirty = true;
+		return annotation;
+	}
+
+	/**
+	 * Returns a timestamp string that is unique within mTimestampToAnnotationMap.
+	 * If the natural timestamp collides with an existing key (possible when two
+	 * annotations are created within the same millisecond), the annotation's date
+	 * is bumped by 1 ms until the key is free.
+	 */
+	private String uniqueTimestamp(Annotation annotation) {
+		String ts = TimestampUtils.getISO8601StringForDate(annotation.getUpdatedDate());
+		while (mTimestampToAnnotationMap.containsKey(ts)) {
+			annotation.setUpdatedDate(new Date(annotation.getUpdatedDate().getTime() + 1));
+			ts = TimestampUtils.getISO8601StringForDate(annotation.getUpdatedDate());
+		}
+		return ts;
+	}
+
 	public synchronized void removeAnnotation(ResultDocument doc){
 		removeAnnotation(new Annotation(doc));
 	}
-	
+
 	public synchronized void removeAnnotation(Annotation annotation){
 		if( annotation == null || !mDocIdToAnnotationMap.containsKey(annotation.getKey()) )
 			return;
@@ -146,21 +251,21 @@ public class AnnotationManager {
 		mTimestampToAnnotationMap.remove(TimestampUtils.getISO8601StringForDate(a.getUpdatedDate()));
 		mbIsDirty = true;
 	}
-	
+
 	public boolean annotationExists(ResultDocument doc){
 		return annotationExists(new Annotation(doc));
 	}
-	
+
 	public boolean annotationExists(Annotation a){
 		if( a == null || mDocIdToAnnotationMap == null || mDocIdToAnnotationMap.isEmpty() )
 			return false;
 		return mDocIdToAnnotationMap.containsKey(a.getKey());
 	}
-	
+
 	public int getNumAnnotations(){
 		return mDocIdToAnnotationMap.size();
 	}
-	
+
 	public List<Annotation> getAnnotations(){
 		List<Annotation> retVal = new ArrayList<>();
 		Set<String> keys = mTimestampToAnnotationMap.descendingKeySet();
@@ -168,5 +273,133 @@ public class AnnotationManager {
 			retVal.add(mTimestampToAnnotationMap.get(ts));
 		}
 		return retVal;
+	}
+
+	/** Returns annotations that belong to the given group (newest-first). */
+	public List<Annotation> getAnnotationsForGroup(String groupId) {
+		List<Annotation> retVal = new ArrayList<>();
+		Set<String> keys = mTimestampToAnnotationMap.descendingKeySet();
+		for (String ts : keys) {
+			Annotation a = mTimestampToAnnotationMap.get(ts);
+			if (a.isInGroup(groupId)) {
+				retVal.add(a);
+			}
+		}
+		return retVal;
+	}
+
+	/** Rename a bookmark by its key. Returns false if not found. */
+	public synchronized boolean renameAnnotation(String key, String newName) {
+		Annotation a = mDocIdToAnnotationMap.get(key);
+		if (a == null) return false;
+		a.setName(newName);
+		mbIsDirty = true;
+		return true;
+	}
+
+	// ------------------------------------------------------------------ groups
+
+	/** Returns all groups in creation order. */
+	public List<BookmarkGroup> getGroups() {
+		return new ArrayList<>(mGroupMap.values());
+	}
+
+	/**
+	 * Add a new group.  The auto-name ("Group 1", "Group 2", …) is assigned by
+	 * the caller; the manager just stores it.
+	 */
+	public synchronized BookmarkGroup addGroup(String name) {
+		BookmarkGroup g = BookmarkGroup.createNew(name);
+		mGroupMap.put(g.getId(), g);
+		mbIsDirty = true;
+		return g;
+	}
+
+	/** Generate the next default group name ("Group 1", "Group 2", …). */
+	public String generateGroupName() {
+		int n = mGroupMap.size() + 1;
+		// Keep incrementing until we find a name not in use.
+		while (true) {
+			String candidate = "Group " + n;
+			boolean taken = false;
+			for (BookmarkGroup g : mGroupMap.values()) {
+				if (candidate.equals(g.getName())) { taken = true; break; }
+			}
+			if (!taken) return candidate;
+			n++;
+		}
+	}
+
+	/** Rename a group.  Returns false if not found. */
+	public synchronized boolean renameGroup(String groupId, String newName) {
+		BookmarkGroup g = mGroupMap.get(groupId);
+		if (g == null) return false;
+		g.setName(newName);
+		mbIsDirty = true;
+		return true;
+	}
+
+	/**
+	 * Delete a group and remove all its id references from annotations.
+	 * Returns false if the group did not exist.
+	 */
+	public synchronized boolean removeGroup(String groupId) {
+		if (!mGroupMap.containsKey(groupId)) return false;
+		mGroupMap.remove(groupId);
+		for (Annotation a : mDocIdToAnnotationMap.values()) {
+			a.removeGroupId(groupId);
+		}
+		mbIsDirty = true;
+		return true;
+	}
+
+	/** Assign an annotation to a group.  Returns false if either is not found. */
+	public synchronized boolean assignAnnotationToGroup(String annotationKey, String groupId) {
+		if (!mGroupMap.containsKey(groupId)) return false;
+		Annotation a = mDocIdToAnnotationMap.get(annotationKey);
+		if (a == null) return false;
+		a.addGroupId(groupId);
+		mbIsDirty = true;
+		return true;
+	}
+
+	/** Remove an annotation from a group.  Returns false if annotation is not found. */
+	public synchronized boolean unassignAnnotationFromGroup(String annotationKey, String groupId) {
+		Annotation a = mDocIdToAnnotationMap.get(annotationKey);
+		if (a == null) return false;
+		a.removeGroupId(groupId);
+		mbIsDirty = true;
+		return true;
+	}
+
+	/**
+	 * Replace the complete group membership of an annotation.
+	 * Each id in newGroupIds must already exist in mGroupMap; unknown ids are silently ignored.
+	 */
+	public synchronized void setAnnotationGroups(String annotationKey, List<String> newGroupIds) {
+		Annotation a = mDocIdToAnnotationMap.get(annotationKey);
+		if (a == null) return;
+		List<String> validated = new ArrayList<>();
+		for (String gid : newGroupIds) {
+			if (mGroupMap.containsKey(gid)) validated.add(gid);
+		}
+		a.setGroupIds(validated);
+		mbIsDirty = true;
+	}
+
+	/** Convenience: comma-separated group names for a given annotation (for display). */
+	public String getGroupNamesString(Annotation annotation) {
+		if (annotation == null) return "";
+		List<String> ids = annotation.getGroupIds();
+		if (ids.isEmpty()) return "";
+		StringBuilder sb = new StringBuilder();
+		for (String id : ids) {
+			BookmarkGroup g = mGroupMap.get(id);
+			if (g != null) {
+				if (sb.length() > 0) sb.append(", ");
+				sb.append(g.getName());
+			}
+		}
+		return sb.toString();
 	}
 }

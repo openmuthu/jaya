@@ -46,6 +46,17 @@
         </RelativeLayout>
 
     <TextView
+        android:id="@+id/list_item_groups"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="4dip"
+        android:textSize="9sp"
+        android:textStyle="italic"
+        android:visibility="gone"
+        android:textAppearance="@android:style/TextAppearance.DeviceDefault"
+        android:textAllCaps="false"/>
+
+    <TextView
         android:id="@+id/list_item_contents"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

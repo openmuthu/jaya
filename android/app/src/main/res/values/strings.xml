@@ -24,6 +24,18 @@
     <string name="toc_search_hint">Search documents…</string>
     <string name="toc_search_no_results">No matching documents</string>
 
+    <!-- Bookmarks grouping -->
+    <string name="bookmark_rename">Rename</string>
+    <string name="bookmark_assign_groups">Assign groups</string>
+    <string name="bookmark_delete">Delete</string>
+    <string name="group_rename">Rename group</string>
+    <string name="group_delete">Delete group</string>
+    <string name="group_new">New group</string>
+    <string name="bookmarks_filter_all">All</string>
+    <string name="bookmark_rename_hint">Bookmark name</string>
+    <string name="group_rename_hint">Group name</string>
+    <string name="bookmark_no_groups">No groups</string>
+
 
     <!-- Strings related to Settings -->
 

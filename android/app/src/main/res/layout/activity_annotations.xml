@@ -1,15 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:orientation="vertical"
     tools:context="org.jaya.android.AnnotationsActivity"
     android:fitsSystemWindows="true">
 
-    <org.jaya.android.JayaDocListView xmlns:android="http://schemas.android.com/apk/res/android"
+    <!-- Group filter chips: "All" + one chip per group + "+" button -->
+    <HorizontalScrollView
+        android:id="@+id/group_chips_scroll"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:scrollbars="none"
+        android:background="?android:attr/windowBackground">
+
+        <LinearLayout
+            android:id="@+id/group_chips_container"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:padding="4dip"/>
+
+    </HorizontalScrollView>
+
+    <org.jaya.android.JayaDocListView
         android:id="@+id/annotations_list_view"
         android:layout_width="fill_parent"
-        android:layout_height="fill_parent" />
+        android:layout_height="0dip"
+        android:layout_weight="1"/>
 
-</RelativeLayout>
+</LinearLayout>
