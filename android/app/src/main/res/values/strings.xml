@@ -35,6 +35,8 @@
     <string name="bookmark_rename_hint">Bookmark name</string>
     <string name="group_rename_hint">Group name</string>
     <string name="bookmark_no_groups">No groups</string>
+    <string name="bookmark_no_groups_hint">No groups yet. Tap \"New Group\" to create one.</string>
+    <string name="bookmark_groups_skip">Skip</string>
 
 
     <!-- Strings related to Settings -->

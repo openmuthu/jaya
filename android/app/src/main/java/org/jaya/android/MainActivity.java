@@ -345,7 +345,7 @@ public class MainActivity extends Activity {
                 }
                 if( mActionMode != null )
                     mActionMode.finish();
-                mActionMode = MainActivity.this.startActionMode(new MainActivityActionBarCallBack(doc));
+                mActionMode = MainActivity.this.startActionMode(new MainActivityActionBarCallBack(doc, MainActivity.this));
                 mActionMode.setTag(doc);
             }
         });
