@@ -1,6 +1,7 @@
 package org.jaya.android;
 
 import android.app.Activity;
+import android.graphics.Color;
 import android.util.TypedValue;
 import android.view.ScaleGestureDetector;
 import android.view.View;
@@ -26,6 +27,8 @@ class TableOfContentsListAdapter extends BaseAdapter implements JayaDocListView.
     }
 
     private static final int INDENT_DP = 20;
+    // Amber tint applied to the row that is currently "selected" / highlighted
+    private static final int HIGHLIGHT_COLOR = 0x55FF8C00;
 
     private float mScaleFactor = 1.0f;
     private final List<TableOfContentsActivity.TreeNode> mNodes;
@@ -33,6 +36,7 @@ class TableOfContentsListAdapter extends BaseAdapter implements JayaDocListView.
     private final OnNodeClickListener mClickListener;
     private OnNodeLongClickListener mLongClickListener;
     private OnNodeSearchClickListener mSearchClickListener;
+    private TableOfContentsActivity.TreeNode mHighlightedNode = null;
 
     TableOfContentsListAdapter(Activity activity,
                                List<TableOfContentsActivity.TreeNode> nodes,
@@ -48,6 +52,11 @@ class TableOfContentsListAdapter extends BaseAdapter implements JayaDocListView.
 
     void setOnNodeSearchClickListener(OnNodeSearchClickListener listener) {
         mSearchClickListener = listener;
+    }
+
+    void setHighlightedNode(TableOfContentsActivity.TreeNode node) {
+        mHighlightedNode = node;
+        notifyDataSetChanged();
     }
 
     @Override
@@ -145,6 +154,9 @@ class TableOfContentsListAdapter extends BaseAdapter implements JayaDocListView.
 
         void bind(TableOfContentsActivity.TreeNode node, float scaleFactor) {
             mNode = node;
+
+            // Highlight the currently selected node; clear for all others
+            itemView.setBackgroundColor(node == mHighlightedNode ? HIGHLIGHT_COLOR : Color.TRANSPARENT);
 
             // Left padding for indentation (depth 0 = top-level folders, no extra indent)
             int indentPx = (int) TypedValue.applyDimension(

@@ -28,14 +28,15 @@ public class TimestampUtils {
 	}	
 	
 	public static Date getDateFromISO8601String(String str){
+		if (str == null) return new Date(0);
 		String[] formats = new String[]{"yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", "yyyy-MM-dd'T'HH:mm:ss'Z'"};
 		for(String format:formats){
 			DateFormat dateFormat = new SimpleDateFormat(format, Locale.US);
-			dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));		
+			dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
 			try{
 				return dateFormat.parse(str);
 			}catch(ParseException ex){
-				
+
 			}
 		}
 		return new Date(0);

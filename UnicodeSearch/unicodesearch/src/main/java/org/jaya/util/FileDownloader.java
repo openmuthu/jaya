@@ -50,6 +50,8 @@ public class FileDownloader {
 	                	try{
 		                	URL url = new URL(mURL);
 		                	conn = (HttpURLConnection)url.openConnection();
+		                	conn.setConnectTimeout(15000);
+		                	conn.setReadTimeout(30000);
 		                	int rc = conn.getResponseCode();
 		                	if( rc != HttpURLConnection.HTTP_OK )
 		                		throw new IOException();

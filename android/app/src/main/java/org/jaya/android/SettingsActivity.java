@@ -330,23 +330,12 @@ public class SettingsActivity extends PreferenceActivity {
         @Override
         public void onViewCreated(View view, Bundle savedInstanceState) {
             super.onViewCreated(view, savedInstanceState);
-            gIndexCatalogue.readCatalog(false);
-            if( !JayaAppUtils.isNetworkAvailable() ){
-                AlertDialog alertDialog = new AlertDialog.Builder(getActivity()).create();
-                alertDialog.setTitle(getResources().getString(R.string.alert));
-                alertDialog.setMessage(getResources().getString(R.string.no_internet_message));
-                alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK",
-                        new DialogInterface.OnClickListener() {
-                            public void onClick(DialogInterface dialog, int which) {
-                                dialog.dismiss();
-                            }
-                        });
-                alertDialog.show();
-            }
-            ListView listView =  (ListView)getView().findViewById(R.id.index_catalogue_list);
-            if( mIndexCatalogueListAdapter == null )
+
+            ListView listView = (ListView) getView().findViewById(R.id.index_catalogue_list);
+            if (mIndexCatalogueListAdapter == null)
                 mIndexCatalogueListAdapter = new IndexCatalogListAdapter(getActivity());
             listView.setAdapter(mIndexCatalogueListAdapter);
+
             mBtnCheckUpdate = (Button) getView().findViewById(R.id.btnCheckUpdate);
             mBtnCheckUpdate.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -358,6 +347,28 @@ public class SettingsActivity extends PreferenceActivity {
                 }
             });
 
+            // If the local cache is empty, force a fresh sync so the list populates.
+            // Always trigger after the adapter is set up so onCatalogueUpdated can update it.
+            if (gIndexCatalogue.getNumItems() == 0) {
+                if (!JayaAppUtils.isNetworkAvailable()) {
+                    AlertDialog alertDialog = new AlertDialog.Builder(getActivity()).create();
+                    alertDialog.setTitle(getResources().getString(R.string.alert));
+                    alertDialog.setMessage(getResources().getString(R.string.no_internet_message));
+                    alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK",
+                            new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface dialog, int which) {
+                                    dialog.dismiss();
+                                }
+                            });
+                    alertDialog.show();
+                } else {
+                    gIndexCatalogue.readCatalog(true);
+                    showProgressBar();
+                }
+            } else {
+                // Catalog already cached — refresh in background without blocking the UI.
+                gIndexCatalogue.readCatalog(false);
+            }
         }
         private void showProgressBar(){
             if( progressDialog == null )
@@ -374,13 +385,16 @@ public class SettingsActivity extends PreferenceActivity {
             progressDialog = null;
         }
         @Override
-        public void onCatalogueUpdated(int error) {
+        public void onCatalogueUpdated(final int error) {
             JayaApp.runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
+                    dismissProgressBar();
                     if( mIndexCatalogueListAdapter != null )
                         mIndexCatalogueListAdapter.setIndexCatalogueAndUpdateView(gIndexCatalogue);
-                    dismissProgressBar();
+                    if( error != 0 && gIndexCatalogue.getNumItems() == 0 ){
+                        Toast.makeText(getActivity(), R.string.no_internet_message, Toast.LENGTH_LONG).show();
+                    }
                 }
             });
         }

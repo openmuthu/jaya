@@ -1,0 +1,247 @@
+{
+  "baseUrl": "https://raw.githubusercontent.com/openmuthu/jaya-index-files/master/v1",
+  "lastModified": "2026-05-03T06:01:23.638Z",
+  "version": "1.0",
+  "items": {
+    "advaitam": {
+      "size": 16440852,
+      "relPath": "advaitam.zip",
+      "lastModified": "2020-07-31T20:34:19.062Z"
+    },
+    "mAdhva_tatvaprakAshikA": {
+      "size": 1560373,
+      "relPath": "mAdhva_tatvaprakAshikA.zip",
+      "lastModified": "2020-08-01T08:42:47.847Z"
+    },
+    "mAdhva_tantradIpikA": {
+      "size": 613817,
+      "relPath": "mAdhva_tantradIpikA.zip",
+      "lastModified": "2021-01-31T18:35:24.828Z"
+    },
+    "mAdhva_sarvamUla": {
+      "size": 11543204,
+      "relPath": "mAdhva_sarvamUla.zip",
+      "lastModified": "2021-01-31T18:35:05.780Z"
+    },
+    "mAdhva_upaniShatprasthAnaM": {
+      "size": 2387793,
+      "relPath": "mAdhva_upaniShatprasthAnaM.zip",
+      "lastModified": "2021-01-31T18:35:08.380Z"
+    },
+    "mAdhva_gItAvivRti": {
+      "size": 766726,
+      "relPath": "mAdhva_gItAvivRti.zip",
+      "lastModified": "2020-08-01T08:42:51.753Z"
+    },
+    "itaragraMthAH": {
+      "size": 10236441,
+      "relPath": "itaragraMthAH.zip",
+      "lastModified": "2026-05-02T06:22:46.986Z"
+    },
+    "mAdhva_gItAbhAShya": {
+      "size": 1157031,
+      "relPath": "mAdhva_gItAbhAShya.zip",
+      "lastModified": "2021-01-31T18:34:57.494Z"
+    },
+    "stOtra": {
+      "size": 1377321,
+      "relPath": "stOtra.zip",
+      "lastModified": "2021-01-31T18:35:01.700Z"
+    },
+    "madhvavijaya": {
+      "size": 286490,
+      "relPath": "madhvavijaya.zip",
+      "lastModified": "2017-06-04T09:18:19Z"
+    },
+    "mahAbhArata_mAdhvapATha": {
+      "size": 19895066,
+      "relPath": "mahAbhArata_mAdhvapATha.zip",
+      "lastModified": "2020-08-01T08:42:45.666Z"
+    },
+    "kOsha_vAchaspatyaM": {
+      "size": 28911945,
+      "relPath": "kOsha_vAchaspatyaM.zip",
+      "lastModified": "2018-08-05T14:00:06.927Z"
+    },
+    "purANa_harivaMsha": {
+      "size": 3697444,
+      "relPath": "purANa_harivaMsha.zip",
+      "lastModified": "2017-06-04T09:18:19Z"
+    },
+    "purANa_nAradapurANa": {
+      "size": 3424840,
+      "relPath": "purANa_nAradapurANa.zip",
+      "lastModified": "2017-06-04T09:18:19Z"
+    },
+    "rAmAyaNa": {
+      "size": 9056555,
+      "relPath": "rAmAyaNa.zip",
+      "lastModified": "2026-05-02T03:35:50.834Z"
+    },
+    "mahAbhArata": {
+      "size": 17673016,
+      "relPath": "mahAbhArata.zip",
+      "lastModified": "2017-06-04T09:18:19Z"
+    },
+    "AgamAH": {
+      "size": 11959034,
+      "relPath": "AgamAH.zip",
+      "lastModified": "2026-05-02T11:29:38.644Z"
+    },
+    "mAdhva": {
+      "size": 4993668,
+      "relPath": "mAdhva.zip",
+      "lastModified": "2026-05-02T11:29:35.594Z"
+    },
+    "kOsha_shabdakalpadruma_1": {
+      "size": 5789135,
+      "relPath": "kOsha_shabdakalpadruma_1.zip",
+      "lastModified": "2018-08-05T14:00:09.027Z"
+    },
+    "kOsha": {
+      "size": 40558,
+      "relPath": "kOsha.zip",
+      "lastModified": "2017-06-04T09:18:19Z"
+    },
+    "purANa": {
+      "size": 19573299,
+      "relPath": "purANa.zip",
+      "lastModified": "2020-07-31T20:34:23.778Z"
+    },
+    "mAdhva_vAdAvalI": {
+      "size": 657189,
+      "relPath": "mAdhva_vAdAvalI.zip",
+      "lastModified": "2021-01-31T18:35:07.816Z"
+    },
+    "purANa_viShNudharma": {
+      "size": 881606,
+      "relPath": "purANa_viShNudharma.zip",
+      "lastModified": "2017-06-04T09:18:19Z"
+    },
+    "purANa_vAyupurANa": {
+      "size": 3384909,
+      "relPath": "purANa_vAyupurANa.zip",
+      "lastModified": "2017-06-04T09:18:19Z"
+    },
+    "purANa_dEvI-mahApurANa": {
+      "size": 3212853,
+      "relPath": "purANa_dEvI-mahApurANa.zip",
+      "lastModified": "2021-01-31T18:35:25.754Z"
+    },
+    "vyAkaraNa": {
+      "size": 8098092,
+      "relPath": "vyAkaraNa.zip",
+      "lastModified": "2026-05-02T11:29:44.285Z"
+    },
+    "kOsha_vAchaspatyaM_1": {
+      "size": 8824209,
+      "relPath": "kOsha_vAchaspatyaM_1.zip",
+      "lastModified": "2018-08-05T13:59:54.145Z"
+    },
+    "mAdhva_sadAchArasmRti-saTIkA": {
+      "size": 1325493,
+      "relPath": "mAdhva_sadAchArasmRti-saTIkA.zip",
+      "lastModified": "2021-01-31T18:35:01.506Z"
+    },
+    "smRti": {
+      "size": 2036294,
+      "relPath": "smRti.zip",
+      "lastModified": "2026-05-02T11:29:36.139Z"
+    },
+    "harikathAmRtasAra": {
+      "size": 357778,
+      "relPath": "harikathAmRtasAra.zip",
+      "lastModified": "2017-06-04T09:18:19Z"
+    },
+    "mAdhva_sudhA_samagra": {
+      "size": 23225493,
+      "relPath": "mAdhva_sudhA_samagra.zip",
+      "lastModified": "2026-05-02T11:29:43.742Z"
+    },
+    "purANa_upapurANam": {
+      "size": 1826587,
+      "relPath": "purANa_upapurANam.zip",
+      "lastModified": "2026-05-02T11:29:41.389Z"
+    },
+    "dAsasAhitya": {
+      "size": 24046945,
+      "relPath": "dAsasAhitya.zip",
+      "lastModified": "2026-05-03T05:41:05.018Z"
+    },
+    "kOsha_amarakOsha": {
+      "size": 369175,
+      "relPath": "kOsha_amarakOsha.zip",
+      "lastModified": "2017-06-04T09:18:19Z"
+    },
+    "sAhitya": {
+      "size": 3411125,
+      "relPath": "sAhitya.zip",
+      "lastModified": "2021-01-31T18:35:25.362Z"
+    },
+    "mAdhva_sUtrabhAShyadIpikA": {
+      "size": 1055949,
+      "relPath": "mAdhva_sUtrabhAShyadIpikA.zip",
+      "lastModified": "2020-08-01T08:43:22.580Z"
+    },
+    "kOsha_shabdakalpadruma": {
+      "size": 28182524,
+      "relPath": "kOsha_shabdakalpadruma.zip",
+      "lastModified": "2018-08-05T14:00:18.261Z"
+    },
+    "purANa_varAhapurANa": {
+      "size": 1844929,
+      "relPath": "purANa_varAhapurANa.zip",
+      "lastModified": "2020-07-31T20:34:27.291Z"
+    },
+    "purANa_bhaviShyapurANa": {
+      "size": 5304909,
+      "relPath": "purANa_bhaviShyapurANa.zip",
+      "lastModified": "2021-01-31T18:35:08.967Z"
+    },
+    "purANa_padmapurANa": {
+      "size": 7957444,
+      "relPath": "purANa_padmapurANa.zip",
+      "lastModified": "2017-06-04T09:18:19Z"
+    },
+    "nirukti": {
+      "size": 414848,
+      "relPath": "nirukti.zip",
+      "lastModified": "2017-06-04T09:18:19Z"
+    },
+    "strIdharma": {
+      "size": 30192,
+      "relPath": "strIdharma.zip",
+      "lastModified": "2017-08-12T10:44:23.568Z"
+    },
+    "vEda": {
+      "size": 11340308,
+      "relPath": "vEda.zip",
+      "lastModified": "2026-05-02T11:29:37.780Z"
+    },
+    "purANa_gArga-saMhitA": {
+      "size": 2002943,
+      "relPath": "purANa_gArga-saMhitA.zip",
+      "lastModified": "2021-01-31T18:34:59.802Z"
+    },
+    "purANa_vAmana-purANa": {
+      "size": 1098174,
+      "relPath": "purANa_vAmana-purANa.zip",
+      "lastModified": "2017-06-04T09:18:19Z"
+    },
+    "mImAMsA": {
+      "size": 190569,
+      "relPath": "mImAMsA.zip",
+      "lastModified": "2017-06-04T09:18:19Z"
+    },
+    "purANa_skandapurANa": {
+      "size": 19703789,
+      "relPath": "purANa_skandapurANa.zip",
+      "lastModified": "2017-06-04T09:18:19Z"
+    },
+    "mAdhva_sUtraprasthAna": {
+      "size": 3454398,
+      "relPath": "mAdhva_sUtraprasthAna.zip",
+      "lastModified": "2026-05-02T11:29:39.190Z"
+    }
+  }
+}

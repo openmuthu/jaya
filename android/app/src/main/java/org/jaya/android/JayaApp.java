@@ -18,8 +18,10 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.io.InputStream;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 
 /**
@@ -105,8 +107,48 @@ public class JayaApp extends Application {
         if( mIndexCatalog == null ) {
             mIndexCatalog = IndexCatalogue.getInstance();
         }
+        // Seed the local catalog from the bundled asset whenever the on-disk catalog
+        // is missing or empty (0 items). This handles both fresh installs and the
+        // upgrade case where a previous build wrote an empty placeholder file.
+        String localCatalogPath = PathUtils.get(getIndexMetadataFolder(),
+                IndexCatalogue.INDEX_CATALOG_FILE_NAME);
+        boolean needsSeed = !new File(localCatalogPath).exists();
+        if (!needsSeed) {
+            // Check whether the existing file has any items.
+            try {
+                JSONParser _p = new JSONParser();
+                JSONObject _cat = (JSONObject) _p.parse(new FileReader(localCatalogPath));
+                JSONObject _items = (JSONObject) _cat.get("items");
+                needsSeed = (_items == null || _items.isEmpty());
+            } catch (Exception ex) {
+                needsSeed = true;  // Unreadable/corrupt — overwrite with bundled catalog
+            }
+        }
+        if (needsSeed) {
+            new File(getIndexMetadataFolder()).mkdirs();
+            seedCatalogFromAssets(localCatalogPath);
+        }
         mIndexCatalog.initialize(JayaApp.getIndexMetadataFolder(), JayaApp.getIndexCatalogueBaseUrl(), JayaApp.getSearchIndexFolder());
         return mIndexCatalog;
+    }
+
+    private static void seedCatalogFromAssets(String destPath) {
+        InputStream in = null;
+        FileOutputStream out = null;
+        try {
+            in = mContext.getAssets().open(IndexCatalogue.INDEX_CATALOG_FILE_NAME);
+            out = new FileOutputStream(destPath);
+            byte[] buf = new byte[8192];
+            int len;
+            while ((len = in.read(buf)) > 0) {
+                out.write(buf, 0, len);
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        } finally {
+            Utils.closeSilently(in);
+            Utils.closeSilently(out);
+        }
     }
 
     public static boolean isIndexPresent(){
@@ -116,21 +158,37 @@ public class JayaApp extends Application {
     public static String getIndexCatalogueBaseUrl(){
         //return "http://10.193.123.248:8080";
         //return "https://raw.githubusercontent.com/openmuthu/jaya/indexing-revamp/UnicodeSearch/unicodesearch/index-zip-output";
+        String defaultUrl = Constatants.getIndexCatalogBaseUrl();
         File iniFile = new File(getDocumentsFolder()+".jaya.ini");
         if( iniFile.exists() ){
             try{
                 JSONParser parser = new JSONParser();
                 JSONObject iniObj = (JSONObject) parser.parse(new FileReader(iniFile));
                 if( iniObj.containsKey("indexCatalogueBaseUrl") ){
-                    return (String)iniObj.get("indexCatalogueBaseUrl");
+                    String storedUrl = (String)iniObj.get("indexCatalogueBaseUrl");
+                    // If the stored URL is stale (differs from the current default),
+                    // overwrite it so the app picks up the new server location.
+                    if( !defaultUrl.equals(storedUrl) ){
+                        iniObj.put("indexCatalogueBaseUrl", defaultUrl);
+                        FileWriter fw = null;
+                        try{
+                            fw = new FileWriter(iniFile);
+                            fw.write(iniObj.toJSONString());
+                        }catch(Exception ex){
+                            ex.printStackTrace();
+                        }finally{
+                            Utils.closeSilently(fw);
+                        }
+                        return defaultUrl;
+                    }
+                    return storedUrl;
                 }
             }catch(Exception ex){
                 ex.printStackTrace();
             }
-        }
-        else{
+        } else {
             JSONObject iniObj = new JSONObject();
-            iniObj.put("indexCatalogueBaseUrl", Constatants.getIndexCatalogBaseUrl());
+            iniObj.put("indexCatalogueBaseUrl", defaultUrl);
             FileWriter fw = null;
             try{
                 fw = new FileWriter(iniFile);
@@ -142,7 +200,7 @@ public class JayaApp extends Application {
                 Utils.closeSilently(fw);
             }
         }
-        return Constatants.getIndexCatalogBaseUrl();
+        return defaultUrl;
     }
 
     public static boolean isIndexingRequired(){

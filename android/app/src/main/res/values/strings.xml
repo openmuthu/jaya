@@ -21,6 +21,8 @@
     <string name="search_in_folder_subtitle">In: %s</string>
     <string name="action_verse_nav">Go to verse</string>
     <string name="verse_nav_title">Go to verse — %s</string>
+    <string name="toc_search_hint">Search documents…</string>
+    <string name="toc_search_no_results">No matching documents</string>
 
 
     <!-- Strings related to Settings -->
