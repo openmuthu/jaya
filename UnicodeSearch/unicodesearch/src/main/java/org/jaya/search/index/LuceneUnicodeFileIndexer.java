@@ -13,6 +13,7 @@ import org.apache.lucene.index.CorruptIndexException;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.index.Term;
+import org.apache.lucene.search.PrefixQuery;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
@@ -196,12 +197,42 @@ public class LuceneUnicodeFileIndexer {
 		return retVal;
 	}
 	
+	/** Adds a document with an explicit path; used in unit tests to seed an index. */
+	public void addDocumentWithPath(String path, String content) throws IOException {
+		Document document = new Document();
+		document.add(new StringField(Constatants.FIELD_PATH, path, Field.Store.YES));
+		document.add(new TextField(Constatants.FIELD_CONTENTS, content, Field.Store.YES));
+		mIndexWriter.addDocument(document);
+		mIndexWriter.commit();
+		mIndexMetadata.append(JayaIndexMetadata.getIndexedFilePathSet(path));
+	}
+
 	public void deleteIndexEntriesWithFilePath(String path){
 		try{
 			TermQuery query = new TermQuery(new Term(Constatants.FIELD_PATH, path));
-			mIndexWriter.deleteDocuments(query);			
+			mIndexWriter.deleteDocuments(query);
 			mIndexWriter.commit();
 			mIndexMetadata.remove(JayaIndexMetadata.getIndexedFilePathSet(path));
+		}catch(IOException ex){
+			ex.printStackTrace();
+		}
+	}
+
+	public void deleteIndexEntriesWithFilePathPrefix(String prefix){
+		if( prefix == null || prefix.isEmpty() )
+			return;
+		try{
+			PrefixQuery query = new PrefixQuery(new Term(Constatants.FIELD_PATH, prefix));
+			mIndexWriter.deleteDocuments(query);
+			mIndexWriter.commit();
+			Set<String> allPaths = mIndexMetadata.getIndexedFilePathSet();
+			Set<String> toRemove = new HashSet<>();
+			for(String p : allPaths){
+				if(p.startsWith(prefix))
+					toRemove.add(p);
+			}
+			if(!toRemove.isEmpty())
+				mIndexMetadata.remove(toRemove);
 		}catch(IOException ex){
 			ex.printStackTrace();
 		}

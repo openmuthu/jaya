@@ -51,7 +51,16 @@ public class IndexCatalogue {
 		return mInstance;
 	}
 	
-	private IndexCatalogue(){}
+	/** Package-private: allows unit tests to create isolated instances. */
+	IndexCatalogue(){}
+
+	/** Package-private: resets shared static state between unit tests. */
+	static void resetStateForTest(){
+		mEventListeners.clear();
+		sbCatalogueUpdateInProgress = false;
+		sbCatalogueDetailsUpdateInProgress = false;
+		mIsInitialized = false;
+	}
 	
 	public String getAppIndexFolderPath(){
 		return mAppSearchIndexFolder;
@@ -108,7 +117,7 @@ public class IndexCatalogue {
 		mEventListeners.add(listener);
 	}
 	
-	private void removeEventListener(EventListener listener){
+	void removeEventListener(EventListener listener){
 		try{
 			Iterator<EventListener> iterator = mEventListeners.iterator();
 			while( iterator.hasNext() ){
@@ -268,9 +277,10 @@ public class IndexCatalogue {
 		fd.loadAsync();
 	}	
 	
-	private void notifyCatalogueUpdate(int error){
+	void notifyCatalogueUpdate(int error){
+		List<EventListener> snapshot = new ArrayList<>(mEventListeners);
 		try {
-			for (EventListener p : mEventListeners) {
+			for (EventListener p : snapshot) {
 				if (p != null) {
 					p.onCatalogueUpdated(error);
 				}
@@ -282,10 +292,11 @@ public class IndexCatalogue {
 			sbCatalogueUpdateInProgress = false;
 		}
 	}
-	
-	private void notifyCatalogueDetailsUpdate(int error){
+
+	void notifyCatalogueDetailsUpdate(int error){
+		List<EventListener> snapshot = new ArrayList<>(mEventListeners);
 		try {
-			for (EventListener p : mEventListeners) {
+			for (EventListener p : snapshot) {
 				if (p != null) {
 					p.onCatalogueDetailsUpdated(error);
 				}
