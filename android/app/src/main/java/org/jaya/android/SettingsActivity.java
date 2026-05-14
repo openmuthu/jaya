@@ -28,9 +28,12 @@ import android.widget.ListView;
 import android.widget.Toast;
 
 import org.jaya.indexsync.IndexCatalogue;
+import org.jaya.indexsync.IndexCatalogueItemDownloader;
 import org.jaya.indexsync.IndexCatalogueItemInstaller;
+import org.jaya.util.FileDownloader;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * A {@link PreferenceActivity} that presents a set of application settings. On
@@ -299,6 +302,7 @@ public class SettingsActivity extends PreferenceActivity {
         private static IndexCatalogue gIndexCatalogue;
         ProgressDialog progressDialog = null;
         Button mBtnCheckUpdate = null;
+        Button mBtnDownloadAll = null;
 
         @Override
         public void onCreate(Bundle savedInstanceState) {
@@ -344,6 +348,63 @@ public class SettingsActivity extends PreferenceActivity {
                     IndexCatalogue indexCatalogue = JayaApp.getIndexCatalog();
                     indexCatalogue.readCatalog(true);
                     showProgressBar();
+                }
+            });
+
+            mBtnDownloadAll = (Button) getView().findViewById(R.id.btnDownloadAll);
+            mBtnDownloadAll.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    if (!JayaAppUtils.isNetworkAvailable()) {
+                        AlertDialog alertDialog = new AlertDialog.Builder(getActivity()).create();
+                        alertDialog.setTitle(getResources().getString(R.string.alert));
+                        alertDialog.setMessage(getResources().getString(R.string.no_internet_message));
+                        alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK",
+                                new DialogInterface.OnClickListener() {
+                                    public void onClick(DialogInterface dialog, int which) {
+                                        dialog.dismiss();
+                                    }
+                                });
+                        alertDialog.show();
+                        return;
+                    }
+                    Set<String> itemNames = gIndexCatalogue.getItemNames();
+                    if (itemNames == null) return;
+                    IndexCatalogueItemDownloader downloader = IndexCatalogueItemDownloader.getInstance();
+                    for (String name : itemNames) {
+                        IndexCatalogue.Item item = gIndexCatalogue.getItemByName(name);
+                        if (item == null) continue;
+                        if (!item.getIsInstalled() || item.getIsUpdateAvailable()) {
+                            downloader.addItemToDownloadQueue(name, new FileDownloader.ProgressCallback() {
+                                @Override
+                                public void onContentLength(long contentLength) {}
+                                @Override
+                                public void onBytesDownloaded(long totalBytesDownloaded) {
+                                    JayaApp.runOnUiThread(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            if (mIndexCatalogueListAdapter != null)
+                                                mIndexCatalogueListAdapter.notifyDataSetChanged();
+                                        }
+                                    });
+                                }
+                                @Override
+                                public void onComplete(final int error) {
+                                    JayaApp.runOnUiThread(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            if (mIndexCatalogueListAdapter != null)
+                                                mIndexCatalogueListAdapter.notifyDataSetChanged();
+                                            if (error == 0)
+                                                JayaApp.getSearcher().reopenIndex();
+                                        }
+                                    });
+                                }
+                            });
+                        }
+                    }
+                    if (mIndexCatalogueListAdapter != null)
+                        mIndexCatalogueListAdapter.notifyDataSetChanged();
                 }
             });
 

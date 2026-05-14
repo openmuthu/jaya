@@ -1,5 +1,6 @@
 plugins {
     id 'java-library'
+    id 'jacoco'
 }
 
 java {
@@ -32,4 +33,11 @@ dependencies {
     testImplementation 'commons-io:commons-io:2.22.0'
     testImplementation 'commons-codec:commons-codec:1.22.0'
     testImplementation 'junit:junit:4.13.2'
+}
+
+jacocoTestReport {
+    reports {
+        xml.required = true
+        html.required = true
+    }
 }

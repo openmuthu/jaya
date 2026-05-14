@@ -12,7 +12,7 @@
 
     <item
         android:id="@+id/action_verse_nav"
-        android:icon="@drawable/ic_info_black_24dp"
+        android:icon="@drawable/ic_goto_verse_white_24dp"
         android:title="@string/action_verse_nav"
         android:showAsAction="ifRoom"
         android:visible="false"/>

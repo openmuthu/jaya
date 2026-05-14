@@ -83,42 +83,31 @@ public class IndexCatalogueItemInstaller {
 	}
 
 	public void unistallItem(final IndexCatalogue.Item item, final String indexFolder, final OnUninstalledCallback callback){
-		final long currentThreadId = Thread.currentThread().getId();
-		item.getIncludedFiles(new IndexCatalogue.ItemDetailsCallback() {
+		new Thread(new Runnable() {
 			@Override
-			public void onDataArrived(final String data, final int error) {
-				Runnable r = new Runnable() {
-					@Override
-					public void run() {
-						synchronized(mInstance){
-							LuceneUnicodeFileIndexer indexer = null;
-							try {
-								if( error == 0 ){
-									indexer = new LuceneUnicodeFileIndexer(indexFolder);
-									Set<String> filePathSet = JayaIndexMetadata.getIndexedFilePathSet(data);
-									for(String path:filePathSet){
-										indexer.deleteIndexEntriesWithFilePath(path);
-									}
-									item.setIsInstalled(false);
-								}
-							}catch(Exception ex){
-								ex.printStackTrace();
-							}finally {
-								if( indexer != null )
-									indexer.close();
-								if( callback != null )
-									callback.onUninstalled(error, item);
-							}
-						}
+			public void run() {
+				synchronized(mInstance){
+					LuceneUnicodeFileIndexer indexer = null;
+					int error = 0;
+					try {
+						indexer = new LuceneUnicodeFileIndexer(indexFolder);
+						// Paths in the index are stored with a leading separator, e.g.
+					// /dAsasAhitya/kIrtane/file.txt, so the prefix must include it.
+					indexer.deleteIndexEntriesWithFilePathPrefix("/" + item.getName() + "/");
+						item.setIsInstalled(false);
+					}catch(Exception ex){
+						ex.printStackTrace();
+						error = 1;
+					}finally {
+						if( indexer != null )
+							indexer.close();
+						final int finalError = error;
+						if( callback != null )
+							callback.onUninstalled(finalError, item);
 					}
-				};
-
-				if( currentThreadId == Thread.currentThread().getId() )
-					new Thread(r).start();
-				else
-					r.run();
+				}
 			}
-		});
+		}).start();
 	}
 	
 	public boolean installToIndex(String indexZipPath, String destIndexFolder){
