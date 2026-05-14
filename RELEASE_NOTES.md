@@ -8,6 +8,27 @@ git log <range-start>..<range-end> --oneline
 
 ---
 
+## Version 13.0 — 2026-05-14
+
+**Git range:** `7978be1..01e2da44`
+Key commits: `d98f6419` (bookmark groups), `b807954c` (group picker), `01e2da44` (fingerprint), `dadaaf1b` (fixes), `f5594fd0` (dAsasAhitya)
+
+### Bookmarks
+- **Bookmark groups** — bookmarks can now be organised into named groups. Long-press a bookmark to rename it, assign it to one or more groups, or delete it. Long-press a group chip to rename or delete the group. A horizontal chip bar at the top of the Bookmarks page filters the list by group.
+- **Group picker on add** — when adding a bookmark a dialog appears immediately to assign it to an existing group or create a new group inline, without navigating away from the reading view.
+- **Resilience to index rebuilds** — bookmarks are now anchored to a content fingerprint as well as a document path. If the index is rebuilt and internal document IDs shift, the app automatically heals each bookmark to the new ID on the next lookup, so no bookmarks are silently lost after an index update.
+
+### Bug Fixes
+- **Download page always shows the grantha list** — the catalogue is now bundled as an app asset so the list of available texts appears immediately on a fresh install or offline, without requiring a network request on first launch.
+- **Stale download URL corrected automatically** — if the app stored an old LAN or repository URL from a previous build it is now overwritten with the current default on upgrade.
+- **TOC folder-name search** — queries such as `padmapurANa` now return every file inside that folder, not just files whose own name matches. Double-vowel ITRANS variants (`aa`/`ii`/`uu`) are normalised before scoring so queries like `dashaavataara` match `dashAvatArastuti`.
+- **TOC scroll and highlight** — tapping a node in the Table of Contents now scrolls it into view and highlights it with an amber tint; the highlight also applies when navigating to a node programmatically.
+
+### Content Updates
+- **dAsasAhitya reorganised** — compositions from 122 saints are now filed under type subfolders (`kIrtane` / `ugAbhOga` / `suLAdi`) with numeric composition IDs derived from the source. 27 manually-curated compositions that had been lost in a prior restructure are restored under each composer's `kIrtane/` folder.
+
+---
+
 ## Version 12.0 — 2026-05-02
 
 **Git range:** `0154a58..7978be1`
