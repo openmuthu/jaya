@@ -13,6 +13,7 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -401,5 +402,85 @@ public class VerseIndexTest {
         // ॥3.1.1॥ has "versetwo ॥3.1.2॥" after it — non-empty, so uses after text
         // ॥3.1.2॥ has nothing after it — falls back to text before
         assertFalse("3.1.2 preview must be non-empty", p2.isEmpty());
+    }
+
+    // ── normaliseDigits ───────────────────────────────────────────────────────
+
+    /** UC-D1: Devanagari digits are converted to ASCII. */
+    @Test
+    public void normaliseDigits_devanagari() {
+        // ०१२३४५६७८९ → 0123456789
+        assertEquals("0123456789", VerseIndex.normaliseDigits("\u0966\u0967\u0968\u0969\u096A\u096B\u096C\u096D\u096E\u096F"));
+    }
+
+    /** UC-D2: Kannada digits are converted to ASCII. */
+    @Test
+    public void normaliseDigits_kannada() {
+        // ೦೧೨ → 012
+        assertEquals("012", VerseIndex.normaliseDigits("\uCE66\uCE67\uCE68"));
+    }
+
+    /** UC-D3: ASCII characters pass through unchanged. */
+    @Test
+    public void normaliseDigits_asciiUnchanged() {
+        assertEquals("abc123", VerseIndex.normaliseDigits("abc123"));
+    }
+
+    /** UC-D4: null input returns null. */
+    @Test
+    public void normaliseDigits_nullInput() {
+        assertNull(VerseIndex.normaliseDigits(null));
+    }
+
+    // ── Single-danda stotra-style verses (॥N॥ → key "1.N") ───────────────────
+
+    /** UC-S1: ॥1॥ style verse is detected and stored as "1.1". */
+    @Test
+    public void singleDanda_detectedAsChapterOneVerse() {
+        VerseIndex idx = buildFrom(docWithContents(10,
+                "verse text \u09651\u0965 more text"));
+        assertTrue("Single-danda stotra verse must be detected", idx.hasVerses());
+        assertEquals("Key '1.1' must map to the doc", 10, idx.getDocId("1.1"));
+    }
+
+    /** UC-S2: multiple ॥N॥ verses appear under chapter "1". */
+    @Test
+    public void singleDanda_multipleVersesUnderChapterOne() {
+        VerseIndex idx = buildFrom(
+                docWithContents(1, "verse1 \u09651\u0965"),
+                docWithContents(2, "verse2 \u09652\u0965"),
+                docWithContents(3, "verse3 \u09653\u0965"));
+        List<String> chapters = idx.getChapters();
+        assertEquals("All stotra verses must be under one chapter", 1, chapters.size());
+        assertEquals("1", chapters.get(0));
+        List<String> verses = idx.getVersesForChapter("1");
+        assertEquals(3, verses.size());
+        assertTrue(verses.contains("1.1"));
+        assertTrue(verses.contains("1.2"));
+        assertTrue(verses.contains("1.3"));
+    }
+
+    /** UC-S3: ॥N॥ with optional spaces is detected. */
+    @Test
+    public void singleDanda_withSpaces_detected() {
+        VerseIndex idx = buildFrom(docWithContents(5, "text \u0965 6 \u0965 after"));
+        assertEquals("Spaced single-danda must detect '1.6'", 5, idx.getDocId("1.6"));
+    }
+
+    /** UC-S4: Kannada digit ॥ ೧ ॥ is detected via digit normalisation. */
+    @Test
+    public void singleDanda_kannadaDigit_detected() {
+        // ॥ ೧ ॥ after digit normalisation becomes ॥ 1 ॥
+        VerseIndex idx = buildFrom(docWithContents(7, "stotra \u0965 \uCE67 \u0965 end"));
+        assertEquals("Kannada ೧ must normalise and match as '1.1'", 7, idx.getDocId("1.1"));
+    }
+
+    /** UC-S5: Devanagari danda verse ॥३.१.१॥ is detected after digit normalisation. */
+    @Test
+    public void dandaPattern_devanagariDigits_detected() {
+        // ॥३.१.१॥ → after normalisation → ॥3.1.1॥
+        VerseIndex idx = buildFrom(docWithContents(8,
+                "text \u0965\u0969.\u0967.\u0967\u0965 after"));
+        assertEquals("Devanagari ३.१.१ must normalise to key '3.1.1'", 8, idx.getDocId("3.1.1"));
     }
 }

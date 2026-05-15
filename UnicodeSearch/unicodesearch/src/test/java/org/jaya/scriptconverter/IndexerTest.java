@@ -66,6 +66,19 @@ public class IndexerTest {
 	}
 
 	/**
+	 * Re-indexes only the {@code mahAbhArata_mAdhvapATha} folder and regenerates
+	 * its ZIP.  Use this after updating verse-number formatting in those source
+	 * files without re-indexing the entire library.
+	 */
+	@Test
+	public void reindexMahAbhArataMadhvapATha() {
+		String srcDir = Constatants.FILES_TO_INDEX_DIRECTORY
+				+ File.separator + "mahAbhArata_mAdhvapATha";
+		createMultipleIndexes(srcDir, "");
+		createIndexZipFiles("", "");
+	}
+
+	/**
 	 * Verifies that {@link #zipFolder} includes {@code .jaya-index-md.txt} in the
 	 * output ZIP even though the name starts with {@code '.'} (which would normally
 	 * be excluded by {@link #isExcluded}).  Also confirms that other dot-files and
