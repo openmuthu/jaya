@@ -133,14 +133,13 @@ public class VerseIndex {
     // ── Private helpers ───────────────────────────────────────────────────────
 
     private void extractVerses(String contents, int docId) {
-        String preview = makePreview(contents);
         // Danda-wrapped: higher confidence, process first
         Matcher m = DANDA_PATTERN.matcher(contents);
         while (m.find()) {
             String key = normalise(m.group(1));
             if (!mVerseToDocId.containsKey(key)) {
                 mVerseToDocId.put(key, docId);
-                mVerseToPreview.put(key, preview);
+                mVerseToPreview.put(key, previewAround(contents, m));
             }
         }
         // Bare ASCII: only record if not already captured via danda
@@ -149,7 +148,7 @@ public class VerseIndex {
             String key = normalise(m.group(1));
             if (!mVerseToDocId.containsKey(key)) {
                 mVerseToDocId.put(key, docId);
-                mVerseToPreview.put(key, preview);
+                mVerseToPreview.put(key, previewAround(contents, m));
             }
         }
     }
@@ -172,6 +171,21 @@ public class VerseIndex {
         return stripped.length() > PREVIEW_LENGTH
                 ? stripped.substring(0, PREVIEW_LENGTH)
                 : stripped;
+    }
+
+    /**
+     * Chooses the best preview for a verse marker match.
+     * Prefers text after the marker (next-verse content); falls back to text
+     * before the marker when the marker sits at the end of a verse
+     * (e.g. Bhāgavata Purāṇa style: {@code verse text ॥3.1.1॥}).
+     */
+    private static String previewAround(String contents, Matcher m) {
+        // Preview from text after the verse-number marker so each verse
+        // in the same Lucene document gets its own distinct preview.
+        String after = makePreview(contents.substring(m.end()));
+        if (!after.isEmpty()) return after;
+        // Marker is at end of verse — use the verse body that precedes it.
+        return makePreview(contents.substring(0, m.start()));
     }
 
     /** Replaces {@code '-'} with {@code '.'} for canonical key form. */

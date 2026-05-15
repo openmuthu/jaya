@@ -292,17 +292,17 @@ public class VerseIndexTest {
 
     // ── getPreview ────────────────────────────────────────────────────────────
 
-    /** UC-P6: getPreview returns preview stored for that verse key. */
+    /** UC-P6: getPreview returns preview from text AFTER the verse marker. */
     @Test
     public void getPreview_returnsPreviewForKnownKey() {
-        // Content has lots of letters so the preview is non-empty
+        // "1.2" appears mid-document; preview should come from text after the marker
         VerseIndex idx = buildFrom(docWithContents(10,
                 "नारायणाय नमः 1.2 इति"));
         String preview = idx.getPreview("1.2");
         assertFalse("Preview must be non-empty for a known key", preview.isEmpty());
-        // Content stripped of specials; check it starts with the Devanagari text
-        assertTrue("Preview must contain content chars",
-                preview.startsWith("नारायणाय"));
+        // Preview is built from " इति" (the text after "1.2"), not from the start
+        assertTrue("Preview must contain text that follows the verse marker",
+                preview.startsWith("इति"));
     }
 
     /** UC-P7: getPreview returns empty string for an unknown key. */
@@ -335,10 +335,71 @@ public class VerseIndexTest {
     @Test
     public void getPreview_firstOccurrenceWinsForPreview() {
         VerseIndex idx = buildFrom(
-                docWithContents(1, "alpha 2.3 text"),
-                docWithContents(2, "beta 2.3 text"));
-        // Preview must come from the first chunk (chunk 1 → starts with "alpha")
+                docWithContents(1, "alpha 2.3 firstchunk"),
+                docWithContents(2, "beta 2.3 secondchunk"));
+        // Preview is from text after "2.3" in the first chunk → "firstchunk"
         String preview = idx.getPreview("2.3");
-        assertTrue("Preview must be from first chunk", preview.startsWith("alpha"));
+        assertTrue("Preview must be from first chunk", preview.startsWith("firstchunk"));
+    }
+
+    /**
+     * UC-P11: the core bug fix — multiple verses in the same Lucene document
+     * must each get a distinct preview derived from text after their own marker.
+     */
+    @Test
+    public void getPreview_multipleVersesInSameDoc_distinctPreviews() {
+        // Single document containing two danda-wrapped verses
+        VerseIndex idx = buildFrom(docWithContents(1,
+                "preamble \u09651.1\u0965 firstverse \u09651.2\u0965 secondverse"));
+        String preview1 = idx.getPreview("1.1");
+        String preview2 = idx.getPreview("1.2");
+        assertFalse("1.1 preview must not be empty", preview1.isEmpty());
+        assertFalse("1.2 preview must not be empty", preview2.isEmpty());
+        assertFalse("Verses in same doc must have distinct previews",
+                preview1.equals(preview2));
+        assertTrue("1.1 preview from text after ॥1.1॥", preview1.startsWith("firstverse"));
+        assertTrue("1.2 preview from text after ॥1.2॥", preview2.startsWith("secondverse"));
+    }
+
+    /** UC-P12: bare verse markers in the same document also get distinct previews. */
+    @Test
+    public void getPreview_multipleBarVersesInSameDoc_distinctPreviews() {
+        VerseIndex idx = buildFrom(docWithContents(5,
+                "2.1 alphacontent 2.2 betacontent"));
+        String p1 = idx.getPreview("2.1");
+        String p2 = idx.getPreview("2.2");
+        assertFalse("2.1 and 2.2 must have distinct previews", p1.equals(p2));
+        assertTrue("2.1 preview from text after '2.1'", p1.startsWith("alphacontent"));
+        assertTrue("2.2 preview from text after '2.2'", p2.startsWith("betacontent"));
+    }
+
+    /**
+     * UC-P13: end-of-verse style (Bhāgavata Purāṇa) — verse marker at the END
+     * of a verse (e.g. {@code verse text ॥3.1.1॥}) must still produce a non-empty
+     * preview using the text BEFORE the marker as a fallback.
+     */
+    @Test
+    public void getPreview_endOfVerseMarker_fallsBackToTextBefore() {
+        // Danda marker at end of verse — nothing follows it
+        VerseIndex idx = buildFrom(docWithContents(10,
+                "श्रीशुक उवाच \u09653.1.1\u0965"));
+        String preview = idx.getPreview("3.1.1");
+        assertFalse("End-of-verse marker must still produce non-empty preview", preview.isEmpty());
+    }
+
+    /**
+     * UC-P14: multiple end-of-verse markers in the same document each fall back
+     * to the text before their own marker — so previews are distinct.
+     */
+    @Test
+    public void getPreview_multipleEndOfVerseMarkers_distinctPreviews() {
+        VerseIndex idx = buildFrom(docWithContents(20,
+                "verseone \u09653.1.1\u0965 versetwo \u09653.1.2\u0965"));
+        String p1 = idx.getPreview("3.1.1");
+        String p2 = idx.getPreview("3.1.2");
+        assertFalse("3.1.1 and 3.1.2 must have distinct previews", p1.equals(p2));
+        // ॥3.1.1॥ has "versetwo ॥3.1.2॥" after it — non-empty, so uses after text
+        // ॥3.1.2॥ has nothing after it — falls back to text before
+        assertFalse("3.1.2 preview must be non-empty", p2.isEmpty());
     }
 }
