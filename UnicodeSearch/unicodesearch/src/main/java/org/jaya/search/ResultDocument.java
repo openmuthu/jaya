@@ -12,7 +12,7 @@ public class ResultDocument {
 	private int mDocId;
 	private Document mDocument;
 	
-	ResultDocument(int docId, Document doc){
+	public ResultDocument(int docId, Document doc){
 		mDocId = docId;
 		mDocument = doc;
 	}

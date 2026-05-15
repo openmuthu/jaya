@@ -1,5 +1,10 @@
 package org.jaya.annotation;
 
+import org.apache.lucene.document.Document;
+import org.apache.lucene.document.Field;
+import org.apache.lucene.document.StringField;
+import org.jaya.search.ResultDocument;
+import org.jaya.util.Constatants;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -345,6 +350,54 @@ public class AnnotationManagerTest {
         AnnotationManager am2 = new AnnotationManager(null, annotationsFile.getAbsolutePath());
         assertEquals("am30a: annotation count preserved", 1, am2.getNumAnnotations());
         assertEquals("am30b: annotation name preserved", "saved", am2.getAnnotations().get(0).getName());
+    }
+
+    // ── getAnnotation(ResultDocument) ─────────────────────────────────────────
+
+    private ResultDocument makeResultDoc(String path, String localId) {
+        Document luceneDoc = new Document();
+        luceneDoc.add(new StringField(Constatants.FIELD_PATH, path, Field.Store.YES));
+        luceneDoc.add(new StringField(Constatants.FIELD_DOC_LOCAL_ID, localId, Field.Store.YES));
+        return new ResultDocument(0, luceneDoc);
+    }
+
+    // am32 — getAnnotation returns null when no annotation exists for the doc
+    @Test
+    public void am32_getAnnotation_noMatch_returnsNull() throws Exception {
+        AnnotationManager am = emptyManager();
+        am.addAnnotationDirect("/p/f.txt", "3", "mark");
+        ResultDocument rd = makeResultDoc("/p/other.txt", "3");
+        assertNull("am32: no match returns null", am.getAnnotation(rd));
+    }
+
+    // am33 — getAnnotation returns the correct annotation when it exists
+    @Test
+    public void am33_getAnnotation_match_returnsAnnotation() throws Exception {
+        AnnotationManager am = emptyManager();
+        am.addAnnotationDirect("/p/f.txt", "3", "rAma");
+        ResultDocument rd = makeResultDoc("/p/f.txt", "3");
+        Annotation a = am.getAnnotation(rd);
+        assertNotNull("am33a: annotation found", a);
+        assertEquals("am33b: annotation name", "rAma", a.getName());
+    }
+
+    // am34 — getAnnotation returns null for null doc
+    @Test
+    public void am34_getAnnotation_nullDoc_returnsNull() throws Exception {
+        AnnotationManager am = emptyManager();
+        assertNull("am34: null doc returns null", am.getAnnotation(null));
+    }
+
+    // am35 — getAnnotation distinguishes same localId under different paths
+    @Test
+    public void am35_getAnnotation_sameLocalId_differentPath() throws Exception {
+        AnnotationManager am = emptyManager();
+        am.addAnnotationDirect("/p/a.txt", "1", "first");
+        am.addAnnotationDirect("/p/b.txt", "1", "second");
+        ResultDocument rdA = makeResultDoc("/p/a.txt", "1");
+        ResultDocument rdB = makeResultDoc("/p/b.txt", "1");
+        assertEquals("am35a: path a returns first",  "first",  am.getAnnotation(rdA).getName());
+        assertEquals("am35b: path b returns second", "second", am.getAnnotation(rdB).getName());
     }
 
     // am31 — maxItems constructor parameter is accepted without error

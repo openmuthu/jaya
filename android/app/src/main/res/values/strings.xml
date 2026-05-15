@@ -27,6 +27,7 @@
     <!-- Bookmarks grouping -->
     <string name="bookmark_rename">Rename</string>
     <string name="bookmark_assign_groups">Assign groups</string>
+    <string name="bookmark_share">Share link</string>
     <string name="bookmark_delete">Delete</string>
     <string name="group_rename">Rename group</string>
     <string name="group_delete">Delete group</string>

@@ -6,6 +6,7 @@ import android.app.SearchManager;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.NonNull;
@@ -69,14 +70,57 @@ public class MainActivity extends Activity {
     }
 
     private void handleIntent(Intent intent) {
-        if (intent.getAction().equals(JayaApp.INTENT_OPEN_DOCUMENT_ID)) {
+        String action = intent.getAction();
+        if (JayaApp.INTENT_OPEN_DOCUMENT_ID.equals(action)) {
             int docId = intent.getIntExtra("documentId", 0);
             showDocumentId(docId);
-        }
-        else {
-            int docId = PreferencesManager.getLastViewedDocId();
+        } else if (Intent.ACTION_VIEW.equals(action) && intent.getData() != null) {
+            Uri uri = intent.getData();
+            if ("https".equals(uri.getScheme())
+                    && "openmuthu.github.io".equals(uri.getHost())
+                    && "/bookmark".equals(uri.getPath())) {
+                handleBookmarkDeepLink(uri);
+            } else {
+                showDocumentId(PreferencesManager.getLastViewedDocId());
+            }
+        } else {
             showDocumentId(PreferencesManager.getLastViewedDocId());
         }
+    }
+
+    private void handleBookmarkDeepLink(final Uri uri) {
+        final String path = uri.getQueryParameter("path");
+        final String localId = uri.getQueryParameter("id");
+        final String fp = uri.getQueryParameter("fp");
+        if (path == null || localId == null) {
+            showDocumentId(PreferencesManager.getLastViewedDocId());
+            return;
+        }
+        JayaApp.runOnWorkerThread(new Runnable() {
+            @Override
+            public void run() {
+                ResultDocument doc = null;
+                try {
+                    doc = JayaApp.getSearcher().getDoc(path, localId);
+                    if (doc == null && fp != null && !fp.isEmpty()) {
+                        doc = JayaApp.getSearcher().getDocByPathAndFingerprint(path, fp);
+                    }
+                } catch (java.io.IOException ex) {
+                    ex.printStackTrace();
+                }
+                final ResultDocument resolvedDoc = doc;
+                JayaApp.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (resolvedDoc != null) {
+                            showDocumentId(resolvedDoc.getId());
+                        } else {
+                            showDocumentId(PreferencesManager.getLastViewedDocId());
+                        }
+                    }
+                });
+            }
+        });
     }
 
     public void showDocumentId(int docId){

@@ -6,6 +6,7 @@ import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.text.InputType;
 import android.view.ActionMode;
 import android.view.Menu;
@@ -57,6 +58,25 @@ class MainActivityActionBarCallBack implements ActionMode.Callback {
                                 new Annotation(doc, TimestampUtils.nowAsString(), new Date()));
                         JayaApp.saveMRUAndAnnotationsIfDirty();
                     }
+                    break;
+                }
+                case R.id.action_bookmark_share: {
+                    Annotation existing = JayaApp.getAnnotationManager().getAnnotation(doc);
+                    String sharePath = doc.getDoc() != null
+                            ? doc.getDoc().get(org.jaya.util.Constatants.FIELD_PATH) : "";
+                    String shareLocalId = doc.getDoc() != null
+                            ? doc.getDoc().get(org.jaya.util.Constatants.FIELD_DOC_LOCAL_ID) : "";
+                    String shareFp = existing != null
+                            ? existing.getContentFingerprint()
+                            : Annotation.buildFingerprint(doc.getDoc() != null
+                                    ? doc.getDoc().get(org.jaya.util.Constatants.FIELD_CONTENTS) : "");
+                    String shareName = existing != null ? existing.getName() : "";
+                    String url = BookmarkDeepLink.buildUrl(sharePath, shareLocalId, shareFp, shareName);
+                    Intent share = new Intent(Intent.ACTION_SEND);
+                    share.setType("text/plain");
+                    share.putExtra(Intent.EXTRA_TEXT, url);
+                    Activity a = mActivity.get();
+                    if (a != null) a.startActivity(Intent.createChooser(share, null));
                     break;
                 }
                 case R.id.action_copy: {

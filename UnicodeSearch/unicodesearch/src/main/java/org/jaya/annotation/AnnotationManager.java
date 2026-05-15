@@ -264,6 +264,12 @@ public class AnnotationManager {
 		return annotationExists(new Annotation(doc));
 	}
 
+	/** Returns the stored annotation for {@code doc}, or {@code null} if none. */
+	public Annotation getAnnotation(ResultDocument doc) {
+		if (doc == null) return null;
+		return mDocIdToAnnotationMap.get(new Annotation(doc).getKey());
+	}
+
 	public boolean annotationExists(Annotation a){
 		if( a == null || mDocIdToAnnotationMap == null || mDocIdToAnnotationMap.isEmpty() )
 			return false;

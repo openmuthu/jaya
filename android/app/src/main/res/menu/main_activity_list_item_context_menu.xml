@@ -11,4 +11,9 @@
         android:title="@string/action_copy"
         app:showAsAction="always"
         android:visible="true"/>
+    <item
+        android:id="@+id/action_bookmark_share"
+        android:title="@string/bookmark_share"
+        app:showAsAction="always"
+        android:visible="true"/>
 </menu>

@@ -247,6 +247,7 @@ public class AnnotationsActivity extends Activity {
         String[] options = {
                 getString(R.string.bookmark_rename),
                 getString(R.string.bookmark_assign_groups),
+                getString(R.string.bookmark_share),
                 getString(R.string.bookmark_delete)
         };
         new AlertDialog.Builder(this)
@@ -256,10 +257,21 @@ public class AnnotationsActivity extends Activity {
                     public void onClick(DialogInterface dialog, int which) {
                         if      (which == 0) showRenameAnnotationDialog(annotation);
                         else if (which == 1) showAssignGroupsDialog(annotation);
+                        else if (which == 2) shareAnnotationLink(annotation);
                         else                 confirmDeleteAnnotation(annotation);
                     }
                 })
                 .show();
+    }
+
+    private void shareAnnotationLink(Annotation annotation) {
+        String url = BookmarkDeepLink.buildUrl(
+                annotation.getDocPath(), annotation.getDocLocalId(),
+                annotation.getContentFingerprint(), annotation.getName());
+        Intent share = new Intent(Intent.ACTION_SEND);
+        share.setType("text/plain");
+        share.putExtra(Intent.EXTRA_TEXT, url);
+        startActivity(Intent.createChooser(share, annotation.getName()));
     }
 
     private void showRenameAnnotationDialog(final Annotation annotation) {
