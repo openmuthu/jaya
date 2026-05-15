@@ -5,6 +5,7 @@ import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.View;
@@ -60,9 +61,18 @@ public class TableOfContentsActivity extends Activity {
         final String breadcrumb;  // e.g. "dAsasAhitya / vAdirAjaru"
         int score;
 
+        // Pre-computed search targets — built once, reused on every keystroke.
+        final String labelLower;
+        final String itransTitleLower;
+        final String itransPathLower;
+
         SearchResult(TreeNode node, String breadcrumb) {
             this.node = node;
             this.breadcrumb = breadcrumb;
+            this.labelLower       = node.displayLabel.toLowerCase();
+            this.itransTitleLower = itransTitleFromSegment(node.itransSegment).toLowerCase();
+            this.itransPathLower  = node.itransPath != null
+                    ? node.itransPath.toLowerCase() : "";
         }
     }
 
@@ -82,6 +92,10 @@ public class TableOfContentsActivity extends Activity {
     private ListView mSearchResultsView;
     private EditText mSearchEdit;
     private ImageButton mClearButton;
+
+    // Debounce: wait for typing to pause before running the search
+    private final Handler mSearchHandler = new Handler();
+    private static final int SEARCH_DEBOUNCE_MS = 200;
 
     // ── Activity lifecycle ────────────────────────────────────────────────────
 
@@ -176,14 +190,21 @@ public class TableOfContentsActivity extends Activity {
 
             @Override
             public void afterTextChanged(Editable s) {
-                String query = s.toString().trim();
+                final String query = s.toString().trim();
                 if (query.isEmpty()) {
+                    mSearchHandler.removeCallbacksAndMessages(null);
                     mSearchResultsView.setVisibility(View.GONE);
                     mClearButton.setVisibility(View.GONE);
                 } else {
                     mClearButton.setVisibility(View.VISIBLE);
-                    updateSearchResults(query);
-                    mSearchResultsView.setVisibility(View.VISIBLE);
+                    // Debounce: cancel any pending search and schedule a new one.
+                    mSearchHandler.removeCallbacksAndMessages(null);
+                    mSearchHandler.postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            scheduleSearch(query);
+                        }
+                    }, SEARCH_DEBOUNCE_MS);
                 }
             }
         });
@@ -289,48 +310,68 @@ public class TableOfContentsActivity extends Activity {
         return s.replace("aa", "a").replace("ii", "i").replace("uu", "u");
     }
 
-    private void updateSearchResults(String rawQuery) {
-        String query = rawQuery.toLowerCase();
+    /**
+     * Runs the search on a background thread so the UI thread stays responsive,
+     * then posts the sorted results back to the main thread.
+     */
+    private void scheduleSearch(final String rawQuery) {
+        final List<SearchResult> snapshot = new ArrayList<SearchResult>(mAllLeaves);
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                final List<SearchResult> results = computeSearchResults(rawQuery, snapshot);
+                mSearchHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        mSearchResults.clear();
+                        mSearchResults.addAll(results);
+                        mSearchResultsView.setVisibility(View.VISIBLE);
+                        mSearchAdapter.notifyDataSetChanged();
+                    }
+                });
+            }
+        }).start();
+    }
+
+    /**
+     * Pure computation — no UI calls.  Safe to run on a background thread.
+     * Uses pre-cached lowercase strings from each {@link SearchResult} so
+     * no string allocations happen inside the hot loop.
+     */
+    static List<SearchResult> computeSearchResults(
+            String rawQuery, List<SearchResult> leaves) {
+        String query     = rawQuery.toLowerCase();
         String queryNorm = normalizeDoubleVowels(query);
-        mSearchResults.clear();
+        boolean normDiffers = !queryNorm.equals(query);
 
-        for (SearchResult sr : mAllLeaves) {
-            // Score against display label and against the raw ITRANS segment
-            // (stripped of the numeric ID prefix and extension) so both
-            // script-typed and ITRANS-typed queries work.
-            String labelLower  = sr.node.displayLabel.toLowerCase();
-            String itransTitle = itransTitleFromSegment(sr.node.itransSegment).toLowerCase();
-            // Full slash-separated ITRANS path (e.g. "purana/padmapurana/bhumi-khanda.txt")
-            // lets folder-name queries like "padmapurANa" surface every file inside that folder.
-            String itransPath  = sr.node.itransPath != null
-                    ? sr.node.itransPath.toLowerCase() : "";
-
-            int s1 = fuzzyScore(labelLower,  query);
-            int s2 = fuzzyScore(itransTitle, query);
-            int s3 = fuzzyScore(itransPath,  query);
+        List<SearchResult> out = new ArrayList<SearchResult>();
+        for (SearchResult sr : leaves) {
+            // Use pre-computed lowercase fields — no allocation in the hot loop.
+            int s1 = fuzzyScore(sr.labelLower,       query);
+            int s2 = fuzzyScore(sr.itransTitleLower, query);
+            int s3 = fuzzyScore(sr.itransPathLower,  query);
             // Also try the double-vowel-normalised query (aa→a, ii→i, uu→u)
             // so "dashaavataara" matches "dashAvatArastuti" etc.
-            int s4 = queryNorm.equals(query) ? -1 : fuzzyScore(labelLower,  queryNorm);
-            int s5 = queryNorm.equals(query) ? -1 : fuzzyScore(itransTitle, queryNorm);
-            int s6 = queryNorm.equals(query) ? -1 : fuzzyScore(itransPath,  queryNorm);
+            int s4 = normDiffers ? fuzzyScore(sr.labelLower,       queryNorm) : -1;
+            int s5 = normDiffers ? fuzzyScore(sr.itransTitleLower, queryNorm) : -1;
+            int s6 = normDiffers ? fuzzyScore(sr.itransPathLower,  queryNorm) : -1;
             int best = Math.max(Math.max(s1, s2), Math.max(Math.max(s3, s4), Math.max(s5, s6)));
 
             if (best > 0) {
                 sr.score = best;
-                mSearchResults.add(sr);
+                out.add(sr);
             }
         }
 
         // Sort: highest score first; ties broken alphabetically by display label
-        Collections.sort(mSearchResults, new Comparator<SearchResult>() {
+        Collections.sort(out, new Comparator<SearchResult>() {
             @Override
             public int compare(SearchResult a, SearchResult b) {
                 if (b.score != a.score) return b.score - a.score;
                 return a.node.displayLabel.compareToIgnoreCase(b.node.displayLabel);
             }
         });
-
-        mSearchAdapter.notifyDataSetChanged();
+        return out;
     }
 
     /**

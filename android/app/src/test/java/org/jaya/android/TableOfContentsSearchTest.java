@@ -536,4 +536,150 @@ public class TableOfContentsSearchTest {
         assertEquals("leaf must be at folder+1 when folder has a single child",
                 folderPos + 1, leafPos);
     }
+
+    // ═════════════════════════════════════════════════════════════════════════
+    // SearchResult cached-field tests  (SR)
+    //
+    // SR-01  labelLower is the display label lowercased
+    // SR-02  itransTitleLower strips extension, ID prefix, and is lowercased
+    // SR-03  itransPathLower is the full path lowercased
+    // SR-04  itransPathLower is empty string for a folder node (itransPath == null)
+    // ═════════════════════════════════════════════════════════════════════════
+
+    @Test
+    public void sr01_labelLowerIsCached() {
+        TableOfContentsActivity.TreeNode leaf =
+                makeLeaf("vAdirAja.txt", "stOtra/vAdirAja.txt", 1);
+        // makeLeaf uses the segment as displayLabel too
+        TableOfContentsActivity.SearchResult sr =
+                new TableOfContentsActivity.SearchResult(leaf, "stOtra");
+        assertEquals("vadiraja.txt", sr.labelLower);
+    }
+
+    @Test
+    public void sr02_itransTitleLowerIsCached() {
+        // segment "42-hari-bhakti.txt" → title "hari bhakti" → lowercased
+        TableOfContentsActivity.TreeNode leaf =
+                makeLeaf("42-hari-bhakti.txt", "stOtra/42-hari-bhakti.txt", 1);
+        TableOfContentsActivity.SearchResult sr =
+                new TableOfContentsActivity.SearchResult(leaf, "stOtra");
+        assertEquals("hari bhakti", sr.itransTitleLower);
+    }
+
+    @Test
+    public void sr03_itransPathLowerIsCached() {
+        TableOfContentsActivity.TreeNode leaf =
+                makeLeaf("vAdirAja.txt", "stOtra/vAdirAja.txt", 1);
+        TableOfContentsActivity.SearchResult sr =
+                new TableOfContentsActivity.SearchResult(leaf, "stOtra");
+        assertEquals("stotra/vadiraja.txt", sr.itransPathLower);
+    }
+
+    @Test
+    public void sr04_itransPathLowerEmptyForFolderNode() {
+        // Folder nodes have itransPath == null; cached field should be ""
+        TableOfContentsActivity.TreeNode folder = makeFolder("stOtra", 0);
+        TableOfContentsActivity.SearchResult sr =
+                new TableOfContentsActivity.SearchResult(folder, "");
+        assertEquals("", sr.itransPathLower);
+    }
+
+    // ═════════════════════════════════════════════════════════════════════════
+    // computeSearchResults tests  (CS)
+    //
+    // CS-01  matching leaf is returned, non-matching leaf is excluded
+    // CS-02  results are sorted highest-score first
+    // CS-03  ties broken alphabetically
+    // CS-04  double-vowel normalised query ("dashaavataara") matches leaf
+    // CS-05  empty leaf list returns empty results
+    // CS-06  query with no matches returns empty results
+    // CS-07  folder-name query matches every leaf whose path contains it
+    // ═════════════════════════════════════════════════════════════════════════
+
+    /** Build a minimal leaf SearchResult. */
+    private static TableOfContentsActivity.SearchResult makeSearchResult(
+            String segment, String itransPath, String breadcrumb) {
+        TableOfContentsActivity.TreeNode leaf = makeLeaf(segment, itransPath, 1);
+        return new TableOfContentsActivity.SearchResult(leaf, breadcrumb);
+    }
+
+    @Test
+    public void cs01_matchingLeafReturnedNonMatchingExcluded() {
+        List<TableOfContentsActivity.SearchResult> leaves = Arrays.asList(
+                makeSearchResult("rAmAyaNa.txt",  "rAmAyaNa.txt",  ""),
+                makeSearchResult("mahAbhArata.txt", "mahAbhArata.txt", ""));
+        List<TableOfContentsActivity.SearchResult> results =
+                TableOfContentsActivity.computeSearchResults("rAmA", leaves);
+        assertEquals(1, results.size());
+        assertEquals("rAmAyaNa.txt", results.get(0).node.displayLabel);
+    }
+
+    @Test
+    public void cs02_sortedHighestScoreFirst() {
+        // "hari" is exact in "hari.txt" (segment = "hari.txt", label = "hari.txt")
+        // "harikathA.txt" is a prefix match
+        List<TableOfContentsActivity.SearchResult> leaves = Arrays.asList(
+                makeSearchResult("harikathA.txt", "harikathA.txt", ""),
+                makeSearchResult("hari.txt",      "hari.txt",      ""));
+        List<TableOfContentsActivity.SearchResult> results =
+                TableOfContentsActivity.computeSearchResults("hari.txt", leaves);
+        assertEquals(2, results.size());
+        // exact match "hari.txt" must come first
+        assertEquals("hari.txt", results.get(0).node.displayLabel);
+    }
+
+    @Test
+    public void cs03_tiesBrokenAlphabetically() {
+        // Both are substring matches for "txt" — tied on score, sorted alphabetically
+        List<TableOfContentsActivity.SearchResult> leaves = Arrays.asList(
+                makeSearchResult("zeta.txt",  "zeta.txt",  ""),
+                makeSearchResult("alpha.txt", "alpha.txt", ""));
+        List<TableOfContentsActivity.SearchResult> results =
+                TableOfContentsActivity.computeSearchResults("txt", leaves);
+        assertEquals(2, results.size());
+        assertEquals("alpha.txt", results.get(0).node.displayLabel);
+        assertEquals("zeta.txt",  results.get(1).node.displayLabel);
+    }
+
+    @Test
+    public void cs04_doubleVowelQueryMatchesLeaf() {
+        // "dashaavataara" normalised → "dashavatara"; label "dashAvatarastuti"
+        // toLowerCase = "dashavatarastuti" which starts with "dashavatara" → score 800
+        List<TableOfContentsActivity.SearchResult> leaves = Arrays.asList(
+                makeSearchResult("dashAvatarastuti.txt", "stOtra/dashAvatarastuti.txt", "stOtra"));
+        List<TableOfContentsActivity.SearchResult> results =
+                TableOfContentsActivity.computeSearchResults("dashaavataara", leaves);
+        assertEquals("double-vowel query must match via normalisation", 1, results.size());
+    }
+
+    @Test
+    public void cs05_emptyLeavesReturnsEmpty() {
+        List<TableOfContentsActivity.SearchResult> results =
+                TableOfContentsActivity.computeSearchResults("rAma",
+                        new ArrayList<TableOfContentsActivity.SearchResult>());
+        assertTrue(results.isEmpty());
+    }
+
+    @Test
+    public void cs06_noMatchReturnsEmpty() {
+        List<TableOfContentsActivity.SearchResult> leaves = Arrays.asList(
+                makeSearchResult("rAmAyaNa.txt", "rAmAyaNa.txt", ""));
+        List<TableOfContentsActivity.SearchResult> results =
+                TableOfContentsActivity.computeSearchResults("zzzzz", leaves);
+        assertTrue(results.isEmpty());
+    }
+
+    @Test
+    public void cs07_folderNameQueryMatchesAllLeavesInThatFolder() {
+        List<TableOfContentsActivity.SearchResult> leaves = Arrays.asList(
+                makeSearchResult("bhumi-khanda.txt",  "purana/padmapurana/bhumi-khanda.txt",  "purana/padmapurana"),
+                makeSearchResult("srishti-khanda.txt", "purana/padmapurana/srishti-khanda.txt", "purana/padmapurana"),
+                makeSearchResult("unrelated.txt",      "mahabharata/unrelated.txt",             "mahabharata"));
+        List<TableOfContentsActivity.SearchResult> results =
+                TableOfContentsActivity.computeSearchResults("padmapurana", leaves);
+        assertEquals("both files in padmapurana folder must match", 2, results.size());
+        for (TableOfContentsActivity.SearchResult sr : results) {
+            assertTrue(sr.node.itransPath.contains("padmapurana"));
+        }
+    }
 }
