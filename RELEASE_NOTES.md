@@ -8,6 +8,25 @@ git log <range-start>..<range-end> --oneline
 
 ---
 
+## Version 14.0 — 2026-05-15
+
+**Git range:** `15a55fac..67065f87`
+Key commits: `9ebbd328` (verse preview), `7d3fa565` (stotra verses + mahābhārata), `81eec8ab` (TOC search), `67065f87` (deep links)
+
+### Bookmarks
+- **Shareable deep links** — tapping a document now shows a "Share link" action alongside "Add Bookmark" and "Copy". The link is a standard `https://openmuthu.github.io/bookmark?…` URL that any messaging app renders as a tappable hyperlink. On Android with the app installed it opens directly to the bookmarked location (Android App Links, no chooser dialog). Without the app it redirects to the Play Store.
+
+### Verse Navigator
+- **Stotra-style verse numbers** — texts using `॥N॥` (sequential single-integer verse numbers per chapter) are now supported in the Verse Navigator. Verse numbers are grouped under a single chapter so the navigator shows the full stotra.
+- **MahābhārataMādhvapāṭha verse navigation** — all 18 parvas now have correctly scoped verse numbers (`chapter.N`) so the Verse Navigator works across the entire text.
+- **Devanagari and Kannada digit support** — verse numbers written in Devanagari (॰–९) or Kannada (೦–೯) digits are now recognised by the Verse Navigator alongside ASCII digits.
+- **Distinct verse previews** — verse previews in the Verse Navigator now always show the verse body, not the verse-number marker. For end-of-verse marker style (e.g. Bhāgavata Purāṇa `verse ॥3.1.1॥`) the preview falls back to text before the marker so each verse has a unique, meaningful preview.
+
+### Table of Contents
+- **Faster search** — the top-of-screen search box in the Table of Contents is now debounced (200 ms) and runs on a background thread, eliminating the choppiness previously visible when typing quickly on large libraries.
+
+---
+
 ## Version 13.0 — 2026-05-14
 
 **Git range:** `7978be1..15a55fac`
